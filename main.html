@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ορθόδοξο Νηστειοδρόμιο</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      --font-serif: Georgia, "Times New Roman", serif;
+      --color-text-primary: #1f1f1f;
+      --color-text-secondary: #5b5b5b;
+      --color-text-tertiary: #8a8a8a;
+      --color-text-warning: #7a4f0d;
+      --color-border-secondary: #d8d1c7;
+      --color-border-tertiary: #e8e1d8;
+      --color-background-primary: #fffdfa;
+      --color-background-secondary: #f5f0e8;
+      --color-background-warning: #fff0d6;
+      --border-radius-md: 12px;
+      --border-radius-lg: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--color-text-primary);
+      background:
+        radial-gradient(circle at top, rgba(186, 117, 23, 0.10), transparent 32%),
+        linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .ort-root {
+      font-family: var(--font-sans);
+      padding: 0 0 2rem;
+    }
+
+    .ort-shell {
+      width: min(100%, 860px);
+      margin: 0 auto;
+      padding: 2rem 1rem 2.5rem;
+    }
+
+    .ort-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+
+    .ort-cross {
+      font-size: 22px;
+      color: #BA7517;
+    }
+
+    .ort-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      font-family: var(--font-serif);
+    }
+
+    .ort-subtitle {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    .today-card {
+      border-radius: var(--border-radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .today-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .today-card.c-none::before {
+      background: #1D9E75;
+    }
+
+    .today-card.c-oil::before {
+      background: #BA7517;
+    }
+
+    .today-card.c-fish::before {
+      background: #185FA5;
+    }
+
+    .today-card.c-dry::before {
+      background: #A32D2D;
+    }
+
+    .today-card.c-strict::before {
+      background: #501313;
+    }
+
+    .today-date {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .today-status {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .today-period {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .today-desc {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    .fast-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+
+    .nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      border-radius: var(--border-radius-md);
+      padding: 0 10px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      transition: color 0.12s;
+    }
+
+    .nav-btn:hover {
+      color: var(--color-text-primary);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-select,
+    .nav-input {
+      height: 36px;
+      padding: 0 8px;
+      border: none;
+      border-bottom: 1.5px solid var(--color-border-secondary);
+      border-radius: 0;
+      background: transparent;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      font-family: var(--font-serif);
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .nav-select:focus,
+    .nav-input:focus {
+      border-bottom-color: #BA7517;
+    }
+
+    .nav-select {
+      width: auto;
+      max-width: 160px;
+    }
+
+    .nav-input {
+      width: 72px;
+      text-align: center;
+    }
+
+    .nav-btn.nav-today {
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      padding: 0 10px;
+      height: 28px;
+      border: 0.5px solid var(--color-border-secondary) !important;
+      border-radius: 999px !important;
+      background: none !important;
+      margin-left: 2px;
+    }
+
+    .nav-btn.nav-today:hover {
+      background: var(--color-background-secondary) !important;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      position: relative;
+      overflow: visible;
+      isolation: isolate;
+    }
+
+    .cal-dow {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--color-text-secondary);
+      padding: 4px 0;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: var(--border-radius-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: opacity 0.15s;
+      overflow: visible;
+    }
+
+    .cal-day:hover {
+      opacity: 0.92;
+      z-index: 40;
+    }
+
+    .cal-day.empty {
+      background: transparent;
+      cursor: default;
+    }
+
+    .cal-day.today-marker {
+      box-shadow: 0 0 0 2px #BA7517;
+    }
+
+    .cal-num {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .cal-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      margin-top: 2px;
+    }
+
+    .cal-none {
+      background: #EAF3DE;
+    }
+
+    .cal-none .cal-num {
+      color: #27500A;
+    }
+
+    .cal-none .cal-dot {
+      background: #3B6D11;
+    }
+
+    .cal-oil {
+      background: #FAEEDA;
+    }
+
+    .cal-oil .cal-num {
+      color: #633806;
+    }
+
+    .cal-oil .cal-dot {
+      background: #BA7517;
+    }
+
+    .cal-fish {
+      background: #E6F1FB;
+    }
+
+    .cal-fish .cal-num {
+      color: #0C447C;
+    }
+
+    .cal-fish .cal-dot {
+      background: #185FA5;
+    }
+
+    .cal-dry {
+      background: #FCEBEB;
+    }
+
+    .cal-dry .cal-num {
+      color: #791F1F;
+    }
+
+    .cal-dry .cal-dot {
+      background: #A32D2D;
+    }
+
+    .cal-strict {
+      background: #F7C1C1;
+    }
+
+    .cal-strict .cal-num {
+      color: #501313;
+    }
+
+    .cal-strict .cal-dot {
+      background: #791F1F;
+    }
+
+    @media (max-width: 640px) {
+      .ort-shell {
+        padding: 1rem 0.75rem 2rem;
+      }
+
+      .today-card {
+        padding: 1rem 1rem 1rem 1.15rem;
+      }
+
+      .nav-row {
+        flex-wrap: wrap;
+      }
+
+      .nav-select {
+        max-width: 140px;
+      }
+
+      .nav-input {
+        width: 72px;
+      }
+
+      .cal-grid {
+        gap: 2px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #f3ede4;
+        --color-text-secondary: #c8bcae;
+        --color-text-tertiary: #9b8f81;
+        --color-text-warning: #ffd58a;
+        --color-border-secondary: #5f5141;
+        --color-border-tertiary: #4c4034;
+        --color-background-primary: #1f1a15;
+        --color-background-secondary: #2b241d;
+        --color-background-warning: #49310b;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
+          linear-gradient(180deg, #17130f 0%, #211a14 100%);
+      }
+
+      .cal-none {
+        background: #173404;
+      }
+
+      .cal-none .cal-num {
+        color: #C0DD97;
+      }
+
+      .cal-none .cal-dot {
+        background: #639922;
+      }
+
+      .cal-oil {
+        background: #412402;
+      }
+
+      .cal-oil .cal-num {
+        color: #FAC775;
+      }
+
+      .cal-oil .cal-dot {
+        background: #EF9F27;
+      }
+
+      .cal-fish {
+        background: #042C53;
+      }
+
+      .cal-fish .cal-num {
+        color: #B5D4F4;
+      }
+
+      .cal-fish .cal-dot {
+        background: #378ADD;
+      }
+
+      .cal-dry {
+        background: #501313;
+      }
+
+      .cal-dry .cal-num {
+        color: #F7C1C1;
+      }
+
+      .cal-dry .cal-dot {
+        background: #E24B4A;
+      }
+
+      .cal-strict {
+        background: #791F1F;
+      }
+
+      .cal-strict .cal-num {
+        color: #FCEBEB;
+      }
+
+      .cal-strict .cal-dot {
+        background: #F09595;
+      }
+    }
+
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 160px;
+      max-width: 210px;
+      background: var(--color-background-primary);
+      border-radius: 10px;
+      padding: 9px 12px 10px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: var(--color-text-primary);
+      white-space: normal;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.18);
+    }
+
+    .tooltip-label {
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .tooltip-period {
+      font-style: italic;
+      color: var(--color-text-secondary);
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .tooltip-desc {
+      color: var(--color-text-secondary);
+      font-size: 11px;
+    }
+
+    .cal-day:hover .tooltip {
+      display: block;
+    }
+
+    .legend-wrap {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--color-border-tertiary);
+    }
+
+    .legend-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      gap: 9px;
+      padding: 0.8rem 0.9rem;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .legend-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 2px;
+    }
+
+    .legend-desc {
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--color-text-secondary);
+    }
+
+    .periods-section {
+      margin-top: 1.5rem;
+    }
+
+    .periods-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .period-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+
+    .period-bar {
+      width: 4px;
+      height: 36px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .period-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .period-dates {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    .period-active {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-warning);
+      color: var(--color-text-warning);
+      font-weight: 500;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .key-dates {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+    }
+
+    .key-date-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 10px 12px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+    }
+
+    .key-date-label {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+
+    .key-date-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-family: var(--font-serif);
+    }
+
+    .monastic-toggle {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--color-border-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .monastic-label {
+      font-size: 13px;
+      color: var(--color-text-primary);
+      font-weight: 500;
+    }
+
+    .monastic-sub {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: var(--color-border-secondary);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: #A32D2D;
+    }
+
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(18px);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="ort-root">
+    <div class="ort-shell">
+      <div class="ort-header">
+        <span class="ort-cross">☩</span>
+        <div>
+          <div class="ort-title">Ορθόδοξο Νηστειοδρόμιο</div>
+          <div class="ort-subtitle">Ημερολόγιο νηστείας &amp; εορτών &nbsp;·&nbsp; <a href="sermons.html" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--color-border-secondary);">Ομιλίες</a></div>
+        </div>
+      </div>
+
+      <div id="today-section"></div>
+      <div id="nav-section"></div>
+      <div id="cal-section"></div>
+      <div id="legend-section"></div>
+      <div id="periods-section"></div>
+    </div>
+  </div>
+
+  <script>
+    const GR_MONTHS = ['Ιανουάριος', 'Φεβρουάριος', 'Μάρτιος', 'Απρίλιος', 'Μάιος', 'Ιούνιος', 'Ιούλιος', 'Αύγουστος', 'Σεπτέμβριος', 'Οκτώβριος', 'Νοέμβριος', 'Δεκέμβριος'];
+    const GR_MONTHS_GEN = ['Ιανουαρίου', 'Φεβρουαρίου', 'Μαρτίου', 'Απριλίου', 'Μαΐου', 'Ιουνίου', 'Ιουλίου', 'Αυγούστου', 'Σεπτεμβρίου', 'Οκτωβρίου', 'Νοεμβρίου', 'Δεκεμβρίου'];
+    const GR_DAYS = [
+      { short: 'Δευ', full: 'Δευτέρα' },
+      { short: 'Τρι', full: 'Τρίτη' },
+      { short: 'Τετ', full: 'Τετάρτη' },
+      { short: 'Πεμ', full: 'Πέμπτη' },
+      { short: 'Παρ', full: 'Παρασκευή' },
+      { short: 'Σαβ', full: 'Σάββατο' },
+      { short: 'Κυρ', full: 'Κυριακή' },
+    ];
+    const GR_DAYS_FULL = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
+
+    const FAST_TYPES = {
+      NONE:   { key: 'none',   label: 'Κατάλυση εις πάντα',        desc: 'Επιτρέπονται όλες οι τροφές.',                                  color: '#3B6D11', calCls: 'cal-none',   cardCls: 'c-none',   legendDesc: 'Δεν υπάρχει νηστεία — επιτρέπονται όλες οι τροφές.' },
+      OIL:    { key: 'oil',   label: 'Κατάλυση οίνου και ελαίου', desc: 'Νηστεία με κατάλυση λαδιού και κρασιού.',                        color: '#BA7517', calCls: 'cal-oil',    cardCls: 'c-oil',    legendDesc: 'Νηστεία — επιτρέπονται λάδι και κρασί.' },
+      FISH:   { key: 'fish',  label: 'Κατάλυση ιχθύος',           desc: 'Νηστεία με κατάλυση ψαριού, λαδιού και κρασιού.',               color: '#185FA5', calCls: 'cal-fish',   cardCls: 'c-fish',   legendDesc: 'Νηστεία — επιτρέπεται ψάρι, λάδι και κρασί.' },
+      DRY:    { key: 'dry',   label: 'Νηστεία',                   desc: 'Νηστεία χωρίς ψάρι, λάδι και κρασί (ξηροφαγία).',               color: '#A32D2D', calCls: 'cal-dry',    cardCls: 'c-dry',    legendDesc: 'Νηστεία χωρίς ψάρι, λάδι και κρασί.' },
+      STRICT: { key: 'strict',label: 'Αυστηρή νηστεία',           desc: 'Αυστηρή νηστεία — συνήθως ξηροφαγία μία φορά το απόγευμα.',    color: '#791F1F', calCls: 'cal-strict', cardCls: 'c-strict', legendDesc: 'Αυστηρότατη νηστεία, ξηροφαγία άπαξ απογευματινή.' },
+    };
+
+    let monasticMode = localStorage.getItem('monasticMode') === 'true';
+
+    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    function dateKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function sameDay(a, b) { return dateKey(a) === dateKey(b); }
+
+    function orthodoxEaster(year) {
+      const a = year % 4, b = year % 7, c = year % 19;
+      const d = (19 * c + 15) % 30, e = (2 * a + 4 * b - d + 34) % 7;
+      const month = Math.floor((d + e + 114) / 31) - 1;
+      const day = ((d + e + 114) % 31) + 1;
+      const dt = new Date(year, month, day);
+      dt.setDate(dt.getDate() + 13);
+      return dt;
+    }
+
+    function getFasting(date) {
+      const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate(), dow = date.getDay();
+      const easter = orthodoxEaster(y);
+      const cleanMon = addDays(easter, -48);
+      const palmSun = addDays(easter, -7);
+      const brightEnd = addDays(easter, 7);
+      const pentecost = addDays(easter, 49);
+      const pentecostEnd = addDays(pentecost, 7);
+      const allSaints = addDays(easter, 56);
+      const apostlesStart = addDays(allSaints, 1);
+      const apostlesEnd = new Date(y, 5, 28);
+      const meatfareSun = addDays(easter, -56);
+      const meatfareStart = addDays(meatfareSun, -6);
+      const cheesefareStart = addDays(cleanMon, -7);
+      const cheesefareEnd = addDays(cleanMon, -1);
+
+      if (date >= easter && date < brightEnd)
+        return { ...FAST_TYPES.NONE, period: 'Διακαινήσιμος Εβδομάδα' };
+      if (date >= pentecost && date < pentecostEnd)
+        return { ...FAST_TYPES.NONE, period: 'Εβδομάδα Πεντηκοστής' };
+      if ((m === 12 && d >= 25) || (m === 1 && d <= 4))
+        return { ...FAST_TYPES.NONE, period: 'Δωδεκαήμερο Χριστουγέννων' };
+      if (m === 1 && d === 5)
+        return { ...FAST_TYPES.STRICT, period: 'Παραμονή Θεοφανείων' };
+      if (date >= meatfareStart && date <= meatfareSun)
+        return { ...FAST_TYPES.NONE, period: 'Εβδομάδα Αποκριάς' };
+      if (date >= cheesefareStart && date <= cheesefareEnd) {
+        if (dow === 3 || dow === 5) return { ...FAST_TYPES.OIL, period: 'Τυρινή Εβδομάδα', note: 'Επιτρέπονται γαλακτοκομικά' };
+        return { ...FAST_TYPES.NONE, period: 'Τυρινή Εβδομάδα' };
+      }
+      if (date >= cleanMon && date < easter) {
+        const holyMon = addDays(easter, -6);
+        const goodFri = addDays(easter, -2);
+        const holySat = addDays(easter, -1);
+        if (sameDay(date, palmSun)) return { ...FAST_TYPES.FISH, period: 'Κυριακή Βαΐων' };
+        if (sameDay(date, holySat)) return { ...FAST_TYPES.STRICT, period: 'Μεγάλο Σάββατο' };
+        if (sameDay(date, goodFri)) return { ...FAST_TYPES.STRICT, period: 'Μεγάλη Παρασκευή' };
+        if (date >= holyMon) return { ...FAST_TYPES.DRY, period: 'Μεγάλη Εβδομάδα' };
+        if (m === 3 && d === 25) return { ...FAST_TYPES.FISH, period: 'Ευαγγελισμός της Θεοτόκου' };
+        if (dow === 0 || dow === 6) return { ...FAST_TYPES.OIL, period: 'Μεγάλη Τεσσαρακοστή' };
+        return { ...FAST_TYPES.DRY, period: 'Μεγάλη Τεσσαρακοστή' };
+      }
+      if (date >= apostlesStart && date <= apostlesEnd) {
+        if (dow === 0 || dow === 6) return { ...FAST_TYPES.FISH, period: 'Νηστεία Αγίων Αποστόλων' };
+        if (dow === 2 || dow === 4) return { ...FAST_TYPES.OIL, period: 'Νηστεία Αγίων Αποστόλων' };
+        return { ...FAST_TYPES.DRY, period: 'Νηστεία Αγίων Αποστόλων' };
+      }
+      if (m === 8 && d >= 1 && d <= 14) {
+        if (d === 6) return { ...FAST_TYPES.FISH, period: 'Μεταμόρφωση Σωτήρος' };
+        if (dow === 0 || dow === 6) return { ...FAST_TYPES.FISH, period: 'Νηστεία Κοιμήσεως Θεοτόκου' };
+        if (dow === 2 || dow === 4) return { ...FAST_TYPES.OIL, period: 'Νηστεία Κοιμήσεως Θεοτόκου' };
+        return { ...FAST_TYPES.DRY, period: 'Νηστεία Κοιμήσεως Θεοτόκου' };
+      }
+      if (m === 8 && d === 29) return { ...FAST_TYPES.STRICT, period: 'Αποτομή Κεφαλής Αγ. Ιωάννη Βαπτιστή' };
+      if (m === 9 && d === 14) return { ...FAST_TYPES.STRICT, period: 'Ύψωση Τιμίου Σταυρού' };
+      if ((m === 11 && d >= 15) || (m === 12 && d <= 24)) {
+        const strict = m === 12 && d >= 18;
+        if (!strict) {
+          if (dow === 0 || dow === 6) return { ...FAST_TYPES.FISH, period: 'Νηστεία Χριστουγέννων' };
+          if (dow === 2 || dow === 4) return { ...FAST_TYPES.OIL, period: 'Νηστεία Χριστουγέννων' };
+          return { ...FAST_TYPES.DRY, period: 'Νηστεία Χριστουγέννων' };
+        } else {
+          if (dow === 0) return { ...FAST_TYPES.FISH, period: 'Νηστεία Χριστουγέννων (αυστηρή)' };
+          if (dow === 6) return { ...FAST_TYPES.OIL, period: 'Νηστεία Χριστουγέννων (αυστηρή)' };
+          return { ...FAST_TYPES.DRY, period: 'Νηστεία Χριστουγέννων (αυστηρή)' };
+        }
+      }
+      if (dow === 3 || dow === 5) return { ...FAST_TYPES.DRY, period: 'Εβδομαδιαία νηστεία' };
+      if (monasticMode && dow === 1) return { ...FAST_TYPES.DRY, period: 'Μοναχική νηστεία Δευτέρας' };
+      return { ...FAST_TYPES.NONE, period: '' };
+    }
+
+    const now = new Date();
+    const TODAY = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let viewYear = TODAY.getFullYear();
+    let viewMonth = TODAY.getMonth();
+
+    function formatDateGR(d) {
+      return GR_DAYS_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + GR_MONTHS_GEN[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function renderToday() {
+      const fi = getFasting(TODAY);
+      const el = document.getElementById('today-section');
+      el.innerHTML = `
+    <div class="today-card ${fi.cardCls}">
+      <div class="today-date">${formatDateGR(TODAY)}</div>
+      <div class="today-status" style="color:${fi.color}">${fi.label}</div>
+      <div class="today-period">${fi.period || 'Κανονική ημέρα'}</div>
+      <div class="today-desc">${fi.desc}</div>
+      ${fi.note ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px;">* ${fi.note}</div>` : ''}
+    </div>
+  `;
+    }
+
+    function renderCalendar() {
+      const y = viewYear, mo = viewMonth;
+      const first = new Date(y, mo, 1);
+      const last = new Date(y, mo + 1, 0);
+      const startDow = (first.getDay() + 6) % 7;
+
+      let days = '';
+      for (let i = 0; i < startDow; i++) days += `<div class="cal-day empty"></div>`;
+      for (let d = 1; d <= last.getDate(); d++) {
+        const date = new Date(y, mo, d);
+        const fi = getFasting(date);
+        const isToday = sameDay(date, TODAY);
+        days += `<div class="cal-day ${fi.calCls}${isToday ? ' today-marker' : ''}">
+      <span class="cal-num">${d}</span>
+      <span class="cal-dot"></span>
+      <span class="tooltip"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span></span>
+    </div>`;
+      }
+
+      document.getElementById('nav-section').innerHTML = `
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevMonth()" aria-label="Προηγούμενος μήνας">←</button>
+      <div class="nav-controls">
+        <select id="month-select" class="nav-select" onchange="jumpToSelection()" aria-label="Επιλογή μήνα">
+          ${GR_MONTHS.map((month, index) => `<option value="${index}" ${index === mo ? 'selected' : ''}>${month}</option>`).join('')}
+        </select>
+        <input id="year-input" class="nav-input" type="number" inputmode="numeric" value="${y}" aria-label="Επιλογή έτους" onchange="jumpToSelection()" onkeydown="handleYearInput(event)">
+        <button class="nav-btn nav-today" onclick="jumpToToday()">Σήμερα</button>
+      </div>
+      <button class="nav-btn" onclick="nextMonth()" aria-label="Επόμενος μήνας">→</button>
+    </div>
+  `;
+
+      document.getElementById('cal-section').innerHTML = `
+    <div class="cal-grid">
+      ${GR_DAYS.map(d => `<div class="cal-dow" title="${d.full}" aria-label="${d.full}">${d.short}</div>`).join('')}
+      ${days}
+    </div>
+  `;
+    }
+
+    function jumpToSelection() {
+      const monthSelect = document.getElementById('month-select');
+      const yearInput = document.getElementById('year-input');
+      const nextMonthValue = Number(monthSelect?.value);
+      const nextYearValue = Number(yearInput?.value);
+
+      if (!Number.isInteger(nextMonthValue) || nextMonthValue < 0 || nextMonthValue > 11) return;
+      if (!Number.isInteger(nextYearValue) || nextYearValue < 1000 || nextYearValue > 9999) return;
+
+      viewMonth = nextMonthValue;
+      viewYear = nextYearValue;
+      renderCalendar();
+    }
+
+    function handleYearInput(event) {
+      if (event.key === 'Enter') {
+        jumpToSelection();
+      }
+    }
+
+    function jumpToToday() {
+      viewYear = TODAY.getFullYear();
+      viewMonth = TODAY.getMonth();
+      renderCalendar();
+    }
+
+    function renderLegend() {
+      const items = [
+        FAST_TYPES.NONE,
+        FAST_TYPES.OIL,
+        FAST_TYPES.FISH,
+        FAST_TYPES.DRY,
+        FAST_TYPES.STRICT,
+      ];
+      document.getElementById('legend-section').innerHTML = `
+    <div class="legend-wrap">
+      <div class="legend-title">Τι σημαίνει κάθε χρώμα</div>
+      <div class="legend">
+        ${items.map(i => `<div class="legend-item"><span class="legend-dot" style="background:${i.color}"></span><div><div class="legend-name">${i.label}</div><div class="legend-desc">${i.legendDesc}</div></div></div>`).join('')}
+      </div>
+    </div>
+  `;
+    }
+
+    function renderPeriods() {
+      const y = TODAY.getFullYear();
+      const easter = orthodoxEaster(y);
+      const cleanMon = addDays(easter, -48);
+      const palmSun = addDays(easter, -7);
+      const allSaints = addDays(easter, 56);
+      const apostlesStart = addDays(allSaints, 1);
+      const apostlesEnd = new Date(y, 5, 28);
+
+      function fmt(d) { return d.getDate() + ' ' + GR_MONTHS_GEN[d.getMonth()]; }
+      function isActive(s, e) { return TODAY >= s && TODAY <= e; }
+      function isUpcoming(s) { return TODAY < s; }
+
+      const periods = [
+        { name: 'Μεγάλη Τεσσαρακοστή', start: cleanMon, end: addDays(easter, -1), color: '#A32D2D' },
+        { name: 'Νηστεία Αγίων Αποστόλων', start: apostlesStart, end: apostlesEnd, color: '#BA7517' },
+        { name: 'Νηστεία Κοιμήσεως Θεοτόκου', start: new Date(y, 7, 1), end: new Date(y, 7, 14), color: '#185FA5' },
+        { name: 'Νηστεία Χριστουγέννων', start: new Date(y, 10, 15), end: new Date(y, 11, 24), color: '#3B6D11' },
+      ];
+
+      const rows = periods.map(p => {
+        const active = isActive(p.start, p.end);
+        const upcoming = isUpcoming(p.start);
+        const badge = active ? `<span class="period-active">● Τώρα</span>` : upcoming ? `<span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto;flex-shrink:0">${fmt(p.start)}</span>` : `<span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto;flex-shrink:0">Πέρασε</span>`;
+        return `<div class="period-item">
+      <div class="period-bar" style="background:${p.color}"></div>
+      <div>
+        <div class="period-name">${p.name}</div>
+        <div class="period-dates">${fmt(p.start)} – ${fmt(p.end)}</div>
+      </div>
+      ${badge}
+    </div>`;
+      }).join('');
+
+      const pentecost2 = addDays(easter, 49);
+      const allSaints2 = addDays(easter, 56);
+      const apostlesStart2 = addDays(allSaints2, 1);
+      const transfig = new Date(y, 7, 6);
+      const dormition = new Date(y, 7, 15);
+      const holyX = new Date(y, 11, 25);
+      const theoph = new Date(y, 0, 6);
+
+      const keyDates = [
+        { label: 'Καθαρά Δευτέρα', value: fmt(cleanMon) },
+        { label: 'Κυριακή Βαΐων', value: fmt(addDays(easter, -7)) },
+        { label: 'Μεγάλη Παρασκευή', value: fmt(addDays(easter, -2)) },
+        { label: `Πάσχα ${y}`, value: fmt(easter), highlight: true },
+        { label: 'Ανάληψη', value: fmt(addDays(easter, 39)) },
+        { label: 'Πεντηκοστή', value: fmt(pentecost2) },
+        { label: 'Αγίων Αποστόλων', value: fmt(apostlesStart2) + ' – ' + fmt(apostlesEnd) },
+        { label: 'Μεταμόρφωση', value: fmt(transfig) },
+        { label: 'Κοίμηση Θεοτόκου', value: fmt(dormition) },
+        { label: 'Χριστούγεννα', value: fmt(holyX) },
+        { label: 'Θεοφάνεια', value: fmt(theoph) },
+      ];
+
+      document.getElementById('periods-section').innerHTML = `
+    <div class="periods-section">
+      <div class="periods-title">Περίοδοι νηστείας ${y}</div>
+      ${rows}
+      <div class="periods-title" style="margin-top:1.5rem;">Κινητές & σταθερές εορτές ${y}</div>
+      <div class="key-dates">
+        ${keyDates.map(k => `<div class="key-date-item"><span class="key-date-label">${k.label}</span><span class="key-date-value" style="${k.highlight ? 'color:#BA7517' : ''}">${k.value}</span></div>`).join('')}
+      </div>
+      <div class="monastic-toggle">
+        <div>
+          <div class="monastic-label">Μοναχικό τυπικό νηστείας</div>
+          <div class="monastic-sub">Προσθέτει νηστεία τη Δευτέρα κατά το μοναστικό τυπικό<br>(Δευ · Τετ · Παρ — ξηροφαγία, εκτός αναλύσεων)</div>
+        </div>
+        <label class="toggle-switch" aria-label="Μοναχικό τυπικό">
+          <input type="checkbox" id="monastic-cb" ${monasticMode ? 'checked' : ''} onchange="toggleMonastic(this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+  `;
+    }
+
+    function toggleMonastic(val) {
+      monasticMode = val;
+      localStorage.setItem('monasticMode', val);
+      renderToday();
+      renderCalendar();
+    }
+
+    function prevMonth() {
+      viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      renderCalendar();
+    }
+    function nextMonth() {
+      viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      renderCalendar();
+    }
+
+    renderToday();
+    renderCalendar();
+    renderLegend();
+    renderPeriods();
+  </script>
+</body>
+
+</html>
