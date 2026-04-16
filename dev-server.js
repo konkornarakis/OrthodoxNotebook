@@ -178,12 +178,15 @@ const server = http.createServer(async (req, res) => {
       fs.writeFileSync(path.join(newFolderPath, '_Details.txt'), detailLines.join('\n'), 'utf8');
       fs.writeFileSync(path.join(newFolderPath, '_Summary.txt'), summary || '', 'utf8');
 
-      // Rename transcript file if folder name changed
-      const oldTsName = `${id}_Transcript.txt`;
-      const newTsName = `${newFolder}_Transcript.txt`;
-      const oldTsPath = path.join(newFolderPath, oldTsName);
-      const newTsPath = path.join(newFolderPath, newTsName);
-      if (oldTsName !== newTsName && fs.existsSync(oldTsPath)) fs.renameSync(oldTsPath, newTsPath);
+      // Find and update transcript file (match by suffix, don't hardcode old name)
+      const filesInFolder = fs.readdirSync(newFolderPath);
+      const existingTs    = filesInFolder.find(f => f !== '_Transcript.txt' && f.endsWith('_Transcript.txt'));
+      const newTsName     = `${newFolder}_Transcript.txt`;
+      const newTsPath     = path.join(newFolderPath, newTsName);
+      if (existingTs) {
+        const existingTsPath = path.join(newFolderPath, existingTs);
+        if (existingTsPath !== newTsPath) fs.renameSync(existingTsPath, newTsPath);
+      }
       fs.writeFileSync(newTsPath, transcript || '', 'utf8');
 
       execSync('node generate-data.js', { cwd: ROOT, stdio: 'inherit' });
@@ -238,19 +241,25 @@ const server = http.createServer(async (req, res) => {
   serveStatic(res, filePath);
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log('\n☩  Orthodox Helper — Dev Server');
-  console.log(`   http://localhost:${PORT}/main.html`);
-  console.log(`   http://localhost:${PORT}/sermons.html`);
-  console.log('\n   Ctrl+C to stop\n');
-});
+function startServer(port) {
+  server.listen(port, '127.0.0.1', () => {
+    console.log('\n\u2629  Orthodox Helper \u2014 Dev Server');
+    console.log(`   http://localhost:${port}/main.html`);
+    console.log(`   http://localhost:${port}/sermons.html`);
+    console.log('\n   Ctrl+C to stop\n');
+  });
+}
 
 server.on('error', e => {
   if (e.code === 'EADDRINUSE') {
-    const next = +PORT + 1;
-    console.log(`Port ${PORT} busy, trying ${next}…`);
-    server.listen(next, '127.0.0.1');
+    const next = (server._port || PORT) + 1;
+    console.log(`Port ${server._port || PORT} busy, trying ${next}\u2026`);
+    server._port = next;
+    startServer(next);
   } else {
     throw e;
   }
 });
+
+server._port = +PORT;
+startServer(+PORT);
