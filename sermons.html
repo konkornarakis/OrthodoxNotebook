@@ -1,62 +1,82 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="el">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ορθόδοξες Ομιλίες</title>
   <style>
-    /* ─── Design tokens (shared with main.html) ─────────────────────────── */
+    /* ── Design tokens — identical to main.html ──────────────────────────── */
     :root {
-      --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color-scheme: light dark;
+      --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       --font-serif: Georgia, "Times New Roman", serif;
       --color-text-primary: #1f1f1f;
       --color-text-secondary: #5b5b5b;
+      --color-text-tertiary: #8a8a8a;
+      --color-text-warning: #7a4f0d;
       --color-border-secondary: #d8d1c7;
       --color-border-tertiary: #e8e1d8;
       --color-background-primary: #fffdfa;
       --color-background-secondary: #f5f0e8;
+      --color-background-warning: #fff0d6;
       --border-radius-md: 12px;
       --border-radius-lg: 18px;
     }
+
     @media (prefers-color-scheme: dark) {
       :root {
         --color-text-primary: #f3ede4;
         --color-text-secondary: #c8bcae;
+        --color-text-tertiary: #9b8f81;
+        --color-text-warning: #ffd58a;
         --color-border-secondary: #5f5141;
         --color-border-tertiary: #4c4034;
         --color-background-primary: #1f1a15;
         --color-background-secondary: #2b241d;
+        --color-background-warning: #49310b;
+      }
+      body {
+        background:
+          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
+          linear-gradient(180deg, #17130f 0%, #211a14 100%);
       }
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-sans);
-      background: var(--color-background-primary);
       color: var(--color-text-primary);
+      background:
+        radial-gradient(circle at top, rgba(186, 117, 23, 0.10), transparent 32%),
+        linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
       min-height: 100vh;
     }
 
-    .site-wrap {
-      max-width: 900px;
+    /* ── Layout shell — identical to main.html ─────────────────────────── */
+    .ort-root  { padding: 0 0 2rem; }
+    .ort-shell {
+      width: min(100%, 860px);
       margin: 0 auto;
-      padding: 24px 16px 60px;
+      padding: 2rem 1rem 2.5rem;
     }
 
-    /* ─── Header ─────────────────────────────────────────────────────────── */
+    /* ── Header — identical to main.html ──────────────────────────────── */
     .ort-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
       border-bottom: 0.5px solid var(--color-border-tertiary);
     }
-    .ort-cross { font-size: 28px; line-height: 1; color: #7a4a14; }
-    .ort-title { font-family: var(--font-serif); font-size: 18px; font-weight: 600; }
-    .ort-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
-    .header-nav-link {
+    .ort-cross    { font-size: 22px; color: #BA7517; }
+    .ort-title    { font-size: 20px; font-weight: 500; font-family: var(--font-serif); }
+    .ort-subtitle { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
+
+    /* ── Nav pill ────────────────────────────────────────────────────── */
+    .nav-pill {
       font-size: 12px;
       color: var(--color-text-secondary);
       text-decoration: none;
@@ -66,103 +86,106 @@
       border-radius: 999px;
       transition: background 0.15s;
     }
-    .header-nav-link:hover { background: var(--color-background-secondary); }
+    .nav-pill:hover { background: var(--color-background-secondary); }
+    .nav-pill.active {
+      background: var(--color-background-secondary);
+      border-color: var(--color-border-secondary);
+      color: var(--color-text-primary);
+      cursor: default; pointer-events: none;
+    }
+    .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
 
-    /* ─── View switching ─────────────────────────────────────────────────── */
-    .view { display: none; }
+    /* ── Views ───────────────────────────────────────────────────────── */
+    .view        { display: none; }
     .view.active { display: block; }
 
-    /* ─── Toolbar ────────────────────────────────────────────────────────── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
+    /* ── Loading skeleton ────────────────────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: -700px 0; }
+      100% { background-position:  700px 0; }
     }
-    .search-wrap { flex: 1; min-width: 160px; position: relative; }
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--color-background-secondary) 25%,
+        var(--color-border-tertiary)      50%,
+        var(--color-background-secondary) 75%);
+      background-size: 700px 100%;
+      animation: shimmer 1.5s infinite linear;
+      border-radius: 6px;
+    }
+    .skel-card {
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .skel-line      { height: 13px; }
+    .skel-line.bold { height: 16px; }
+    .skel-line.w-30 { width: 30%; }
+    .skel-line.w-50 { width: 50%; }
+    .skel-line.w-70 { width: 70%; }
+    .skel-line.w-90 { width: 90%; }
+
+    /* ── Toolbar + search ────────────────────────────────────────────── */
+    .toolbar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 0.75rem; flex-wrap: wrap;
+    }
+    .search-wrap { flex: 1; min-width: 180px; position: relative; }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      color: var(--color-text-tertiary); pointer-events: none; font-size: 13px;
+    }
     .search-input {
-      width: 100%;
-      height: 36px;
-      padding: 0 12px 0 32px;
+      width: 100%; height: 36px;
+      padding: 0 12px 0 34px;
       border: 0.5px solid var(--color-border-secondary);
       border-radius: 999px;
       background: var(--color-background-secondary);
       color: var(--color-text-primary);
-      font-size: 13px;
-      font-family: var(--font-sans);
+      font-family: var(--font-sans); font-size: 13px;
       outline: none;
     }
-    .search-input::placeholder { color: var(--color-text-secondary); }
-    .search-input:focus { border-color: #BA7517; }
-    .search-icon {
-      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-      font-size: 13px; color: var(--color-text-secondary); pointer-events: none;
-    }
+    .search-input::placeholder { color: var(--color-text-tertiary); }
+    .search-input:focus         { border-color: #BA7517; }
 
-    /* ─── Buttons ────────────────────────────────────────────────────────── */
-    .btn {
-      height: 36px;
-      padding: 0 16px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-family: var(--font-sans);
-      transition: opacity 0.15s;
-      white-space: nowrap;
-    }
-    .btn:hover { opacity: 0.82; }
-    .btn-primary { background: #7a4a14; color: #fff; }
-    .btn-ghost {
-      background: none;
+    /* ── Filter chips ────────────────────────────────────────────────── */
+    .filter-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+    .chip-row     { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .chip-label   { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .chip-speaker.active { background: rgba(186,117,23,0.12); border-color: #BA7517; }
+
+    /* ── Sort dropdown ───────────────────────────────────────────────────────── */
+    .sort-select {
+      height: 36px; padding: 0 10px;
       border: 0.5px solid var(--color-border-secondary);
+      border-radius: 8px;
+      background: var(--color-background-secondary);
       color: var(--color-text-secondary);
+      font-family: var(--font-sans); font-size: 12px;
+      outline: none; cursor: pointer;
     }
-    .btn-danger {
-      background: none;
-      border: 0.5px solid #c0392b;
-      color: #c0392b;
-    }
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      margin-bottom: 1.25rem;
-      font-family: var(--font-sans);
-    }
-    .back-btn:hover { color: var(--color-text-primary); }
-
-    /* ─── Filter chips ───────────────────────────────────────────────────── */
-    .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .result-count { grid-column: 1/-1; font-size: 11px; color: var(--color-text-tertiary); padding-bottom: 4px; }
     .chip {
-      font-size: 11px;
-      padding: 3px 10px;
+      font-size: 11px; padding: 3px 10px;
       border-radius: 999px;
       border: 0.5px solid var(--color-border-secondary);
-      background: none;
-      cursor: pointer;
+      background: none; cursor: pointer;
       color: var(--color-text-secondary);
       font-family: var(--font-sans);
       transition: all 0.12s;
     }
-    .chip.active, .chip:hover {
+    .chip:hover, .chip.active {
       background: var(--color-background-secondary);
       border-color: #BA7517;
       color: var(--color-text-primary);
     }
 
-    /* ─── Sermon card grid ───────────────────────────────────────────────── */
-    .sermon-list {
+    /* ── Sermon card grid ────────────────────────────────────────────── */
+    .sermon-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
     }
     .sermon-card {
       border: 0.5px solid var(--color-border-tertiary);
@@ -170,662 +193,957 @@
       padding: 16px;
       background: var(--color-background-primary);
       cursor: pointer;
-      transition: box-shadow 0.15s, border-color 0.15s;
+      transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
     }
     .sermon-card:hover {
       border-color: var(--color-border-secondary);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
     }
-    .card-title {
-      font-family: var(--font-serif);
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      line-height: 1.35;
-    }
-    .card-speaker { font-size: 12px; color: #7a4a14; margin-bottom: 6px; }
-    .card-meta { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 7px; }
-    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .card-title   { font-family: var(--font-serif); font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+    .card-speaker { font-size: 12px; color: #BA7517; margin-bottom: 5px; }
+    .card-meta    { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+    .card-tags    { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 7px; }
     .tag {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 999px;
+      font-size: 10px; padding: 2px 7px; border-radius: 999px;
       background: var(--color-background-secondary);
       color: var(--color-text-secondary);
     }
     .card-summary {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      line-height: 1.5;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
     }
 
-    /* ─── Empty state ────────────────────────────────────────────────────── */
+    /* ── Empty state ─────────────────────────────────────────────────── */
     .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--color-text-secondary);
+      grid-column: 1 / -1; text-align: center;
+      padding: 60px 20px; color: var(--color-text-secondary);
     }
-    .empty-icon { font-size: 40px; margin-bottom: 12px; }
-    .empty-title { font-family: var(--font-serif); font-size: 16px; margin-bottom: 6px; }
-    .empty-text { font-size: 13px; }
+    .empty-icon  { font-size: 34px; margin-bottom: 10px; }
+    .empty-title { font-family: var(--font-serif); font-size: 15px; margin-bottom: 5px; }
+    .empty-text  { font-size: 12px; }
 
-    /* ─── Detail view ────────────────────────────────────────────────────── */
-    .detail-title {
-      font-family: var(--font-serif);
-      font-size: 22px;
-      font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 6px;
+    /* ── Detail view ─────────────────────────────────────────────────── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 13px; color: var(--color-text-secondary);
+      background: none; border: none; cursor: pointer; padding: 0;
+      margin-bottom: 1.25rem; font-family: var(--font-sans);
     }
-    .detail-speaker { font-size: 14px; color: #7a4a14; margin-bottom: 6px; }
-    .detail-meta {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 10px;
+    .back-btn:hover { color: var(--color-text-primary); }
+
+    .detail-title   { font-family: var(--font-serif); font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
+    .detail-speaker { font-size: 14px; color: #BA7517; margin-bottom: 7px; }
+    .detail-speaker-link { cursor: pointer; transition: opacity 0.12s; }
+    .detail-speaker-link:hover { opacity: 0.72; text-decoration: underline; }
+    .detail-tag-link  { cursor: pointer; }
+    .detail-tag-link:hover { border-color: #BA7517; }
+    .card-speaker-link { cursor: pointer; }
+    .card-speaker-link:hover { text-decoration: underline; opacity: 0.8; }
+    .tag-link { cursor: pointer; }
+    .tag-link:hover { border-color: #BA7517; }
+    /* ── Dev edit/delete actions ─────────────────────────────────────────── */
+    .dev-actions { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .dev-btn {
+      height: 30px; padding: 0 12px; border-radius: 999px;
+      font-size: 11px; font-family: var(--font-sans);
+      cursor: pointer; border: 0.5px solid var(--color-border-secondary);
+      background: none; transition: all 0.12s;
     }
-    .detail-meta a { color: #BA7517; text-decoration: none; }
+    .dev-btn-edit  { color: var(--color-text-secondary); }
+    .dev-btn-edit:hover  { border-color: #BA7517; color: var(--color-text-primary); }
+    .dev-btn-delete { color: #c0392b; border-color: rgba(192,57,43,0.4); }
+    .dev-btn-delete:hover { background: rgba(192,57,43,0.08); }
+    .detail-meta    { font-size: 12px; color: var(--color-text-secondary); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .detail-meta a  { color: #BA7517; text-decoration: none; }
     .detail-meta a:hover { text-decoration: underline; }
-    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-    .detail-actions { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+    .detail-tags    { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 1rem; }
 
-    /* ─── Collapsible sections ───────────────────────────────────────────── */
-    .section {
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-md);
-      margin-bottom: 12px;
-      overflow: hidden;
+    /* ── Action buttons ──────────────────────────────────────────────── */
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .action-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 14px; border-radius: 999px;
+      font-size: 12px; font-family: var(--font-sans);
+      cursor: pointer; text-decoration: none; white-space: nowrap;
+      border: none; transition: opacity 0.15s;
     }
+    .action-btn:hover { opacity: 0.78; }
+    .btn-wayin  { background: #7a4a14; color: #fff; }
+    .btn-source { background: none; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+
+    /* ── YouTube embed (16:9) ────────────────────────────────────────── */
+    .yt-wrap {
+      position: relative; width: 100%; padding-bottom: 56.25%;
+      height: 0; overflow: hidden;
+      border-radius: var(--border-radius-md);
+      border: 0.5px solid var(--color-border-tertiary);
+      margin-bottom: 1rem;
+    }
+    .yt-wrap iframe {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      border: none; border-radius: var(--border-radius-md);
+    }
+
+    /* ── Collapsible sections ────────────────────────────────────────── */
+    .section { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); margin-bottom: 10px; overflow: hidden; }
     .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      cursor: pointer;
-      user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; cursor: pointer; user-select: none;
       background: var(--color-background-secondary);
     }
     .section-header:hover { filter: brightness(0.97); }
-    .section-title { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
-    .section-arrow { font-size: 11px; color: var(--color-text-secondary); transition: transform 0.2s; }
+    .section-title  { font-family: var(--font-serif); font-size: 13px; font-weight: 600; }
+    .section-arrow  { font-size: 10px; color: var(--color-text-tertiary); transition: transform 0.18s; }
     .section.open .section-arrow { transform: rotate(90deg); }
-    .section-body { display: none; padding: 16px; }
-    .section.open .section-body { display: block; }
+    .section-body   { display: none; padding: 14px 16px; }
+    .section.open .section-body  { display: block; }
 
-    .summary-text {
-      font-size: 14px;
-      line-height: 1.75;
+    .summary-para { font-size: 13.5px; line-height: 1.8; margin: 0 0 0.8em; color: var(--color-text-primary); }
+    .summary-para:last-child { margin-bottom: 0; }
+
+    /* ── Transcript ──────────────────────────────────────────────────── */
+    .transcript-search-wrap { position: relative; margin-bottom: 10px; }
+    .transcript-search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 12px; color: var(--color-text-tertiary); pointer-events: none;
+    }
+    .transcript-search {
+      width: 100%; height: 32px;
+      padding: 0 10px 0 30px;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 999px;
+      background: var(--color-background-primary);
       color: var(--color-text-primary);
-      margin-bottom: 14px;
+      font-size: 12px; font-family: var(--font-sans); outline: none;
     }
-    .key-points { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-    .key-points li {
-      display: flex;
-      gap: 10px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .key-points li::before {
-      content: "✦";
-      color: #BA7517;
-      flex-shrink: 0;
-      font-size: 10px;
-      margin-top: 3px;
-    }
+    .transcript-search:focus { border-color: #BA7517; }
 
-    /* ─── Transcript ─────────────────────────────────────────────────────── */
     .transcript-body { font-size: 13.5px; line-height: 1.75; }
     .ts-block {
-      display: flex;
-      gap: 12px;
-      padding: 8px 0;
+      display: flex; gap: 10px; padding: 8px 0;
       border-bottom: 0.5px solid var(--color-border-tertiary);
     }
     .ts-block:last-child { border-bottom: none; }
+    .ts-block.ts-hidden  { display: none; }
     .ts-stamp {
-      flex-shrink: 0;
-      font-size: 11px;
-      font-family: monospace;
-      color: #fff;
-      background: #7a4a14;
-      border-radius: 4px;
-      padding: 2px 6px;
-      margin-top: 3px;
-      text-decoration: none;
-      white-space: nowrap;
-      display: inline-block;
+      flex-shrink: 0; font-size: 10px; font-family: monospace;
+      color: #fff; background: #7a4a14;
+      border-radius: 4px; padding: 2px 5px;
+      margin-top: 3px; white-space: nowrap;
+      text-decoration: none; display: inline-block;
     }
-    .ts-stamp:hover { opacity: 0.78; }
+    .ts-stamp:hover { opacity: 0.75; }
     .ts-text { flex: 1; color: var(--color-text-primary); }
 
-    /* ─── Add / Edit form ────────────────────────────────────────────────── */
-    .form-wrap { max-width: 640px; }
-    .form-title { font-family: var(--font-serif); font-size: 18px; font-weight: 600; margin-bottom: 1.5rem; }
-    .form-group { margin-bottom: 16px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-secondary);
-      margin-bottom: 5px;
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .sermon-grid  { grid-template-columns: 1fr; }
+      .detail-title { font-size: 18px; }
     }
-    .form-input,
-    .form-textarea {
-      width: 100%;
-      padding: 8px 12px;
+    /* ── Add-sermon modal (local dev only) ──────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.45);
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-lg);
+      padding: 24px;
+      width: 100%; max-width: 560px;
+      position: relative; flex-shrink: 0;
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; color: var(--color-text-tertiary); line-height: 1; padding: 4px;
+    }
+    .modal-close:hover { color: var(--color-text-primary); }
+    .modal-title { font-family: var(--font-serif); font-size: 17px; font-weight: 600; margin-bottom: 1.25rem; }
+    .form-group  { margin-bottom: 12px; }
+    .form-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-label  {
+      display: block; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--color-text-secondary); margin-bottom: 4px;
+    }
+    .form-input, .form-textarea {
+      width: 100%; padding: 7px 11px;
       border: 0.5px solid var(--color-border-secondary);
       border-radius: 8px;
       background: var(--color-background-primary);
       color: var(--color-text-primary);
-      font-size: 13px;
-      font-family: var(--font-sans);
-      outline: none;
+      font-family: var(--font-sans); font-size: 13px; outline: none;
     }
     .form-input:focus, .form-textarea:focus { border-color: #BA7517; }
-    .form-textarea { min-height: 90px; resize: vertical; }
-    .form-textarea.tall { min-height: 220px; }
-    .form-hint { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; }
-
-    .key-points-editor { display: flex; flex-direction: column; gap: 6px; }
-    .kp-row { display: flex; gap: 6px; }
-    .kp-row .form-input { flex: 1; }
-    .kp-del {
-      background: none;
-      border: 0.5px solid var(--color-border-secondary);
-      border-radius: 6px;
-      width: 32px;
-      height: 34px;
-      cursor: pointer;
+    .form-textarea      { min-height: 72px; resize: vertical; }
+    .form-textarea.tall { min-height: 160px; }
+    .form-hint { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
+    .url-row             { display: flex; gap: 8px; }
+    .url-row .form-input { flex: 1; min-width: 0; }
+    .btn-primary {
+      height: 34px; padding: 0 16px; border-radius: 999px;
+      background: #7a4a14; color: #fff;
+      border: none; cursor: pointer; font-family: var(--font-sans); font-size: 13px;
+      white-space: nowrap; transition: opacity 0.15s;
+    }
+    .btn-primary:hover   { opacity: 0.82; }
+    .btn-primary:disabled{ opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      height: 34px; padding: 0 14px; border-radius: 999px;
+      background: none; border: 0.5px solid var(--color-border-secondary);
       color: var(--color-text-secondary);
-      font-size: 14px;
-      flex-shrink: 0;
+      cursor: pointer; font-family: var(--font-sans); font-size: 13px;
+      text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;
     }
-    .kp-del:hover { border-color: #c0392b; color: #c0392b; }
-    .add-kp-btn {
-      font-size: 12px;
-      color: #7a4a14;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      font-family: var(--font-sans);
-      margin-top: 4px;
+    .btn-secondary:hover { background: var(--color-background-secondary); }
+    .form-actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+    .form-error   { font-size: 12px; color: #c0392b; margin-top: 6px; display: none; }
+    .add-sermon-btn {
+      height: 36px; padding: 0 14px; border-radius: 999px;
+      background: #7a4a14; color: #fff;
+      border: none; cursor: pointer; font-family: var(--font-sans); font-size: 13px;
+      white-space: nowrap; flex-shrink: 0;
     }
-    .add-kp-btn:hover { text-decoration: underline; }
-    .form-actions { display: flex; gap: 10px; margin-top: 24px; }
-
-    /* ─── Responsive ─────────────────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      .sermon-list { grid-template-columns: 1fr; }
-      .form-row { grid-template-columns: 1fr; }
-      .detail-title { font-size: 18px; }
-    }
-  </style>
+    .add-sermon-btn:hover { opacity: 0.82; }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }  </style>
 </head>
 <body>
-<div class="site-wrap">
+<div class="ort-root">
+  <div class="ort-shell">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
-  <div class="ort-header">
-    <span class="ort-cross">☩</span>
-    <div style="flex:1">
-      <div class="ort-title">Ορθόδοξες Ομιλίες</div>
-      <div class="ort-subtitle">Αρχείο ομιλιών, αναλύσεων &amp; μεταγραφών</div>
-    </div>
-    <a href="main.html" class="header-nav-link">Ημερολόγιο ↗</a>
-  </div>
-
-  <!-- ── LIST VIEW ────────────────────────────────────────────────────────── -->
-  <div id="list-view" class="view active">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input id="search-input" class="search-input" type="search" placeholder="Αναζήτηση ομιλίας...">
+    <!-- ── Header ───────────────────────────────────────────────────── -->
+    <div class="ort-header">
+      <span class="ort-cross">☩</span>
+      <div style="flex:1">
+        <div class="ort-title">Ορθόδοξες Ομιλίες</div>
       </div>
-      <button class="btn btn-primary" onclick="showForm(null)">+ Νέα Ομιλία</button>
+      <nav class="nav-links">
+        <a href="main.html" class="nav-pill">Νηστειοδρόμιο</a>
+        <a href="sermons.html" class="nav-pill active">Ομιλίες</a>
+      </nav>
     </div>
-    <div id="filter-chips" class="filter-chips"></div>
-    <div id="sermon-list" class="sermon-list"></div>
-  </div>
 
-  <!-- ── DETAIL VIEW ──────────────────────────────────────────────────────── -->
-  <div id="detail-view" class="view">
-    <button class="back-btn" onclick="showList()">← Πίσω στη λίστα</button>
-    <div id="detail-content"></div>
-  </div>
-
-  <!-- ── FORM VIEW ────────────────────────────────────────────────────────── -->
-  <div id="form-view" class="view">
-    <button class="back-btn" onclick="cancelForm()">← Άκυρο</button>
-    <div class="form-wrap">
-      <div id="form-title-el" class="form-title">Νέα Ομιλία</div>
-      <form id="sermon-form" onsubmit="saveSermon(event)">
-        <input type="hidden" id="edit-id">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="f-title">Τίτλος *</label>
-            <input class="form-input" id="f-title" required placeholder="π.χ. Περί Μετανοίας">
+    <!-- ── LIST VIEW ─────────────────────────────────────────────────── -->
+    <div id="view-list" class="view active">
+      <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">⍕</span>
+            <input id="search-input" class="search-input" type="search" placeholder="Αναζήτηση ομιλίας…">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="f-speaker">Ομιλητής *</label>
-            <input class="form-input" id="f-speaker" required placeholder="π.χ. π. Γεώργιος Μεταλληνός">
-          </div>
+          <select id="sort-select" class="sort-select" onchange="renderList()" aria-label="Ταξινόμηση">
+            <option value="date-desc">Ημερομηνία ↓</option>
+            <option value="date-asc">Ημερομηνία ↑</option>
+            <option value="alpha">Αλφαβητικά</option>
+          </select>
+          <button id="add-btn" class="add-sermon-btn" onclick="openAddModal()" style="display:none">+ Νέα Ομιλία</button>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="f-date">Ημερομηνία</label>
-            <input class="form-input" id="f-date" type="date">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="f-duration">Διάρκεια</label>
-            <input class="form-input" id="f-duration" placeholder="π.χ. 45:30">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="f-source">Πηγή / URL (προαιρετικό)</label>
-          <input class="form-input" id="f-source" type="url" placeholder="https://youtube.com/...">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="f-tags">Θεματικές ετικέτες</label>
-          <input class="form-input" id="f-tags" placeholder="Νηστεία, Μετάνοια, Αγάπη (με κόμμα)">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="f-summary">Αναλυτική περίληψη</label>
-          <textarea class="form-textarea" id="f-summary" placeholder="Γράψτε μια αναλυτική περίληψη της ομιλίας..."></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Βασικά σημεία</label>
-          <div id="key-points-editor" class="key-points-editor"></div>
-          <button type="button" class="add-kp-btn" onclick="addKeyPointRow('')">+ Προσθήκη σημείου</button>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="f-transcript">Μεταγραφή</label>
-          <textarea class="form-textarea tall" id="f-transcript"
-            placeholder="Επικολλήστε τη μεταγραφή. Χρησιμοποιήστε timestamps [00:02:15] ή [2:15] για χρονικά σημεία.&#10;&#10;Παράδειγμα:&#10;[00:00:00] Αδελφοί και αδελφές...&#10;[00:05:30] Η νηστεία είναι..."></textarea>
-          <div class="form-hint">Timestamps της μορφής [ΩΩ:ΛΛ:ΔΔ] αναγνωρίζονται αυτόματα. Αν η πηγή είναι YouTube, γίνονται συνδέσμοι.</div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Αποθήκευση</button>
-          <button type="button" class="btn btn-ghost" onclick="cancelForm()">Άκυρο</button>
-        </div>
-      </form>
+      <div id="filter-chips" class="filter-chips"></div>
+      <div id="sermon-grid" class="sermon-grid">
+        <div class="skel-card"><div class="skeleton skel-line bold w-90"></div><div class="skeleton skel-line w-50"></div><div class="skeleton skel-line w-70"></div></div>
+        <div class="skel-card"><div class="skeleton skel-line bold w-70"></div><div class="skeleton skel-line w-50"></div><div class="skeleton skel-line w-90"></div></div>
+        <div class="skel-card"><div class="skeleton skel-line bold w-90"></div><div class="skeleton skel-line w-30"></div><div class="skeleton skel-line w-70"></div></div>
+      </div>
     </div>
-  </div>
 
-</div><!-- /.site-wrap -->
+    <!-- ── DETAIL VIEW ───────────────────────────────────────────────── -->
+    <div id="view-detail" class="view">
+      <button class="back-btn" onclick="showList()">← Πίσω στη λίστα</button>
+      <div id="detail-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ADD SERMON MODAL (local dev only) ───────────────────────────────── -->
+<div id="add-modal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddModal()" title="Κλείσιμο">✕</button>
+    <div class="modal-title">Νέα Ομιλία</div>
+    <form id="add-form" onsubmit="submitAddForm(event)">
+
+      <div class="form-group">
+        <label class="form-label" for="f-url">YouTube URL</label>
+        <div class="url-row">
+          <input class="form-input" id="f-url" type="url" placeholder="https://www.youtube.com/watch?v=…" oninput="onUrlChange()">
+          <a id="wayin-link" class="btn-secondary" style="display:none" target="_blank" rel="noopener noreferrer">✦ Wayin</a>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-title">Τίτλος *</label>
+          <input class="form-input" id="f-title" required placeholder="π.χ. Περί Μετανοίας">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-speaker">Ομιλητής</label>
+          <input class="form-input" id="f-speaker" placeholder="π.χ. π. Γεώργιος">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-date">Ημερομηνία</label>
+          <input class="form-input" id="f-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-tags">Ετικέτες</label>
+          <input class="form-input" id="f-tags" placeholder="Νηστεία, Άσκηση">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-summary">Περίληψη</label>
+        <textarea class="form-textarea" id="f-summary" placeholder="Σύντομη περίληψη της ομιλίας…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-transcript">Μεταγραφή</label>
+        <textarea class="form-textarea tall" id="f-transcript" placeholder="Επικολλήστε τη μεταγραφή από το Wayin ή αφήστε κενό για να προσθέσετε αργότερα…"></textarea>
+        <div class="form-hint">Αποθηκεύεται ως _Transcript.txt. Μπορείτε να το επεξεργαστείτε αργότερα με οποιοδήποτε text editor.</div>
+      </div>
+
+      <div id="form-error" class="form-error"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="submit-btn">Αποθήκευση</button>
+        <button type="button" class="btn-secondary" onclick="closeAddModal()">Άκυρο</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── EDIT SERMON MODAL (local dev only) ──────────────────────────────────── -->
+<div id="edit-modal" class="modal-overlay" onclick="closeEditModalOnOverlay(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEditModal()" title="Κλείσιμο">✕</button>
+    <div class="modal-title">Επεξεργασία Ομιλίας</div>
+    <form id="edit-form" onsubmit="submitEditForm(event)">
+      <input type="hidden" id="ef-id">
+
+      <div class="form-group">
+        <label class="form-label" for="ef-url">YouTube URL</label>
+        <input class="form-input" id="ef-url" type="url" placeholder="https://www.youtube.com/watch?v=…">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="ef-title">Τίτλος *</label>
+          <input class="form-input" id="ef-title" required placeholder="π.χ. Περί Μετανοίας">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ef-speaker">Ομιλητής</label>
+          <input class="form-input" id="ef-speaker" placeholder="π.χ. π. Γεώργιος">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="ef-date">Ημερομηνία</label>
+          <input class="form-input" id="ef-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ef-tags">Ετικέτες</label>
+          <input class="form-input" id="ef-tags" placeholder="Νηστεία, Άσκηση">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ef-summary">Περίληψη</label>
+        <textarea class="form-textarea" id="ef-summary" placeholder="Σύντομη περίληψη της ομιλίας…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ef-transcript">Μεταγραφή</label>
+        <textarea class="form-textarea tall" id="ef-transcript" placeholder="HH:MM:SS&#10;Κείμενο…&#10;&#10;HH:MM:SS&#10;Κείμενο…"></textarea>
+        <div class="form-hint">Κάθε απόσπασμα: timestamp σε νέα γραμμή, μετά κείμενο. Αδειο = χωρίς μεταγραφή.</div>
+      </div>
+
+      <div id="edit-form-error" class="form-error"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="edit-submit-btn">Αποθήκευση</button>
+        <button type="button" class="btn-secondary" onclick="closeEditModal()">Άκυρο</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
-// ─── Storage ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'orthodoxSermons';
+// ── State ─────────────────────────────────────────────────────────────────────
+let SERMONS        = [];
+let IS_LOCAL       = false;
+let activeTag      = null;
+let activeSpeaker  = null;
+let currentSermonIdx = -1;
 
-function loadSermons() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+// ── Fetch generated JSON ──────────────────────────────────────────────────────
+fetch('./sermons-data.json')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(data => { SERMONS = data; routeFromHash(); })
+  .catch(() => {
+    document.getElementById('sermon-grid').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠</div>' +
+      '<div class="empty-title">Σφάλμα φόρτωσης</div>' +
+      '<div class="empty-text">Δεν ήταν δυνατή η φόρτωση των ομιλιών.</div></div>';
+  });
+
+// ── Hash routing ──────────────────────────────────────────────────────────────
+window.addEventListener('hashchange', routeFromHash);
+
+function routeFromHash() {
+  const hash = location.hash;
+  if (hash.startsWith('#sermon/')) {
+    const id  = decodeURIComponent(hash.slice(8));
+    const idx = SERMONS.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      renderDetail(SERMONS[idx]);
+      _showView('view-detail');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+    history.replaceState(null, '', '#list');
+  }
+  // List view (default)
+  const qi = location.hash.indexOf('?');
+  if (qi !== -1) {
+    const params = new URLSearchParams(location.hash.slice(qi + 1));
+    activeTag     = params.get('tag')     || null;
+    activeSpeaker = params.get('speaker') || null;
+  } else {
+    activeTag = null; activeSpeaker = null;
+  }
+  _showView('view-list');
+  renderList();
 }
 
-function persistSermons(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-}
-
-// ─── Sample data (inserted on first visit) ────────────────────────────────────
-(function injectSample() {
-  if (loadSermons().length > 0) return;
-  persistSermons([{
-    id: 'sample1',
-    title: 'Η σημασία της νηστείας στην ορθόδοξη πνευματική ζωή',
-    speaker: 'π. Γεώργιος Μεταλληνός',
-    date: '2024-03-10',
-    duration: '42:15',
-    sourceUrl: '',
-    tags: ['Νηστεία', 'Πνευματική ζωή', 'Μεγάλη Τεσσαρακοστή'],
-    summary: 'Ο ομιλητής αναπτύσσει τη θεολογική βάση της νηστείας ως πνευματική άσκηση που απελευθερώνει τον άνθρωπο από τη δουλεία των παθών. Ξεκινά με ιστορική αναδρομή στην πατερική παράδοση, περνά στην ψυχοσωματική διάσταση της εγκράτειας και καταλήγει στην εσχατολογική σημασία της νηστείας ως προγεύση της Βασιλείας.',
-    keyPoints: [
-      'Η νηστεία δεν είναι απλώς αποχή τροφών αλλά ολιστική στροφή προς τον Θεό.',
-      'Η πατερική παράδοση (Βασίλειος, Χρυσόστομος) βλέπει τη νηστεία ως φάρμακο ψυχής και σώματος.',
-      'Η συνύπαρξη νηστείας–προσευχής–ελεημοσύνης αποτελεί τον κλασικό τριπτύχο της ορθόδοξης άσκησης.',
-      'Η υπερβολική αυστηρότητα χωρίς πνευματική κατανόηση μπορεί να οδηγήσει σε υπερηφάνεια.',
-      'Εσχατολογική διάσταση: νηστεύουμε ως πολίτες Βασιλείας που δεν εξαρτώνται από υλικές ανάγκες.'
-    ],
-    transcript: `[00:00:00] Αδελφοί και αδελφές εν Χριστώ, σήμερα θα μιλήσουμε για ένα από τα θεμελιώδη στοιχεία της ορθόδοξης πνευματικής ζωής: τη νηστεία.
-
-[00:02:30] Η νηστεία δεν είναι ανθρώπινη εφεύρεση. Ξεκινά από τον Παράδεισο, όταν ο Θεός θέτει στον Αδάμ και την Εύα την πρώτη εντολή εγκράτειας: «Από παντός ξύλου του παραδείσου βρώσει φαγή, από δε του ξύλου του γινώσκειν καλόν και πονηρόν, ου φάγεσθε».
-
-[00:07:45] Οι Πατέρες της Εκκλησίας, και πρωτίστως ο Μέγας Βασίλειος στον «Λόγο περί νηστείας», μας διδάσκουν ότι η κατάπτωση του ανθρώπου ξεκίνησε από τη λαιμαργία. Άρα η νηστεία είναι η ανάκτηση της αξιοπρέπειάς μας.
-
-[00:14:20] Σε ψυχοσωματικό επίπεδο, η επιστήμη σήμερα επιβεβαιώνει αυτό που γνώριζαν οι ασκητές: η μείωση της τροφής οξύνει τον νου, καθαρίζει κυριολεκτικά τον εγκέφαλο — αυτό που σήμερα λέμε «autophagy».
-
-[00:21:00] Αλλά προσέξτε: η νηστεία χωρίς αγάπη και ταπείνωση γίνεται πνευματική παγίδα. Ο Χρυσόστομος λέει χαρακτηριστικά: «Τι ωφελεί να νηστεύεις από τροφές και να τρως τον αδελφό σου;»
-
-[00:29:15] Η νηστεία της Εκκλησίας — Τετάρτη και Παρασκευή, Μεγάλη Τεσσαρακοστή, νηστεία Αποστόλων, Δεκαπενταύγουστος, Χριστούγεννα — δεν είναι αυθαίρετη. Ακολουθεί το εορτολόγιο και προετοιμάζει για τη Χαρά.
-
-[00:36:40] Κλείνοντας: νηστεύουμε γιατί είμαστε πολίτες μιας άλλης Βασιλείας. Ο άνθρωπος που νηστεύει μαρτυρά ότι δεν ζει «επ' άρτω μόνο», ότι έχει πείνα για τον Θεό. Αυτή είναι η βαθύτερη σημασία.
-
-[00:40:10] Ευχαριστώ. Ερωτήσεις;`
-  }]);
-})();
-
-// ─── State ────────────────────────────────────────────────────────────────────
-let activeTag = null;
-let prevViewId = 'list-view'; // for cancel-form navigation
-
-// ─── View helpers ─────────────────────────────────────────────────────────────
-function showView(id) {
+function _showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
+function updateListHash() {
+  const params = new URLSearchParams();
+  if (activeTag)     params.set('tag',     activeTag);
+  if (activeSpeaker) params.set('speaker', activeSpeaker);
+  const q = params.toString();
+  history.replaceState(null, '', location.pathname + '#list' + (q ? '?' + q : ''));
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
 function showList() {
-  showView('list-view');
-  renderList();
-}
-
-function showDetail(id) {
-  const s = loadSermons().find(x => x.id === id);
-  if (!s) return showList();
-  renderDetail(s);
-  showView('detail-view');
-}
-
-function showForm(id) {
-  prevViewId = id ? 'detail-view' : 'list-view';
-  document.getElementById('form-title-el').textContent = id ? 'Επεξεργασία ομιλίας' : 'Νέα Ομιλία';
-  document.getElementById('edit-id').value = id || '';
-  document.getElementById('sermon-form').reset();
-  document.getElementById('key-points-editor').innerHTML = '';
-
-  if (id) {
-    const s = loadSermons().find(x => x.id === id);
-    if (!s) return;
-    document.getElementById('f-title').value    = s.title;
-    document.getElementById('f-speaker').value  = s.speaker;
-    document.getElementById('f-date').value     = s.date || '';
-    document.getElementById('f-duration').value = s.duration || '';
-    document.getElementById('f-source').value   = s.sourceUrl || '';
-    document.getElementById('f-tags').value     = (s.tags || []).join(', ');
-    document.getElementById('f-summary').value  = s.summary || '';
-    document.getElementById('f-transcript').value = s.transcript || '';
-    (s.keyPoints || []).forEach(kp => addKeyPointRow(kp));
+  if (location.hash.startsWith('#sermon/')) {
+    history.back();
   } else {
-    addKeyPointRow(''); // start with one blank row
+    _showView('view-list'); renderList();
   }
-
-  showView('form-view');
+}
+function showDetail(idx) {
+  updateListHash();
+  location.hash = '#sermon/' + encodeURIComponent(SERMONS[idx].id);
 }
 
-function cancelForm() {
-  const editId = document.getElementById('edit-id').value;
-  if (editId) showDetail(editId);
-  else showList();
+// ── Filter navigation ─────────────────────────────────────────────────────────
+function filterByTag(tag) {
+  activeTag = tag || null; activeSpeaker = null;
+  const h = '#list' + (activeTag ? '?tag=' + encodeURIComponent(activeTag) : '');
+  if (location.hash.startsWith('#sermon/')) {
+    location.hash = h;
+  } else {
+    history.replaceState(null, '', h || '#list');
+    renderList();
+  }
+}
+function filterBySpeaker(speaker) {
+  activeSpeaker = speaker || null; activeTag = null;
+  const h = '#list' + (activeSpeaker ? '?speaker=' + encodeURIComponent(activeSpeaker) : '');
+  if (location.hash.startsWith('#sermon/')) {
+    location.hash = h;
+  } else {
+    history.replaceState(null, '', h || '#list');
+    renderList();
+  }
 }
 
-// ─── Key-points editor ────────────────────────────────────────────────────────
-function addKeyPointRow(value) {
-  const editor = document.getElementById('key-points-editor');
-  const row = document.createElement('div');
-  row.className = 'kp-row';
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'form-input kp-input';
-  input.placeholder = 'Σημείο...';
-  input.value = value;
-  const del = document.createElement('button');
-  del.type = 'button';
-  del.className = 'kp-del';
-  del.textContent = '✕';
-  del.title = 'Αφαίρεση';
-  del.onclick = () => row.remove();
-  row.appendChild(input);
-  row.appendChild(del);
-  editor.appendChild(row);
-  if (!value) input.focus();
-}
-
-// ─── Save ─────────────────────────────────────────────────────────────────────
-function saveSermon(e) {
-  e.preventDefault();
-  const id = document.getElementById('edit-id').value || genId();
-  const keyPoints = Array.from(document.querySelectorAll('.kp-input'))
-    .map(el => el.value.trim()).filter(Boolean);
-  const rawSource = document.getElementById('f-source').value.trim();
-
-  const sermon = {
-    id,
-    title:     document.getElementById('f-title').value.trim(),
-    speaker:   document.getElementById('f-speaker').value.trim(),
-    date:      document.getElementById('f-date').value,
-    duration:  document.getElementById('f-duration').value.trim(),
-    sourceUrl: rawSource,
-    tags:      document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-    summary:   document.getElementById('f-summary').value.trim(),
-    keyPoints,
-    transcript: document.getElementById('f-transcript').value.trim(),
-  };
-
-  const list = loadSermons();
-  const idx = list.findIndex(s => s.id === id);
-  if (idx >= 0) list[idx] = sermon; else list.unshift(sermon);
-  persistSermons(list);
-  showDetail(id);
-}
-
-// ─── Delete ───────────────────────────────────────────────────────────────────
-function deleteSermon(id) {
-  if (!confirm('Να διαγραφεί οριστικά η ομιλία;')) return;
-  persistSermons(loadSermons().filter(s => s.id !== id));
-  showList();
-}
-
-// ─── Render list ──────────────────────────────────────────────────────────────
+// ── List ──────────────────────────────────────────────────────────────────────
 function renderList() {
-  const all = loadSermons();
-  const q   = document.getElementById('search-input').value.toLowerCase();
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
 
-  // Filter chips from unique tags
-  const allTags = [...new Set(all.flatMap(s => s.tags || []))].sort();
-  const chipsEl = document.getElementById('filter-chips');
+  const allSpeakers = [...new Set(SERMONS.map(s => s.speaker).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'el'));
+  const allTags     = [...new Set(SERMONS.flatMap(s => s.tags || []))].sort((a, b) => a.localeCompare(b, 'el'));
+  const chipsEl     = document.getElementById('filter-chips');
   chipsEl.innerHTML = '';
-  if (allTags.length > 0) {
-    const allBtn = mkChip('Όλες', activeTag === null, () => { activeTag = null; renderList(); });
-    chipsEl.appendChild(allBtn);
-    allTags.forEach(tag => {
-      chipsEl.appendChild(mkChip(tag, activeTag === tag, () => { activeTag = tag; renderList(); }));
-    });
+
+  if (allSpeakers.length > 1) {
+    const row = document.createElement('div');
+    row.className = 'chip-row';
+    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Ομιλητής';
+    row.appendChild(lbl);
+    row.appendChild(mkChip('Όλοι', activeSpeaker === null, () => filterBySpeaker(null)));
+    allSpeakers.forEach(sp => row.appendChild(mkChip(sp, activeSpeaker === sp, () => filterBySpeaker(sp), 'chip-speaker')));
+    chipsEl.appendChild(row);
   }
 
-  const filtered = all.filter(s => {
-    const matchTag = !activeTag || (s.tags || []).includes(activeTag);
-    const matchQ   = !q || [s.title, s.speaker, s.summary, ...(s.tags || [])].join(' ').toLowerCase().includes(q);
-    return matchTag && matchQ;
+  if (allTags.length > 0) {
+    const row = document.createElement('div');
+    row.className = 'chip-row';
+    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Θέματα';
+    row.appendChild(lbl);
+    row.appendChild(mkChip('Όλα', activeTag === null, () => filterByTag(null)));
+    allTags.forEach(t => row.appendChild(mkChip(t, activeTag === t, () => filterByTag(t))));
+    chipsEl.appendChild(row);
+  }
+
+  let filtered = SERMONS.filter(s => {
+    const matchTag     = !activeTag     || (s.tags || []).includes(activeTag);
+    const matchSpeaker = !activeSpeaker || s.speaker === activeSpeaker;
+    const matchQ       = !q || [s.title, s.speaker, s.summary, ...(s.tags || [])].join(' ').toLowerCase().includes(q);
+    return matchTag && matchSpeaker && matchQ;
   });
 
-  const listEl = document.getElementById('sermon-list');
-  listEl.innerHTML = '';
+  const so = document.getElementById('sort-select')?.value || 'date-desc';
+  if      (so === 'date-desc') filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  else if (so === 'date-asc')  filtered.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  else if (so === 'alpha')     filtered.sort((a, b) => a.title.localeCompare(b.title, 'el'));
+
+  const grid = document.getElementById('sermon-grid');
+  grid.innerHTML = '';
 
   if (filtered.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'empty-state';
-    empty.innerHTML = `<div class="empty-icon">📖</div>
-      <div class="empty-title">${all.length === 0 ? 'Δεν υπάρχουν ομιλίες ακόμη' : 'Δεν βρέθηκαν αποτελέσματα'}</div>
-      <div class="empty-text">${all.length === 0 ? 'Προσθέστε την πρώτη ομιλία με το κουμπί «+ Νέα Ομιλία».' : 'Δοκιμάστε διαφορετικούς όρους αναζήτησης.'}</div>`;
-    listEl.appendChild(empty);
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div>' +
+      '<div class="empty-title">Δεν βρέθηκαν αποτελέσματα</div>' +
+      '<div class="empty-text">Δοκιμάστε διαφορετικούς όρους αναζήτησης.</div></div>';
     return;
   }
 
+  if (activeTag || activeSpeaker || q) {
+    const countEl = document.createElement('div');
+    countEl.className = 'result-count';
+    countEl.textContent = filtered.length + (filtered.length === 1 ? ' ομιλία' : ' ομιλίες');
+    grid.appendChild(countEl);
+  }
+
   filtered.forEach(s => {
+    const origIdx = SERMONS.indexOf(s);
     const card = document.createElement('div');
     card.className = 'sermon-card';
-    card.onclick = () => showDetail(s.id);
-    const meta = [s.date ? formatDate(s.date) : '', s.duration ? '⏱\u202f' + s.duration : ''].filter(Boolean).join('  ·  ');
-    const tagsHtml = (s.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-    card.innerHTML = `
-      <div class="card-title">${esc(s.title)}</div>
-      <div class="card-speaker">${esc(s.speaker)}</div>
-      ${meta ? `<div class="card-meta">${esc(meta)}</div>` : ''}
-      ${tagsHtml ? `<div class="card-tags">${tagsHtml}</div>` : ''}
-      ${s.summary ? `<div class="card-summary">${esc(s.summary)}</div>` : ''}`;
-    listEl.appendChild(card);
+    card.onclick = () => showDetail(origIdx);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'card-title'; titleEl.textContent = s.title;
+    card.appendChild(titleEl);
+
+    if (s.speaker) {
+      const spEl = document.createElement('div');
+      spEl.className = 'card-speaker card-speaker-link'; spEl.textContent = s.speaker;
+      spEl.onclick = e => { e.stopPropagation(); filterBySpeaker(s.speaker); };
+      card.appendChild(spEl);
+    }
+
+    const meta = [
+      s.date ? formatDate(s.date) : '',
+      s.transcript && s.transcript.length > 0 ? '📜 ' + s.transcript.length + ' αποσπ.' : '',
+    ].filter(Boolean).join(' · ');
+    if (meta) {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'card-meta'; metaEl.textContent = meta;
+      card.appendChild(metaEl);
+    }
+
+    if ((s.tags || []).length > 0) {
+      const tagsEl = document.createElement('div'); tagsEl.className = 'card-tags';
+      for (const t of s.tags) {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag tag-link'; tagEl.textContent = t;
+        tagEl.onclick = e => { e.stopPropagation(); filterByTag(t); };
+        tagsEl.appendChild(tagEl);
+      }
+      card.appendChild(tagsEl);
+    }
+
+    if (s.summary) {
+      const sumEl = document.createElement('div');
+      sumEl.className = 'card-summary'; sumEl.textContent = s.summary;
+      card.appendChild(sumEl);
+    }
+
+    grid.appendChild(card);
   });
 }
 
-function mkChip(label, isActive, onClick) {
-  const btn = document.createElement('button');
-  btn.className = 'chip' + (isActive ? ' active' : '');
-  btn.textContent = label;
-  btn.onclick = onClick;
-  return btn;
+function mkChip(label, active, onClick, extraClass) {
+  const b = document.createElement('button');
+  b.className = 'chip' + (active ? ' active' : '') + (extraClass ? ' ' + extraClass : '');
+  b.textContent = label;
+  b.onclick = onClick;
+  return b;
 }
 
-// ─── Render detail ────────────────────────────────────────────────────────────
+// ── Detail ────────────────────────────────────────────────────────────────────
 function renderDetail(s) {
-  const meta = [
-    s.date     ? `<span>${esc(formatDate(s.date))}</span>` : '',
-    s.duration ? `<span>⏱\u202f${esc(s.duration)}</span>` : '',
-    s.sourceUrl ? `<a href="${escAttr(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">Ηχητικό / Βίντεο ↗</a>` : '',
-  ].filter(Boolean).join('');
+  currentSermonIdx = SERMONS.findIndex(x => x.id === s.id);
+  const ytId    = extractYtId(s.url);
+  const content = document.getElementById('detail-content');
+  content.innerHTML = '';
 
-  const tagsHtml = (s.tags || [])
-    .map(t => `<span class="tag" style="font-size:11px;padding:3px 9px">${esc(t)}</span>`).join('');
-  const kpHtml = (s.keyPoints || []).length
-    ? `<ul class="key-points">${s.keyPoints.map(kp => `<li>${esc(kp)}</li>`).join('')}</ul>` : '';
+  // Title
+  const titleEl = document.createElement('div');
+  titleEl.className = 'detail-title'; titleEl.textContent = s.title;
+  content.appendChild(titleEl);
 
-  const hasSummarySection = s.summary || kpHtml;
-  const hasTranscript = s.transcript && s.transcript.trim();
+  // Speaker (clickable — navigates to filtered list)
+  if (s.speaker) {
+    const spEl = document.createElement('div');
+    spEl.className = 'detail-speaker detail-speaker-link'; spEl.textContent = s.speaker;
+    spEl.title = 'Εμφάνιση ομιλιών αυτού του ομιλητή';
+    spEl.onclick = () => filterBySpeaker(s.speaker);
+    content.appendChild(spEl);
+  }
 
-  document.getElementById('detail-content').innerHTML = `
-    <div class="detail-title">${esc(s.title)}</div>
-    <div class="detail-speaker">${esc(s.speaker)}</div>
-    ${meta ? `<div class="detail-meta">${meta}</div>` : ''}
-    ${tagsHtml ? `<div class="detail-tags">${tagsHtml}</div>` : ''}
-    <div class="detail-actions">
-      <button class="btn btn-ghost" onclick="showForm('${escAttr(s.id)}')">✏ Επεξεργασία</button>
-      <button class="btn btn-danger" onclick="deleteSermon('${escAttr(s.id)}')">Διαγραφή</button>
-    </div>
+  // Date
+  if (s.date) {
+    const dateEl = document.createElement('div');
+    dateEl.className = 'detail-meta'; dateEl.textContent = formatDate(s.date);
+    content.appendChild(dateEl);
+  }
 
-    ${hasSummarySection ? `
-    <div class="section open" id="sec-summary">
-      <div class="section-header" onclick="toggleSection('sec-summary')">
-        <div class="section-title">Αναλυτική Περίληψη</div>
-        <span class="section-arrow">▶</span>
-      </div>
-      <div class="section-body">
-        ${s.summary ? `<div class="summary-text">${esc(s.summary).replace(/\n/g,'<br>')}</div>` : ''}
-        ${kpHtml}
-      </div>
-    </div>` : ''}
+  // Tags (clickable)
+  if ((s.tags || []).length > 0) {
+    const tagsEl = document.createElement('div'); tagsEl.className = 'detail-tags';
+    for (const t of s.tags) {
+      const tagEl = document.createElement('span');
+      tagEl.className = 'tag detail-tag-link'; tagEl.textContent = t;
+      tagEl.style.fontSize = '11px'; tagEl.style.padding = '3px 9px';
+      tagEl.onclick = () => filterByTag(t);
+      tagsEl.appendChild(tagEl);
+    }
+    content.appendChild(tagsEl);
+  }
 
-    ${hasTranscript ? `
-    <div class="section open" id="sec-transcript">
-      <div class="section-header" onclick="toggleSection('sec-transcript')">
-        <div class="section-title">Μεταγραφή</div>
-        <span class="section-arrow">▶</span>
-      </div>
-      <div class="section-body">
-        <div class="transcript-body">${parseTranscript(s.transcript, s.sourceUrl || '')}</div>
-      </div>
-    </div>` : ''}
-  `;
+  // External action buttons
+  const actionsEl = document.createElement('div'); actionsEl.className = 'detail-actions';
+  if (ytId) {
+    const wayinUrl = 'https://wayin.ai/wayinvideo/home/video/result?url=' +
+      encodeURIComponent(s.url) + '&input_t=URL&v_t_t=transcript_tool_task';
+    const wa = document.createElement('a');
+    wa.className = 'action-btn btn-wayin'; wa.href = wayinUrl;
+    wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '✦ Δημιουργία Μεταγραφής';
+    actionsEl.appendChild(wa);
+    const yt = document.createElement('a');
+    yt.className = 'action-btn btn-source'; yt.href = s.url;
+    yt.target = '_blank'; yt.rel = 'noopener noreferrer'; yt.textContent = 'YouTube ↗';
+    actionsEl.appendChild(yt);
+  } else if (s.url) {
+    const src = document.createElement('a');
+    src.className = 'action-btn btn-source'; src.href = s.url;
+    src.target = '_blank'; src.rel = 'noopener noreferrer'; src.textContent = 'Πηγή ↗';
+    actionsEl.appendChild(src);
+  }
+  if (actionsEl.children.length > 0) content.appendChild(actionsEl);
+
+  // Dev edit/delete (local only)
+  if (IS_LOCAL) {
+    const devEl = document.createElement('div'); devEl.className = 'dev-actions';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'dev-btn dev-btn-edit'; editBtn.textContent = '✎ Επεξεργασία';
+    editBtn.onclick = () => openEditModal(currentSermonIdx);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'dev-btn dev-btn-delete'; delBtn.textContent = '✕ Διαγραφή';
+    delBtn.onclick = () => deleteSermon(currentSermonIdx);
+    devEl.appendChild(editBtn); devEl.appendChild(delBtn);
+    content.appendChild(devEl);
+  }
+
+  // YouTube embed
+  if (ytId) {
+    const wrap = document.createElement('div'); wrap.className = 'yt-wrap';
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + escAttr(ytId);
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true; iframe.loading = 'lazy'; iframe.title = s.title;
+    wrap.appendChild(iframe); content.appendChild(wrap);
+  }
+
+  // Summary
+  if (s.summary && s.summary.trim()) {
+    const sec = document.createElement('div');
+    sec.innerHTML =
+      `<div class="section open" id="sec-summary">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+          <div class="section-title">Περίληψη</div><span class="section-arrow">▶</span>
+        </div>
+        <div class="section-body">${renderSummary(s.summary)}</div>
+      </div>`;
+    content.appendChild(sec.firstChild);
+  }
+
+  // Transcript
+  if (s.transcript && s.transcript.length > 0) {
+    const sec = document.createElement('div');
+    sec.innerHTML =
+      `<div class="section open" id="sec-transcript">
+        <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
+          <div class="section-title">Μεταγραφή (${s.transcript.length} αποσπάσματα)</div>
+          <span class="section-arrow">▶</span>
+        </div>
+        <div class="section-body">
+          <div class="transcript-search-wrap">
+            <span class="transcript-search-icon">⌕</span>
+            <input class="transcript-search" type="search"
+              placeholder="Αναζήτηση στη μεταγραφή…"
+              oninput="filterTranscript(this.value)">
+          </div>
+          <div class="transcript-body" id="transcript-body">
+            ${renderTranscript(s.transcript, s.url)}
+          </div>
+        </div>
+      </div>`;
+    content.appendChild(sec.firstChild);
+  }
 }
 
-// ─── Transcript parser ────────────────────────────────────────────────────────
-function parseTranscript(raw, sourceUrl) {
-  if (!raw) return '';
-  const TS_RE = /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g;
-  const segments = [];
-  let currentTs = null;
-  let currentStart = 0;
-  let match;
+function renderSummary(text) {
+  return text.trim()
+    .split(/\n{2,}/)
+    .map(para => `<p class="summary-para">${esc(para.trim()).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
 
-  while ((match = TS_RE.exec(raw)) !== null) {
-    if (currentTs !== null) {
-      const text = raw.slice(currentStart, match.index).replace(/^\n+|\n+$/, '');
-      segments.push({ ts: currentTs, text });
-    } else {
-      const leading = raw.slice(0, match.index).trim();
-      if (leading) segments.push({ ts: null, text: leading });
-    }
-    currentTs = match[1];
-    currentStart = match.index + match[0].length;
-  }
-
-  if (currentTs !== null) {
-    segments.push({ ts: currentTs, text: raw.slice(currentStart).replace(/^\n+|\n+$/, '') });
-  } else if (segments.length === 0) {
-    // No timestamps: render plain paragraphs
-    return raw.split(/\n\n+/)
-      .map(p => `<p style="margin-bottom:0.9em">${esc(p.trim()).replace(/\n/g,'<br>')}</p>`)
-      .join('');
-  }
-
+function renderTranscript(segments, sourceUrl) {
+  const ytId = extractYtId(sourceUrl);
   return segments.map(seg => {
-    const stamp = seg.ts ? buildStamp(seg.ts, sourceUrl) : '';
-    const body  = esc(seg.text).replace(/\n/g, '<br>');
-    return `<div class="ts-block">${stamp ? `<span>${stamp}</span>` : ''}<div class="ts-text">${body}</div></div>`;
+    const stamp = ytId
+      ? `<a class="ts-stamp" href="https://www.youtube.com/watch?v=${escAttr(ytId)}&t=${tsToSec(seg.ts)}s" ` +
+        `target="_blank" rel="noopener noreferrer">${esc(seg.ts)}</a>`
+      : `<span class="ts-stamp">${esc(seg.ts)}</span>`;
+    const escapedText = esc(seg.text).replace(/\n/g, '<br>');
+    return `<div class="ts-block" data-search="${escAttr(seg.text.toLowerCase())}">` +
+           `${stamp}<div class="ts-text">${escapedText}</div></div>`;
   }).join('');
 }
 
-function buildStamp(ts, sourceUrl) {
-  const ytId = extractYtId(sourceUrl);
-  if (ytId) {
-    const sec = tsToSec(ts);
-    const href = `https://www.youtube.com/watch?v=${encodeURIComponent(ytId)}&t=${sec}s`;
-    return `<a class="ts-stamp" href="${escAttr(href)}" target="_blank" rel="noopener noreferrer" title="YouTube ${ts}">${esc(ts)}</a>`;
-  }
-  return `<span class="ts-stamp">${esc(ts)}</span>`;
+function filterTranscript(q) {
+  const term = q.trim().toLowerCase();
+  document.querySelectorAll('#transcript-body .ts-block').forEach(block => {
+    const match = !term || block.getAttribute('data-search').includes(term);
+    block.classList.toggle('ts-hidden', !match);
+  });
 }
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
 function tsToSec(ts) {
   const p = ts.split(':').map(Number);
-  return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1];
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
 }
 
 function extractYtId(url) {
   if (!url) return null;
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/);
+  const m = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/
+  );
   return m ? m[1] : null;
 }
 
-// ─── Accordion ────────────────────────────────────────────────────────────────
-function toggleSection(id) {
-  document.getElementById(id).classList.toggle('open');
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+function escAttr(s) { return esc(s); }
 
-// ─── Escape helpers ───────────────────────────────────────────────────────────
-function esc(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function escAttr(str) { return esc(str); }
-
-// ─── Date formatting ──────────────────────────────────────────────────────────
 function formatDate(d) {
   if (!d) return '';
   const [y, m, day] = d.split('-').map(Number);
   const months = ['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'];
-  return `${day} ${months[m-1]} ${y}`;
+  return `${day} ${months[m - 1]} ${y}`;
 }
 
-// ─── Search live ──────────────────────────────────────────────────────────────
-document.getElementById('search-input').addEventListener('input', renderList);
+document.getElementById('search-input').addEventListener('input', () => { updateListHash(); renderList(); });
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-showList();
+// ── Local dev detection ───────────────────────────────────────────────────────
+fetch('/api/local')
+  .then(r => r.ok ? r.json() : null)
+  .then(data => {
+    if (data && data.local) {
+      IS_LOCAL = true;
+      document.getElementById('add-btn').style.display = '';
+    }
+  })
+  .catch(() => { /* production — silently ignore */ });
+
+// ── Add-sermon modal ──────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('add-form').reset();
+  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('wayin-link').style.display = 'none';
+  document.getElementById('form-error').style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('submit-btn').textContent = 'Αποθήκευση';
+  document.getElementById('add-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('add-modal')) closeAddModal();
+}
+
+function onUrlChange() {
+  const url  = document.getElementById('f-url').value.trim();
+  const ytId = extractYtId(url);
+  const link = document.getElementById('wayin-link');
+  if (ytId) {
+    link.href =
+      'https://wayin.ai/wayinvideo/home/video/result?url=' +
+      encodeURIComponent(url) +
+      '&input_t=URL&v_t_t=transcript_tool_task';
+    link.style.display = '';
+  } else {
+    link.style.display = 'none';
+  }
+}
+
+async function submitAddForm(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('submit-btn');
+  const errEl = document.getElementById('form-error');
+  btn.disabled = true;
+  btn.textContent = 'Αποθήκευση…';
+  errEl.style.display = 'none';
+
+  const payload = {
+    title:      document.getElementById('f-title').value.trim(),
+    speaker:    document.getElementById('f-speaker').value.trim(),
+    sourceUrl:  document.getElementById('f-url').value.trim(),
+    date:       document.getElementById('f-date').value,
+    tags:       document.getElementById('f-tags').value.trim(),
+    summary:    document.getElementById('f-summary').value.trim(),
+    transcript: document.getElementById('f-transcript').value.trim(),
+  };
+
+  try {
+    const res  = await fetch('/api/create-sermon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Άγνωστο σφάλμα');
+
+    SERMONS = await fetch('./sermons-data.json?t=' + Date.now()).then(r => r.json());
+    closeAddModal();
+    activeTag = null; activeSpeaker = null;
+    const newIdx = SERMONS.findIndex(s => s.id === data.folder);
+    if (newIdx >= 0) { updateListHash(); location.hash = '#sermon/' + encodeURIComponent(data.folder); }
+    else { history.replaceState(null, '', '#list'); _showView('view-list'); renderList(); }
+  } catch (err) {
+    errEl.textContent = 'Σφάλμα: ' + err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Αποθήκευση';
+  }
+}
+
+// ── Edit-sermon modal ─────────────────────────────────────────────────────────
+function openEditModal(idx) {
+  const s = SERMONS[idx];
+  document.getElementById('ef-id').value        = s.id;
+  document.getElementById('ef-url').value       = s.url     || '';
+  document.getElementById('ef-title').value     = s.title   || '';
+  document.getElementById('ef-speaker').value   = s.speaker || '';
+  document.getElementById('ef-date').value      = s.date    || '';
+  document.getElementById('ef-tags').value      = (s.tags   || []).join(', ');
+  document.getElementById('ef-summary').value   = s.summary || '';
+  document.getElementById('ef-transcript').value =
+    (s.transcript || []).map(seg => seg.ts + '\n' + seg.text).join('\n\n');
+  document.getElementById('edit-form-error').style.display  = 'none';
+  document.getElementById('edit-submit-btn').disabled       = false;
+  document.getElementById('edit-submit-btn').textContent    = 'Αποθήκευση';
+  document.getElementById('edit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeEditModalOnOverlay(e) {
+  if (e.target === document.getElementById('edit-modal')) closeEditModal();
+}
+
+async function submitEditForm(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('edit-submit-btn');
+  const errEl = document.getElementById('edit-form-error');
+  btn.disabled = true; btn.textContent = 'Αποθήκευση…';
+  errEl.style.display = 'none';
+
+  const payload = {
+    id:         document.getElementById('ef-id').value,
+    title:      document.getElementById('ef-title').value.trim(),
+    speaker:    document.getElementById('ef-speaker').value.trim(),
+    sourceUrl:  document.getElementById('ef-url').value.trim(),
+    date:       document.getElementById('ef-date').value,
+    tags:       document.getElementById('ef-tags').value.trim(),
+    summary:    document.getElementById('ef-summary').value.trim(),
+    transcript: document.getElementById('ef-transcript').value.trim(),
+  };
+
+  try {
+    const res  = await fetch('/api/edit-sermon', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Άγνωστο σφάλμα');
+
+    SERMONS = await fetch('./sermons-data.json?t=' + Date.now()).then(r => r.json());
+    closeEditModal();
+    const newIdx = SERMONS.findIndex(s => s.id === data.folder);
+    if (newIdx >= 0) {
+      history.replaceState(null, '', '#sermon/' + encodeURIComponent(data.folder));
+      renderDetail(SERMONS[newIdx]); _showView('view-detail');
+    } else {
+      history.replaceState(null, '', '#list'); _showView('view-list'); renderList();
+    }
+  } catch (err) {
+    errEl.textContent = 'Σφάλμα: ' + err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Αποθήκευση';
+  }
+}
+
+// ── Delete sermon ─────────────────────────────────────────────────────────────
+async function deleteSermon(idx) {
+  const s = SERMONS[idx];
+  if (!confirm('Διαγραφή της ομιλίας «' + s.title + '»;\n\nΑυτή η ενέργεια δεν αναιρείται.')) return;
+  try {
+    const res  = await fetch('/api/delete-sermon', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: s.id }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Άγνωστο σφάλμα');
+    SERMONS = await fetch('./sermons-data.json?t=' + Date.now()).then(r => r.json());
+    activeTag = null; activeSpeaker = null;
+    history.replaceState(null, '', '#list'); _showView('view-list'); renderList();
+  } catch (err) {
+    alert('Σφάλμα διαγραφής: ' + err.message);
+  }
+}
 </script>
 </body>
 </html>

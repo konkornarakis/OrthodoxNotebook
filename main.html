@@ -91,6 +91,26 @@
       margin-top: 2px;
     }
 
+    .nav-pill {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      white-space: nowrap;
+      padding: 4px 10px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 999px;
+      transition: background 0.15s;
+    }
+
+    .nav-pill:hover { background: var(--color-background-secondary); }
+    .nav-pill.active {
+      background: var(--color-background-secondary);
+      border-color: var(--color-border-secondary);
+      color: var(--color-text-primary);
+      cursor: default; pointer-events: none;
+    }
+    .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
+
     .today-card {
       border-radius: var(--border-radius-lg);
       padding: 1.25rem 1.5rem;
@@ -712,14 +732,17 @@
         <span class="ort-cross">☩</span>
         <div style="flex:1">
           <div class="ort-title">Ορθόδοξο Νηστειοδρόμιο</div>
-          <div class="ort-subtitle">Ημερολόγιο νηστείας &amp; εορτών</div>
         </div>
-        <a href="sermons.html" style="font-size:12px;color:var(--color-text-secondary);text-decoration:none;white-space:nowrap;padding:4px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:999px;" onmouseover="this.style.background='var(--color-background-secondary)'" onmouseout="this.style.background=''">Ομιλίες ↗</a>
+        <nav class="nav-links">
+          <a href="main.html" class="nav-pill active">Νηστειοδρόμιο</a>
+          <a href="sermons.html" class="nav-pill">Ομιλίες</a>
+        </nav>
       </div>
 
       <div id="today-section"></div>
       <div id="nav-section"></div>
       <div id="cal-section"></div>
+      <div id="monastic-section"></div>
       <div id="legend-section"></div>
       <div id="periods-section"></div>
     </div>
@@ -1007,16 +1030,6 @@
       <div class="key-dates">
         ${keyDates.map(k => `<div class="key-date-item"><span class="key-date-label">${k.label}</span><span class="key-date-value" style="${k.highlight ? 'color:#BA7517' : ''}">${k.value}</span></div>`).join('')}
       </div>
-      <div class="monastic-toggle">
-        <div>
-          <div class="monastic-label">Μοναχικό τυπικό νηστείας</div>
-          <div class="monastic-sub">Προσθέτει νηστεία τη Δευτέρα κατά το μοναστικό τυπικό<br>(Δευ · Τετ · Παρ — ξηροφαγία, εκτός αναλύσεων)</div>
-        </div>
-        <label class="toggle-switch" aria-label="Μοναχικό τυπικό">
-          <input type="checkbox" id="monastic-cb" ${monasticMode ? 'checked' : ''} onchange="toggleMonastic(this.checked)">
-          <span class="toggle-track"></span>
-        </label>
-      </div>
     </div>
   `;
     }
@@ -1026,6 +1039,22 @@
       localStorage.setItem('monasticMode', val);
       renderToday();
       renderCalendar();
+      renderMonasticToggle();
+    }
+
+    function renderMonasticToggle() {
+      document.getElementById('monastic-section').innerHTML = `
+    <div class="monastic-toggle">
+      <div>
+        <div class="monastic-label">Μοναχικό τυπικό νηστείας</div>
+        <div class="monastic-sub">Προσθέτει νηστεία τη Δευτέρα κατά το μοναστικό τυπικό<br>(Δευ · Τετ · Παρ — ξηροφαγία, εκτός αναλύσεων)</div>
+      </div>
+      <label class="toggle-switch" aria-label="Μοναχικό τυπικό">
+        <input type="checkbox" id="monastic-cb" ${monasticMode ? 'checked' : ''} onchange="toggleMonastic(this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+  `;
     }
 
     function prevMonth() {
@@ -1039,6 +1068,7 @@
 
     renderToday();
     renderCalendar();
+    renderMonasticToggle();
     renderLegend();
     renderPeriods();
   </script>
