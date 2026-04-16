@@ -153,8 +153,7 @@
     /* ── Filter chips ────────────────────────────────────────────────── */
     .filter-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
     .chip-row     { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .chip-label   { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
-    .chip-speaker.active { background: rgba(186,117,23,0.12); border-color: #BA7517; }
+    .chip-label   { font-size: 12px; color: var(--color-text-secondary); font-weight: 600; white-space: nowrap; margin-right: 2px; }
 
     /* ── Sort dropdown ───────────────────────────────────────────────────────── */
     .sort-select {
@@ -163,12 +162,12 @@
       border-radius: 8px;
       background: var(--color-background-secondary);
       color: var(--color-text-secondary);
-      font-family: var(--font-sans); font-size: 12px;
+      font-family: var(--font-sans); font-size: 13px;
       outline: none; cursor: pointer;
     }
-    .result-count { grid-column: 1/-1; font-size: 11px; color: var(--color-text-tertiary); padding-bottom: 4px; }
+    .result-count { grid-column: 1/-1; font-size: 12px; color: var(--color-text-tertiary); padding-bottom: 4px; }
     .chip {
-      font-size: 11px; padding: 3px 10px;
+      font-size: 13px; padding: 5px 13px;
       border-radius: 999px;
       border: 0.5px solid var(--color-border-secondary);
       background: none; cursor: pointer;
@@ -176,10 +175,15 @@
       font-family: var(--font-sans);
       transition: all 0.12s;
     }
-    .chip:hover, .chip.active {
+    .chip:hover {
       background: var(--color-background-secondary);
-      border-color: #BA7517;
       color: var(--color-text-primary);
+    }
+    .chip.active {
+      background: rgba(186,117,23,0.12);
+      border-color: #BA7517;
+      color: #7a4a14;
+      font-weight: 600;
     }
 
     /* ── Sermon card grid ────────────────────────────────────────────── */
@@ -201,17 +205,17 @@
       box-shadow: 0 2px 16px rgba(0,0,0,0.08);
       transform: translateY(-1px);
     }
-    .card-title   { font-family: var(--font-serif); font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
-    .card-speaker { font-size: 12px; color: #BA7517; margin-bottom: 5px; }
-    .card-meta    { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+    .card-title   { font-family: var(--font-serif); font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+    .card-speaker { font-size: 14px; color: #BA7517; margin-bottom: 5px; }
+    .card-meta    { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 6px; }
     .card-tags    { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 7px; }
     .tag {
-      font-size: 10px; padding: 2px 7px; border-radius: 999px;
+      font-size: 11px; padding: 3px 9px; border-radius: 999px;
       background: var(--color-background-secondary);
       color: var(--color-text-secondary);
     }
     .card-summary {
-      font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;
+      font-size: 13.5px; color: var(--color-text-secondary); line-height: 1.5;
       display: -webkit-box; -webkit-line-clamp: 3;
       -webkit-box-orient: vertical; overflow: hidden;
     }
@@ -222,8 +226,8 @@
       padding: 60px 20px; color: var(--color-text-secondary);
     }
     .empty-icon  { font-size: 34px; margin-bottom: 10px; }
-    .empty-title { font-family: var(--font-serif); font-size: 15px; margin-bottom: 5px; }
-    .empty-text  { font-size: 12px; }
+    .empty-title { font-family: var(--font-serif); font-size: 16px; margin-bottom: 5px; }
+    .empty-text  { font-size: 13px; }
 
     /* ── Detail view ─────────────────────────────────────────────── */
     .detail-paper {
@@ -234,14 +238,14 @@
     }
     .back-btn {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 13px; color: var(--color-text-secondary);
+      font-size: 14px; color: var(--color-text-secondary);
       background: none; border: none; cursor: pointer; padding: 0;
       margin-bottom: 1.25rem; font-family: var(--font-sans);
     }
     .back-btn:hover { color: var(--color-text-primary); }
 
     .detail-title   { font-family: var(--font-serif); font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
-    .detail-speaker { font-size: 14px; color: #BA7517; margin-bottom: 7px; }
+    .detail-speaker { font-size: 15px; color: #BA7517; margin-bottom: 7px; }
     .detail-speaker-link { cursor: pointer; transition: opacity 0.12s; }
     .detail-speaker-link:hover { opacity: 0.72; text-decoration: underline; }
     .detail-tag-link  { cursor: pointer; }
@@ -262,7 +266,7 @@
     .dev-btn-edit:hover  { border-color: #BA7517; color: var(--color-text-primary); }
     .dev-btn-delete { color: #c0392b; border-color: rgba(192,57,43,0.4); }
     .dev-btn-delete:hover { background: rgba(192,57,43,0.08); }
-    .detail-meta    { font-size: 12px; color: var(--color-text-secondary); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .detail-meta    { font-size: 13px; color: var(--color-text-secondary); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
     .detail-meta a  { color: #BA7517; text-decoration: none; }
     .detail-meta a:hover { text-decoration: underline; }
     .detail-tags    { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -272,7 +276,7 @@
     .action-btn {
       display: inline-flex; align-items: center; gap: 6px;
       height: 32px; padding: 0 14px; border-radius: 999px;
-      font-size: 12px; font-family: var(--font-sans);
+      font-size: 13px; font-family: var(--font-sans);
       cursor: pointer; text-decoration: none; white-space: nowrap;
       border: none; transition: opacity 0.15s;
     }
@@ -301,7 +305,7 @@
       background: var(--color-background-secondary);
     }
     .section-header:hover { filter: brightness(0.97); }
-    .section-title  { font-family: var(--font-serif); font-size: 13px; font-weight: 600; }
+    .section-title  { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
     .section-arrow  { font-size: 10px; color: var(--color-text-tertiary); transition: transform 0.18s; }
     .section.open .section-arrow { transform: rotate(90deg); }
     .section-body   { display: none; padding: 14px 16px; }
@@ -501,9 +505,9 @@
       <div class="detail-paper">
         <div id="detail-content"></div>
       </div>
-      <footer class="ort-footer"><p class="footer-text">Σε ανάπτυξη &nbsp;&middot;&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;&middot;&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a></p></footer>
     </div>
 
+    <footer class="ort-footer"><p class="footer-text">Υπό ανάπτυξη &nbsp;&middot;&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;&middot;&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a></p></footer>
   </div>
 </div>
 
@@ -744,30 +748,6 @@ function renderList() {
     chipsEl.appendChild(row);
   }
 
-  // Active filter indicator
-  if (activeSpeaker || activeTag) {
-    const bar = document.createElement('div');
-    bar.className = 'active-filter-bar';
-    const lbl = document.createElement('span'); lbl.textContent = 'Φίλτρο:';
-    bar.appendChild(lbl);
-    if (activeSpeaker) {
-      const badge = document.createElement('span'); badge.className = 'filter-badge';
-      badge.textContent = activeSpeaker;
-      const x = document.createElement('button'); x.className = 'filter-badge-x'; x.textContent = '✕';
-      x.onclick = () => filterBySpeaker(null); badge.appendChild(x); bar.appendChild(badge);
-    }
-    if (activeTag) {
-      const badge = document.createElement('span'); badge.className = 'filter-badge';
-      badge.textContent = activeTag;
-      const x = document.createElement('button'); x.className = 'filter-badge-x'; x.textContent = '✕';
-      x.onclick = () => filterByTag(null); badge.appendChild(x); bar.appendChild(badge);
-    }
-    const ca = document.createElement('button'); ca.className = 'clear-all-btn';
-    ca.textContent = 'Καθαρισμός';
-    ca.onclick = () => { activeSpeaker = null; activeTag = null; updateListHash(); renderList(); };
-    bar.appendChild(ca); chipsEl.appendChild(bar);
-  }
-
   let filtered = SERMONS.filter(s => {
     const matchTag     = !activeTag     || (s.tags || []).includes(activeTag);
     const matchSpeaker = !activeSpeaker || s.speaker === activeSpeaker;
@@ -895,7 +875,6 @@ function renderDetail(s) {
     for (const t of s.tags) {
       const tagEl = document.createElement('span');
       tagEl.className = 'tag detail-tag-link'; tagEl.textContent = t;
-      tagEl.style.fontSize = '11px'; tagEl.style.padding = '3px 9px';
       tagEl.onclick = () => filterByTag(t);
       tagsEl.appendChild(tagEl);
     }
@@ -905,12 +884,14 @@ function renderDetail(s) {
   // External action buttons
   const actionsEl = document.createElement('div'); actionsEl.className = 'detail-actions';
   if (ytId) {
-    const wayinUrl = 'https://wayin.ai/wayinvideo/home/video/result?url=' +
-      encodeURIComponent(s.url) + '&input_t=URL&v_t_t=transcript_tool_task';
-    const wa = document.createElement('a');
-    wa.className = 'action-btn btn-wayin'; wa.href = wayinUrl;
-    wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '✦ Δημιουργία Μεταγραφής';
-    actionsEl.appendChild(wa);
+    if (IS_LOCAL) {
+      const wayinUrl = 'https://wayin.ai/wayinvideo/home/video/result?url=' +
+        encodeURIComponent(s.url) + '&input_t=URL&v_t_t=transcript_tool_task';
+      const wa = document.createElement('a');
+      wa.className = 'action-btn btn-wayin'; wa.href = wayinUrl;
+      wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '✦ Δημιουργία Μεταγραφής';
+      actionsEl.appendChild(wa);
+    }
     const yt = document.createElement('a');
     yt.className = 'action-btn btn-source'; yt.href = s.url;
     yt.target = '_blank'; yt.rel = 'noopener noreferrer'; yt.textContent = 'YouTube ↗';
