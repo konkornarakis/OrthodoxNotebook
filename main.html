@@ -23,6 +23,13 @@
       --border-radius-lg: 18px;
     }
 
+    @media (max-width: 620px) {
+      .ort-header { flex-wrap: wrap; }
+      .nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
+      .nav-links::-webkit-scrollbar { display: none; }
+      .nav-pill { flex-shrink: 0; }
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -731,6 +738,16 @@
     .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
     .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
     .footer-text a:hover { text-decoration: underline; }
+    /* ── Namedays & Vestment Colour ──────────────────────────────── */
+    .lit-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 2px; pointer-events: none; opacity: 0.85; border: 0.5px solid rgba(255,255,255,0.25); }
+    .tooltip-lit { display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 11px; color: var(--color-text-secondary); }
+    .tooltip-lit-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.15); }
+    .tooltip-names { display: block; margin-top: 3px; padding-top: 3px; border-top: 0.5px solid var(--color-border-tertiary); font-size: 11px; color: var(--color-text-secondary); }
+    .today-lit { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 13px; color: var(--color-text-secondary); }
+    .today-lit-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.15); }
+    /* ── iCal inline button ─────────────────────────────────────────── */
+    .ical-inline-btn { font-size: 11px; opacity: 0.5; letter-spacing: 0.02em; }
+    .ical-inline-btn:hover { opacity: 1; }
   </style>
 </head>
 
@@ -746,6 +763,8 @@
         <nav class="nav-links">
           <a href="main.html" class="nav-pill active">Νηστειοδρόμιο</a>
           <a href="sermons.html" class="nav-pill">Ομιλίες</a>
+          <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
+          <a href="fasting.html" class="nav-pill">Περί νηστείας</a>
         </nav>
       </div>
 
@@ -874,12 +893,151 @@
     let viewYear = TODAY.getFullYear();
     let viewMonth = TODAY.getMonth();
 
+    const NAMEDAYS = {
+      '01-01': ['Βασίλης', 'Βασιλική'],
+      '01-06': ['Θεοφάνης', 'Φώτης', 'Φωτεινή'],
+      '01-07': ['Ιωάννης', 'Γιάννης'],
+      '01-11': ['Θεοδόσης', 'Θεοδοσία'],
+      '01-17': ['Αντώνης', 'Αντωνία'],
+      '01-18': ['Αθανάσιος', 'Αθανασία', 'Θανάσης'],
+      '01-20': ['Ευθύμιος', 'Ευθυμία'],
+      '01-25': ['Γρηγόριος', 'Γρηγορία'],
+      '01-27': ['Χρυσόστομος', 'Χρύσα'],
+      '01-30': ['Βασίλης', 'Γρηγόριος', 'Ιωάννης'],
+      '02-08': ['Θεόδωρος', 'Θεοδώρα'],
+      '02-10': ['Χαράλαμπος', 'Χαραλαμπία'],
+      '02-11': ['Βλάσης'],
+      '02-17': ['Θεόδωρος', 'Θεοδώρα'],
+      '02-23': ['Πολύκαρπος'],
+      '03-17': ['Αλέξης', 'Αλεξία'],
+      '03-25': ['Ευαγγελία', 'Βαγγέλης', 'Αγγελική', 'Άγγελος', 'Λεωνίδας'],
+      '04-23': ['Γεώργιος', 'Γεωργία', 'Γιώργης'],
+      '04-25': ['Μάρκος'],
+      '05-05': ['Ειρήνη', 'Ειρηναίος'],
+      '05-08': ['Ιωάννης', 'Γιάννης'],
+      '05-21': ['Κωνσταντίνος', 'Ελένη', 'Κώστας'],
+      '06-11': ['Βαρνάβας'],
+      '06-24': ['Ιωάννης', 'Γιάννης'],
+      '06-29': ['Πέτρος', 'Παύλος', 'Παυλίνα'],
+      '06-30': ['Αποστόλης', 'Αποστολία'],
+      '07-01': ['Κοσμάς', 'Δαμιανός', 'Αναργύρης'],
+      '07-17': ['Μαρίνα'],
+      '07-20': ['Ηλίας', 'Ηλιάνα'],
+      '07-22': ['Μαρία Μαγδαληνή'],
+      '07-25': ['Αννα'],
+      '07-26': ['Παρασκευή'],
+      '07-27': ['Παντελεήμονας', 'Παντελής'],
+      '08-06': ['Σωτήρης', 'Σωτηρία'],
+      '08-15': ['Παναγιώτης', 'Παναγιώτα', 'Δέσποινα', 'Μαρία'],
+      '08-25': ['Τίτος'],
+      '08-29': ['Ιωάννης', 'Γιάννης'],
+      '08-30': ['Αλέξανδρος', 'Αλεξάνδρα'],
+      '09-08': ['Σωτήρης', 'Σωτηρία', 'Θεοτόκης'],
+      '09-14': ['Σταύρος', 'Σταυρούλα'],
+      '09-17': ['Σοφία', 'Ελπίδα', 'Πίστη', 'Αγάπη'],
+      '09-20': ['Ευστάθιος', 'Ευσταθία'],
+      '09-26': ['Ιωάννης'],
+      '10-18': ['Λουκάς', 'Λουκία'],
+      '10-23': ['Ιάκωβος'],
+      '10-26': ['Δημήτριος', 'Δημήτρης', 'Δήμητρα'],
+      '11-01': ['Κοσμάς', 'Δαμιανός'],
+      '11-08': ['Μιχαήλ', 'Μιχάλης', 'Γαβριήλ', 'Αγγελική', 'Άγγελος'],
+      '11-13': ['Χρυσόστομος', 'Χρύσα'],
+      '11-14': ['Φίλιππος', 'Φιλίππα'],
+      '11-16': ['Ματθαίος'],
+      '11-21': ['Παναγιώτης', 'Παναγιώτα'],
+      '11-25': ['Αικατερίνη', 'Κατερίνα'],
+      '11-26': ['Στυλιανός', 'Στυλιανή'],
+      '11-30': ['Ανδρέας'],
+      '12-04': ['Βαρβάρα'],
+      '12-05': ['Σάββας'],
+      '12-06': ['Νικόλαος', 'Νίκος', 'Νικολέτα'],
+      '12-09': ['Αννα'],
+      '12-12': ['Σπυρίδωνας', 'Σπύρος', 'Σπυριδούλα'],
+      '12-13': ['Ευστράτιος'],
+      '12-17': ['Δανιήλ'],
+      '12-25': ['Εμμανουήλ', 'Μανώλης'],
+      '12-26': ['Ευγένιος', 'Ευγενία'],
+      '12-27': ['Στέφανος', 'Στεφανία'],
+      '12-31': ['Μελανία'],
+    };
+
+    function getLiturgicalColor(date, fi) {
+      const mo = date.getMonth() + 1, da = date.getDate();
+      const mmdd = String(mo).padStart(2,'0') + '-' + String(da).padStart(2,'0');
+      const dow = date.getDay();
+      const per = fi.period || '';
+      // Vestment colours follow Byzantine Orthodox tradition:
+      // White/Gold: Lord's feasts | Red: Martyrs & Holy Cross | Blue: Theotokos
+      // Green: Palm Sunday, Pentecost | Purple: Lenten fasting | Dark: Holy Week
+      const FEAST = {
+        '01-06': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Θεοφάνεια' },
+        '01-07': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Αγ. Ιωάννη Προδρόμου' },
+        '03-25': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Ευαγγελισμός Θεοτόκου' },
+        '04-23': { hex: '#9B2335', label: 'Κόκκινο — Άγ. Γεώργιος' },
+        '05-21': { hex: '#9B2335', label: 'Κόκκινο — Κωνσταντίνος & Ελένη' },
+        '06-24': { hex: '#9B2335', label: 'Κόκκινο — Γέννηση Αγ. Ιωάννη Βαπτιστή' },
+        '06-29': { hex: '#9B2335', label: 'Κόκκινο — Αγ. Πέτρος & Παύλος' },
+        '06-30': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Δώδεκα Αποστόλων' },
+        '08-06': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Μεταμόρφωση Σωτήρος' },
+        '08-15': { hex: '#1A4B8C', label: 'Μπλε — Κοίμηση Θεοτόκου' },
+        '08-29': { hex: '#9B2335', label: 'Κόκκινο — Αποτομή Κεφαλής Προδρόμου' },
+        '09-08': { hex: '#1A4B8C', label: 'Μπλε — Γέννηση Θεοτόκου' },
+        '09-14': { hex: '#9B2335', label: 'Κόκκινο — Ύψωση Τιμίου Σταυρού' },
+        '11-08': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Σύναξη Αρχαγγέλων' },
+        '11-21': { hex: '#1A4B8C', label: 'Μπλε — Εισόδια Θεοτόκου' },
+        '12-25': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Χριστούγεννα' },
+        '12-26': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Θεοτόκου' },
+        '12-27': { hex: '#9B2335', label: 'Κόκκινο — Άγ. Στέφανος Πρωτομάρτυρας' },
+      };
+      if (FEAST[mmdd]) return FEAST[mmdd];
+      // Movable periods
+      if (per === 'Κυριακή Βαϊν') return { hex: '#2A5C38', label: 'Πράσινο — Κυριακή Βαϊν' };
+      if (per === 'Μεγάλη Παρασκευή' || per === 'Μεγάλο Σάββατο') return { hex: '#2D1245', label: 'Σκούρο Μωβ — Μεγάλη Εβδομάδα' };
+      if (per === 'Μεγάλη Εβδομάδα') return { hex: '#2D1245', label: 'Σκούρο Μωβ — Μεγάλη Εβδομάδα' };
+      if (per === 'Διακαινήσιμος Εβδομάδα') return { hex: '#C8A800', label: 'Χρυσό/Λευκό — Διακαινήσιμος' };
+      if (per === 'Εβδομάδα Πεντηκοστής') return { hex: '#2A5C38', label: 'Πράσινο — Πεντηκοστή' };
+      if (per && per.includes('Μεγάλη Τεσσαρακοστή')) return { hex: '#4A1A6A', label: 'Μωβ — Μεγάλη Τεσσαρακοστή' };
+      // Other fasting periods
+      if (fi.calCls === 'cal-strict') return { hex: '#4A1A6A', label: 'Μωβ — αυστηρή νηστεία' };
+      if (['cal-dry','cal-oil','cal-fish'].includes(fi.calCls)) return { hex: '#5A2080', label: 'Μωβ — νηστεία' };
+      // Default
+      if (dow === 0) return { hex: '#B8860B', label: 'Χρυσό — Κυριακή' };
+      return { hex: '#4A7C59', label: 'Πράσινο' };
+    }
+
+    function exportIcal(year) {
+      const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//OrthodoxHelper//Fasting Calendar//EL',
+        'X-WR-CALNAME:Νηστειολόγιο ' + year,'X-WR-TIMEZONE:Europe/Athens','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+      const end = new Date(year + 1, 0, 1);
+      for (let cur = new Date(year, 0, 1); cur < end; cur.setDate(cur.getDate() + 1)) {
+        const fi = getFasting(cur);
+        const ds = cur.getFullYear() + String(cur.getMonth()+1).padStart(2,'0') + String(cur.getDate()).padStart(2,'0');
+        const nxt = new Date(cur.getTime()); nxt.setDate(nxt.getDate() + 1);
+        const de = nxt.getFullYear() + String(nxt.getMonth()+1).padStart(2,'0') + String(nxt.getDate()).padStart(2,'0');
+        lines.push('BEGIN:VEVENT','DTSTART;VALUE=DATE:' + ds,'DTEND;VALUE=DATE:' + de,
+          'SUMMARY:' + fi.label,
+          'DESCRIPTION:' + fi.desc.replace(/,/g,'\\,') + (fi.period ? ' \u2014 ' + fi.period.replace(/,/g,'\\,') : ''),
+          'UID:ortho-fast-' + ds + '@orthodoxhelper','END:VEVENT');
+      }
+      lines.push('END:VCALENDAR');
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = '\u03bd\u03b7\u03c3\u03c4\u03b5\u03b9\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf-' + year + '.ics';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     function formatDateGR(d) {
       return GR_DAYS_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + GR_MONTHS_GEN[d.getMonth()] + ' ' + d.getFullYear();
     }
 
     function renderToday() {
       const fi = getFasting(TODAY);
+      const litColor = getLiturgicalColor(TODAY, fi);
+      const mmddT = String(TODAY.getMonth()+1).padStart(2,'0') + '-' + String(TODAY.getDate()).padStart(2,'0');
+      const ndToday = (NAMEDAYS[mmddT] || []).join(', ');
       const el = document.getElementById('today-section');
       el.innerHTML = `
     <div class="today-card ${fi.cardCls}">
@@ -888,6 +1046,8 @@
       <div class="today-period">${fi.period || 'Κανονική ημέρα'}</div>
       <div class="today-desc">${fi.desc}</div>
       ${fi.note ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px;">* ${fi.note}</div>` : ''}
+      <div class="today-lit"><span class="today-lit-swatch" style="background:${litColor.hex}"></span>${litColor.label}</div>
+      ${ndToday ? `<div style="margin-top:6px;font-size:13px;color:var(--color-text-secondary);">☩ ${ndToday}</div>` : ''}
     </div>
   `;
     }
@@ -906,10 +1066,14 @@
         const isToday = sameDay(date, TODAY);
         const dow = (date.getDay() + 6) % 7;
         const ttCls = dow <= 1 ? ' tt-left' : dow >= 5 ? ' tt-right' : '';
+        const litColor = getLiturgicalColor(date, fi);
+        const mmdd2 = String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+        const ndStr = (NAMEDAYS[mmdd2] || []).join(', ');
         days += `<div class="cal-day ${fi.calCls}${isToday ? ' today-marker' : ''}">
       <span class="cal-num">${d}</span>
       <span class="cal-dot"></span>
-      <span class="tooltip${ttCls}"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span></span>
+      <span class="lit-dot" style="background:${litColor.hex}" title="${litColor.label}"></span>
+      <span class="tooltip${ttCls}"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span><span class="tooltip-lit"><span class="tooltip-lit-dot" style="background:${litColor.hex}"></span>${litColor.label}</span>${ndStr ? '<span class="tooltip-names">☩ ' + ndStr + '</span>' : ''}</span>
     </div>`;
       }
 
@@ -924,6 +1088,7 @@
           ${Array.from({length: 46}, (_, i) => 2000 + i).map(yr => `<option value="${yr}" ${yr === y ? 'selected' : ''}>${yr}</option>`).join('')}
         </select>
         <button class="nav-btn nav-today" onclick="jumpToToday()">Σήμερα</button>
+        <button class="nav-btn ical-inline-btn" onclick="exportIcal(${y})" title="Εξαγωγή νηστειολογίου ${y} ως .ics" aria-label="Εξαγωγή .ics">.ics</button>
       </div>
       <button class="nav-btn" onclick="nextMonth()" aria-label="Επόμενος μήνας">→</button>
     </div>

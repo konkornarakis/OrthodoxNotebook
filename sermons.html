@@ -42,6 +42,13 @@
       }
     }
 
+    @media (max-width: 620px) {
+      .ort-header { flex-wrap: wrap; }
+      .nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
+      .nav-links::-webkit-scrollbar { display: none; }
+      .nav-pill { flex-shrink: 0; }
+    }
+
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     html { overflow-y: scroll; }
@@ -151,9 +158,31 @@
     .search-input:focus         { border-color: #BA7517; }
 
     /* ── Filter chips ────────────────────────────────────────────────── */
-    .filter-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
-    .chip-row     { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .chip-label   { font-size: 12px; color: var(--color-text-secondary); font-weight: 600; white-space: nowrap; margin-right: 2px; }
+    .filter-chips { margin-bottom: 1rem; }
+    .filter-panel {
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: 4px 12px;
+    }
+    .fp-section {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      padding: 8px 0;
+    }
+    .fp-section + .fp-section { border-top: 0.5px solid var(--color-border-tertiary); }
+    .fp-label {
+      font-size: 10px; font-weight: 700; color: var(--color-text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      white-space: nowrap; min-width: 58px;
+    }
+    .fp-clear {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      font-size: 12px; color: var(--color-text-tertiary);
+      font-family: var(--font-sans); padding: 3px 8px;
+      border-radius: 999px; transition: color 0.12s, background 0.12s;
+      white-space: nowrap;
+    }
+    .fp-clear:hover { color: #BA7517; background: rgba(186,117,23,0.08); }
 
     /* ── Sort dropdown ───────────────────────────────────────────────────────── */
     .sort-select {
@@ -464,7 +493,6 @@
     /* ── Readability bumps ─────────────────────────────────────────── */
     .card-meta    { font-size: 13px; }
     .card-summary { font-size: 14.5px; }
-    .chip-label   { font-size: 13px; }
     .search-input, .sort-select { font-size: 14px; }
     .transcript-body { font-size: 15px; line-height: 1.8; }
     .summary-para { font-size: 15px; line-height: 1.9; }
@@ -472,27 +500,16 @@
     .detail-meta  { font-size: 14px; }
 
     /* ── Date range filter ─────────────────────────────────────────── */
-    .date-row { align-items: center; gap: 8px; }
     .date-input {
-      height: 32px; padding: 0 10px;
+      height: 29px; padding: 0 9px;
       border: 0.5px solid var(--color-border-secondary); border-radius: 8px;
-      background: var(--color-background-secondary); color: var(--color-text-primary);
-      font-family: var(--font-sans); font-size: 13px; outline: none; cursor: pointer;
+      background: var(--color-background-primary); color: var(--color-text-primary);
+      font-family: var(--font-sans); font-size: 12px; outline: none; cursor: pointer;
     }
     .date-input:focus { border-color: #BA7517; }
-    .date-sep { font-size: 13px; color: var(--color-text-tertiary); }
+    .date-sep { font-size: 12px; color: var(--color-text-tertiary); }
 
     /* ── Clear filters button ──────────────────────────────────────── */
-    .clear-filters-btn {
-      height: 30px; padding: 0 14px;
-      border: 1px dashed #BA7517; border-radius: 999px;
-      background: none; cursor: pointer; font-size: 13px;
-      color: #BA7517; font-family: var(--font-sans); transition: all 0.12s;
-    }
-    .clear-filters-btn:hover { background: rgba(186,117,23,0.08); }
-    .clear-row { padding-top: 2px; }
-
-    /* ── Bookmark button ───────────────────────────────────────────── */
     .sermon-card { position: relative; }
     .bookmark-btn {
       background: none; border: none; cursor: pointer;
@@ -534,6 +551,8 @@
       <nav class="nav-links">
         <a href="main.html" class="nav-pill">Νηστειοδρόμιο</a>
         <a href="sermons.html" class="nav-pill active">Ομιλίες</a>
+        <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
+        <a href="fasting.html" class="nav-pill">Περί νηστείας</a>
       </nav>
     </div>
 
@@ -799,60 +818,51 @@ function renderList() {
   const chipsEl     = document.getElementById('filter-chips');
   chipsEl.innerHTML = '';
 
-  // Speaker row (single select)
-  if (allSpeakers.length > 1 || activeSpeaker !== null) {
-    const row = document.createElement('div'); row.className = 'chip-row';
-    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Ομιλητής';
-    row.appendChild(lbl);
-    row.appendChild(mkChip('Όλοι', activeSpeaker === null, () => filterBySpeaker(null)));
-    allSpeakers.forEach(sp => row.appendChild(mkChip(sp, activeSpeaker === sp, () => filterBySpeaker(sp))));
-    chipsEl.appendChild(row);
-  }
+  const hasSpeakers = allSpeakers.length > 1 || activeSpeaker !== null;
+  const hasTags     = allTags.length > 0;
+  const hasFilter   = activeTags.size > 0 || activeSpeaker || dateFrom || dateTo || showBookmarked;
 
-  // Tags row (multi-select — click toggles, Όλα clears all)
-  if (allTags.length > 0) {
-    const row = document.createElement('div'); row.className = 'chip-row';
-    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Θέματα';
-    row.appendChild(lbl);
-    row.appendChild(mkChip('Όλα', activeTags.size === 0, () => filterByTag(null)));
-    allTags.forEach(t => row.appendChild(mkChip(t, activeTags.has(t), () => filterByTag(t))));
-    chipsEl.appendChild(row);
-  }
-
-  // Date range row
-  {
-    const row = document.createElement('div'); row.className = 'chip-row date-row';
-    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Περίοδος';
-    row.appendChild(lbl);
+  if (hasSpeakers || hasTags) {
+    const panel = document.createElement('div'); panel.className = 'filter-panel';
+    if (hasSpeakers) {
+      const sec = document.createElement('div'); sec.className = 'fp-section';
+      const lbl = document.createElement('span'); lbl.className = 'fp-label'; lbl.textContent = 'ΞΞΌΞΉΞ»Ξ·Ο„Ξ®Ο‚';
+      sec.appendChild(lbl);
+      sec.appendChild(mkChip('ΞΞ»ΞΏΞΉ', activeSpeaker === null, () => filterBySpeaker(null)));
+      allSpeakers.forEach(sp => sec.appendChild(mkChip(sp, activeSpeaker === sp, () => filterBySpeaker(sp))));
+      panel.appendChild(sec);
+    }
+    if (hasTags) {
+      const sec = document.createElement('div'); sec.className = 'fp-section';
+      const lbl = document.createElement('span'); lbl.className = 'fp-label'; lbl.textContent = 'ΞΞ­ΞΌΞ±Ο„Ξ±';
+      sec.appendChild(lbl);
+      sec.appendChild(mkChip('ΞΞ»Ξ±', activeTags.size === 0, () => filterByTag(null)));
+      allTags.forEach(t => sec.appendChild(mkChip(t, activeTags.has(t), () => filterByTag(t))));
+      panel.appendChild(sec);
+    }
+    const bRow = document.createElement('div'); bRow.className = 'fp-section';
     const fromIn = document.createElement('input');
     fromIn.type = 'date'; fromIn.className = 'date-input'; fromIn.value = dateFrom;
+    fromIn.title = 'Ξ‘Ο€Ο'; fromIn.setAttribute('aria-label', 'Ξ‘Ο€Ο Ξ·ΞΌΞµΟΞΏΞΌΞ·Ξ½Ξ―Ξ±');
     fromIn.onchange = () => { dateFrom = fromIn.value; updateListHash(); renderList(); };
-    const sep = document.createElement('span'); sep.className = 'date-sep'; sep.textContent = '→';
+    const sep = document.createElement('span'); sep.className = 'date-sep'; sep.textContent = 'β€“';
     const toIn = document.createElement('input');
     toIn.type = 'date'; toIn.className = 'date-input'; toIn.value = dateTo;
+    toIn.title = 'ΞΟ‰Ο‚'; toIn.setAttribute('aria-label', 'ΞΟ‰Ο‚ Ξ·ΞΌΞµΟΞΏΞΌΞ·Ξ½Ξ―Ξ±');
     toIn.onchange = () => { dateTo = toIn.value; updateListHash(); renderList(); };
-    row.appendChild(fromIn); row.appendChild(sep); row.appendChild(toIn);
-    chipsEl.appendChild(row);
-  }
-
-  // Bookmarks filter
-  if (bookmarks.size > 0) {
-    const row = document.createElement('div'); row.className = 'chip-row';
-    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Αποθηκευμένα';
-    row.appendChild(lbl);
-    row.appendChild(mkChip('★ ' + bookmarks.size + (bookmarks.size === 1 ? ' ομιλία' : ' ομιλίες'), showBookmarked,
-      () => { showBookmarked = !showBookmarked; updateListHash(); renderList(); }));
-    chipsEl.appendChild(row);
-  }
-
-  // Clear all filters
-  const hasFilter = activeTags.size > 0 || activeSpeaker || dateFrom || dateTo || showBookmarked;
-  if (hasFilter) {
-    const row = document.createElement('div'); row.className = 'chip-row clear-row';
-    const clrBtn = document.createElement('button'); clrBtn.className = 'clear-filters-btn';
-    clrBtn.textContent = 'Καθαρισμός φίλτρων';
-    clrBtn.onclick = () => { activeTags.clear(); activeSpeaker = null; dateFrom = ''; dateTo = ''; showBookmarked = false; updateListHash(); renderList(); };
-    row.appendChild(clrBtn); chipsEl.appendChild(row);
+    bRow.appendChild(fromIn); bRow.appendChild(sep); bRow.appendChild(toIn);
+    if (bookmarks.size > 0) {
+      bRow.appendChild(mkChip('β… ' + bookmarks.size, showBookmarked,
+        () => { showBookmarked = !showBookmarked; updateListHash(); renderList(); }));
+    }
+    if (hasFilter) {
+      const clr = document.createElement('button'); clr.className = 'fp-clear';
+      clr.textContent = 'β• ΞΞ±ΞΈΞ±ΟΞΉΟƒΞΌΟΟ‚';
+      clr.onclick = () => { activeTags.clear(); activeSpeaker = null; dateFrom = ''; dateTo = ''; showBookmarked = false; updateListHash(); renderList(); };
+      bRow.appendChild(clr);
+    }
+    panel.appendChild(bRow);
+    chipsEl.appendChild(panel);
   }
 
   let filtered = SERMONS.filter(s => {
