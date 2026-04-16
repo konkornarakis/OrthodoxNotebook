@@ -459,7 +459,67 @@
       white-space: nowrap; flex-shrink: 0;
     }
     .add-sermon-btn:hover { opacity: 0.82; }
-    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }  </style>
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ── Readability bumps ─────────────────────────────────────────── */
+    .card-meta    { font-size: 13px; }
+    .card-summary { font-size: 14.5px; }
+    .chip-label   { font-size: 13px; }
+    .search-input, .sort-select { font-size: 14px; }
+    .transcript-body { font-size: 15px; line-height: 1.8; }
+    .summary-para { font-size: 15px; line-height: 1.9; }
+    .section-title { font-size: 15px; }
+    .detail-meta  { font-size: 14px; }
+
+    /* ── Date range filter ─────────────────────────────────────────── */
+    .date-row { align-items: center; gap: 8px; }
+    .date-input {
+      height: 32px; padding: 0 10px;
+      border: 0.5px solid var(--color-border-secondary); border-radius: 8px;
+      background: var(--color-background-secondary); color: var(--color-text-primary);
+      font-family: var(--font-sans); font-size: 13px; outline: none; cursor: pointer;
+    }
+    .date-input:focus { border-color: #BA7517; }
+    .date-sep { font-size: 13px; color: var(--color-text-tertiary); }
+
+    /* ── Clear filters button ──────────────────────────────────────── */
+    .clear-filters-btn {
+      height: 30px; padding: 0 14px;
+      border: 1px dashed #BA7517; border-radius: 999px;
+      background: none; cursor: pointer; font-size: 13px;
+      color: #BA7517; font-family: var(--font-sans); transition: all 0.12s;
+    }
+    .clear-filters-btn:hover { background: rgba(186,117,23,0.08); }
+    .clear-row { padding-top: 2px; }
+
+    /* ── Bookmark button ───────────────────────────────────────────── */
+    .sermon-card { position: relative; }
+    .bookmark-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 18px; line-height: 1; padding: 4px 6px;
+      color: var(--color-text-tertiary); transition: color 0.12s;
+    }
+    .bookmark-btn.active { color: #BA7517; }
+    .bookmark-btn:hover  { color: var(--color-text-primary); }
+    .card-bm-btn { position: absolute; top: 8px; right: 10px; font-size: 17px; padding: 2px 4px; }
+    .detail-bm-btn {
+      font-size: 13px; height: 32px; padding: 0 14px;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .detail-bm-btn.active { background: rgba(186,117,23,0.08); border-color: #BA7517; color: #7a4a14; }
+
+    /* ── Back to top ───────────────────────────────────────────────── */
+    .back-to-top {
+      position: fixed; bottom: 28px; right: 28px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #7a4a14; color: #fff; border: none;
+      cursor: pointer; font-size: 22px;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+      z-index: 999; transition: opacity 0.2s;
+    }
+    .back-to-top.visible { display: flex; }
+  </style>
 </head>
 <body>
 <div class="ort-root">
@@ -627,8 +687,12 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 let SERMONS        = [];
 let IS_LOCAL       = false;
-let activeTag      = null;
+let activeTags     = new Set();
 let activeSpeaker  = null;
+let dateFrom       = '';
+let dateTo         = '';
+let showBookmarked = false;
+let bookmarks      = new Set(JSON.parse(localStorage.getItem('sermon-bookmarks') || '[]'));
 let currentSermonIdx = -1;
 
 // ── Fetch generated JSON ──────────────────────────────────────────────────────
@@ -661,11 +725,14 @@ function routeFromHash() {
   // List view (default)
   const qi = location.hash.indexOf('?');
   if (qi !== -1) {
-    const params = new URLSearchParams(location.hash.slice(qi + 1));
-    activeTag     = params.get('tag')     || null;
-    activeSpeaker = params.get('speaker') || null;
+    const params   = new URLSearchParams(location.hash.slice(qi + 1));
+    activeTags     = new Set((params.get('tags') || '').split(',').filter(Boolean));
+    activeSpeaker  = params.get('speaker') || null;
+    dateFrom       = params.get('from')    || '';
+    dateTo         = params.get('to')      || '';
+    showBookmarked = params.get('bm')      === '1';
   } else {
-    activeTag = null; activeSpeaker = null;
+    activeTags.clear(); activeSpeaker = null; dateFrom = ''; dateTo = ''; showBookmarked = false;
   }
   _showView('view-list');
   renderList();
@@ -678,8 +745,11 @@ function _showView(id) {
 
 function updateListHash() {
   const params = new URLSearchParams();
-  if (activeTag)     params.set('tag',     activeTag);
-  if (activeSpeaker) params.set('speaker', activeSpeaker);
+  if (activeTags.size)  params.set('tags',    [...activeTags].join(','));
+  if (activeSpeaker)    params.set('speaker', activeSpeaker);
+  if (dateFrom)         params.set('from',    dateFrom);
+  if (dateTo)           params.set('to',      dateTo);
+  if (showBookmarked)   params.set('bm',      '1');
   const q = params.toString();
   history.replaceState(null, '', location.pathname + '#list' + (q ? '?' + q : ''));
 }
@@ -698,25 +768,26 @@ function showDetail(idx) {
 }
 
 // ── Filter navigation ─────────────────────────────────────────────────────────
+function _listHash() {
+  const p = new URLSearchParams();
+  if (activeTags.size)  p.set('tags',    [...activeTags].join(','));
+  if (activeSpeaker)    p.set('speaker', activeSpeaker);
+  if (dateFrom)         p.set('from',    dateFrom);
+  if (dateTo)           p.set('to',      dateTo);
+  if (showBookmarked)   p.set('bm',      '1');
+  const q = p.toString(); return '#list' + (q ? '?' + q : '');
+}
 function filterByTag(tag) {
-  activeTag = tag || null; activeSpeaker = null;
-  const h = '#list' + (activeTag ? '?tag=' + encodeURIComponent(activeTag) : '');
-  if (location.hash.startsWith('#sermon/')) {
-    location.hash = h;
-  } else {
-    history.replaceState(null, '', h || '#list');
-    renderList();
-  }
+  if (!tag) { activeTags.clear(); }
+  else if (activeTags.has(tag)) { activeTags.delete(tag); }
+  else { activeTags.add(tag); }
+  if (location.hash.startsWith('#sermon/')) { location.hash = _listHash(); }
+  else { updateListHash(); renderList(); }
 }
 function filterBySpeaker(speaker) {
-  activeSpeaker = speaker || null; activeTag = null;
-  const h = '#list' + (activeSpeaker ? '?speaker=' + encodeURIComponent(activeSpeaker) : '');
-  if (location.hash.startsWith('#sermon/')) {
-    location.hash = h;
-  } else {
-    history.replaceState(null, '', h || '#list');
-    renderList();
-  }
+  activeSpeaker = speaker || null;
+  if (location.hash.startsWith('#sermon/')) { location.hash = _listHash(); }
+  else { updateListHash(); renderList(); }
 }
 
 // ── List ──────────────────────────────────────────────────────────────────────
@@ -728,31 +799,69 @@ function renderList() {
   const chipsEl     = document.getElementById('filter-chips');
   chipsEl.innerHTML = '';
 
+  // Speaker row (single select)
   if (allSpeakers.length > 1 || activeSpeaker !== null) {
-    const row = document.createElement('div');
-    row.className = 'chip-row';
+    const row = document.createElement('div'); row.className = 'chip-row';
     const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Ομιλητής';
     row.appendChild(lbl);
     row.appendChild(mkChip('Όλοι', activeSpeaker === null, () => filterBySpeaker(null)));
-    allSpeakers.forEach(sp => row.appendChild(mkChip(sp, activeSpeaker === sp, () => filterBySpeaker(sp), 'chip-speaker')));
+    allSpeakers.forEach(sp => row.appendChild(mkChip(sp, activeSpeaker === sp, () => filterBySpeaker(sp))));
     chipsEl.appendChild(row);
   }
 
+  // Tags row (multi-select — click toggles, Όλα clears all)
   if (allTags.length > 0) {
-    const row = document.createElement('div');
-    row.className = 'chip-row';
+    const row = document.createElement('div'); row.className = 'chip-row';
     const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Θέματα';
     row.appendChild(lbl);
-    row.appendChild(mkChip('Όλα', activeTag === null, () => filterByTag(null)));
-    allTags.forEach(t => row.appendChild(mkChip(t, activeTag === t, () => filterByTag(t))));
+    row.appendChild(mkChip('Όλα', activeTags.size === 0, () => filterByTag(null)));
+    allTags.forEach(t => row.appendChild(mkChip(t, activeTags.has(t), () => filterByTag(t))));
     chipsEl.appendChild(row);
+  }
+
+  // Date range row
+  {
+    const row = document.createElement('div'); row.className = 'chip-row date-row';
+    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Περίοδος';
+    row.appendChild(lbl);
+    const fromIn = document.createElement('input');
+    fromIn.type = 'date'; fromIn.className = 'date-input'; fromIn.value = dateFrom;
+    fromIn.onchange = () => { dateFrom = fromIn.value; updateListHash(); renderList(); };
+    const sep = document.createElement('span'); sep.className = 'date-sep'; sep.textContent = '→';
+    const toIn = document.createElement('input');
+    toIn.type = 'date'; toIn.className = 'date-input'; toIn.value = dateTo;
+    toIn.onchange = () => { dateTo = toIn.value; updateListHash(); renderList(); };
+    row.appendChild(fromIn); row.appendChild(sep); row.appendChild(toIn);
+    chipsEl.appendChild(row);
+  }
+
+  // Bookmarks filter
+  if (bookmarks.size > 0) {
+    const row = document.createElement('div'); row.className = 'chip-row';
+    const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Αποθηκευμένα';
+    row.appendChild(lbl);
+    row.appendChild(mkChip('★ ' + bookmarks.size + (bookmarks.size === 1 ? ' ομιλία' : ' ομιλίες'), showBookmarked,
+      () => { showBookmarked = !showBookmarked; updateListHash(); renderList(); }));
+    chipsEl.appendChild(row);
+  }
+
+  // Clear all filters
+  const hasFilter = activeTags.size > 0 || activeSpeaker || dateFrom || dateTo || showBookmarked;
+  if (hasFilter) {
+    const row = document.createElement('div'); row.className = 'chip-row clear-row';
+    const clrBtn = document.createElement('button'); clrBtn.className = 'clear-filters-btn';
+    clrBtn.textContent = 'Καθαρισμός φίλτρων';
+    clrBtn.onclick = () => { activeTags.clear(); activeSpeaker = null; dateFrom = ''; dateTo = ''; showBookmarked = false; updateListHash(); renderList(); };
+    row.appendChild(clrBtn); chipsEl.appendChild(row);
   }
 
   let filtered = SERMONS.filter(s => {
-    const matchTag     = !activeTag     || (s.tags || []).includes(activeTag);
+    const matchTag     = activeTags.size === 0 || [...activeTags].some(t => (s.tags || []).includes(t));
     const matchSpeaker = !activeSpeaker || s.speaker === activeSpeaker;
+    const matchDate    = (!dateFrom || (s.date && s.date >= dateFrom)) && (!dateTo || (s.date && s.date <= dateTo));
+    const matchBm      = !showBookmarked || bookmarks.has(s.id);
     const matchQ       = !q || [s.title, s.speaker, s.summary, ...(s.tags || [])].join(' ').toLowerCase().includes(q);
-    return matchTag && matchSpeaker && matchQ;
+    return matchTag && matchSpeaker && matchDate && matchBm && matchQ;
   });
 
   const so = document.getElementById('sort-select')?.value || 'date-desc';
@@ -770,7 +879,7 @@ function renderList() {
     return;
   }
 
-  if (activeTag || activeSpeaker || q) {
+  if (activeTags.size || activeSpeaker || dateFrom || dateTo || showBookmarked || q) {
     const countEl = document.createElement('div');
     countEl.className = 'result-count';
     countEl.textContent = filtered.length + (filtered.length === 1 ? ' ομιλία' : ' ομιλίες');
@@ -782,6 +891,12 @@ function renderList() {
     const card = document.createElement('div');
     card.className = 'sermon-card';
     card.onclick = () => showDetail(origIdx);
+    const bmBtn = document.createElement('button');
+    bmBtn.className = 'bookmark-btn card-bm-btn' + (bookmarks.has(s.id) ? ' active' : '');
+    bmBtn.textContent = bookmarks.has(s.id) ? '★' : '☆';
+    bmBtn.title = bookmarks.has(s.id) ? 'Αφαίρεση από αποθηκευμένα' : 'Αποθήκευση';
+    bmBtn.onclick = e => { e.stopPropagation(); toggleBookmark(s.id); };
+    card.appendChild(bmBtn);
 
     const titleEl = document.createElement('div');
     titleEl.className = 'card-title'; titleEl.textContent = s.title;
@@ -902,6 +1017,17 @@ function renderDetail(s) {
     src.target = '_blank'; src.rel = 'noopener noreferrer'; src.textContent = 'Πηγή ↗';
     actionsEl.appendChild(src);
   }
+  // Bookmark button (always visible)
+  const bmDetailBtn = document.createElement('button');
+  bmDetailBtn.className = 'bookmark-btn detail-bm-btn btn-secondary' + (bookmarks.has(s.id) ? ' active' : '');
+  bmDetailBtn.innerHTML = (bookmarks.has(s.id) ? '★ ' : '☆ ') + 'Αποθήκευση';
+  bmDetailBtn.onclick = () => {
+    toggleBookmark(s.id);
+    const on = bookmarks.has(s.id);
+    bmDetailBtn.innerHTML = (on ? '★ ' : '☆ ') + 'Αποθήκευση';
+    bmDetailBtn.classList.toggle('active', on);
+  };
+  actionsEl.appendChild(bmDetailBtn);
   if (actionsEl.children.length > 0) content.appendChild(actionsEl);
 
   // Dev edit/delete (local only)
@@ -994,6 +1120,13 @@ function filterTranscript(q) {
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
+function toggleBookmark(id) {
+  if (bookmarks.has(id)) bookmarks.delete(id);
+  else bookmarks.add(id);
+  localStorage.setItem('sermon-bookmarks', JSON.stringify([...bookmarks]));
+  renderList();
+}
+
 function getDuration(s) {
   if (!s.transcript || !s.transcript.length) return null;
   const ts = s.transcript[s.transcript.length - 1].ts;
@@ -1211,6 +1344,15 @@ async function deleteSermon(idx) {
     alert('Σφάλμα διαγραφής: ' + err.message);
   }
 }
+</script>
+<button class="back-to-top" id="back-to-top"
+  onclick="window.scrollTo({top:0,behavior:'smooth'})"
+  title="Επιστροφή στην αρχή" aria-label="Επιστροφή στην αρχή">↑</button>
+<script>
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('back-to-top');
+  if (btn) btn.classList.toggle('visible', window.scrollY > 400);
+});
 </script>
 </body>
 </html>

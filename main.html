@@ -153,7 +153,7 @@
     }
 
     .today-date {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--color-text-secondary);
       margin-bottom: 6px;
     }
@@ -165,14 +165,14 @@
     }
 
     .today-period {
-      font-size: 13px;
+      font-size: 15px;
       color: var(--color-text-secondary);
       font-style: italic;
       margin-bottom: 8px;
     }
 
     .today-desc {
-      font-size: 13px;
+      font-size: 15px;
       color: var(--color-text-secondary);
     }
 
@@ -279,7 +279,7 @@
 
     .cal-dow {
       text-align: center;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--color-text-secondary);
@@ -314,7 +314,7 @@
     }
 
     .cal-num {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
     }
 
@@ -497,9 +497,10 @@
       min-width: 160px;
       max-width: 210px;
       background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
       border-radius: 10px;
       padding: 9px 12px 10px;
-      font-size: 11.5px;
+      font-size: 13px;
       line-height: 1.45;
       color: var(--color-text-primary);
       white-space: normal;
@@ -510,21 +511,24 @@
 
     .tooltip-label {
       font-weight: 600;
-      font-size: 12px;
+      font-size: 13px;
       margin-bottom: 3px;
     }
 
     .tooltip-period {
       font-style: italic;
       color: var(--color-text-secondary);
-      font-size: 11px;
+      font-size: 12px;
       margin-bottom: 3px;
     }
 
     .tooltip-desc {
       color: var(--color-text-secondary);
-      font-size: 11px;
+      font-size: 12px;
     }
+
+    .tooltip.tt-left  { left: 0; transform: none; }
+    .tooltip.tt-right { left: auto; right: 0; transform: none; }
 
     .cal-day:hover .tooltip {
       display: block;
@@ -567,14 +571,14 @@
     }
 
     .legend-name {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--color-text-primary);
       margin-bottom: 2px;
     }
 
     .legend-desc {
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1.35;
       color: var(--color-text-secondary);
     }
@@ -606,13 +610,13 @@
     }
 
     .period-name {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
       color: var(--color-text-primary);
     }
 
     .period-dates {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--color-text-secondary);
       margin-top: 2px;
     }
@@ -900,10 +904,12 @@
         const date = new Date(y, mo, d);
         const fi = getFasting(date);
         const isToday = sameDay(date, TODAY);
+        const dow = (date.getDay() + 6) % 7;
+        const ttCls = dow <= 1 ? ' tt-left' : dow >= 5 ? ' tt-right' : '';
         days += `<div class="cal-day ${fi.calCls}${isToday ? ' today-marker' : ''}">
       <span class="cal-num">${d}</span>
       <span class="cal-dot"></span>
-      <span class="tooltip"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span></span>
+      <span class="tooltip${ttCls}"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span></span>
     </div>`;
       }
 
@@ -914,7 +920,9 @@
         <select id="month-select" class="nav-select" onchange="jumpToSelection()" aria-label="Επιλογή μήνα">
           ${GR_MONTHS.map((month, index) => `<option value="${index}" ${index === mo ? 'selected' : ''}>${month}</option>`).join('')}
         </select>
-        <input id="year-input" class="nav-input" type="number" inputmode="numeric" value="${y}" aria-label="Επιλογή έτους" onchange="jumpToSelection()" onkeydown="handleYearInput(event)">
+        <select id="year-select" class="nav-select" onchange="jumpToSelection()" aria-label="Επιλογή έτους">
+          ${Array.from({length: 46}, (_, i) => 2000 + i).map(yr => `<option value="${yr}" ${yr === y ? 'selected' : ''}>${yr}</option>`).join('')}
+        </select>
         <button class="nav-btn nav-today" onclick="jumpToToday()">Σήμερα</button>
       </div>
       <button class="nav-btn" onclick="nextMonth()" aria-label="Επόμενος μήνας">→</button>
@@ -931,22 +939,16 @@
 
     function jumpToSelection() {
       const monthSelect = document.getElementById('month-select');
-      const yearInput = document.getElementById('year-input');
+      const yearSelect = document.getElementById('year-select');
       const nextMonthValue = Number(monthSelect?.value);
-      const nextYearValue = Number(yearInput?.value);
+      const nextYearValue = Number(yearSelect?.value);
 
       if (!Number.isInteger(nextMonthValue) || nextMonthValue < 0 || nextMonthValue > 11) return;
-      if (!Number.isInteger(nextYearValue) || nextYearValue < 1000 || nextYearValue > 9999) return;
+      if (!Number.isInteger(nextYearValue)) return;
 
       viewMonth = nextMonthValue;
       viewYear = nextYearValue;
       renderCalendar();
-    }
-
-    function handleYearInput(event) {
-      if (event.key === 'Enter') {
-        jumpToSelection();
-      }
     }
 
     function jumpToToday() {
