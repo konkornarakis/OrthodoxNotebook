@@ -32,6 +32,7 @@
       margin: 0;
       padding: 0;
     }
+    html { overflow-y: scroll; }
 
     body {
       font-family: var(--font-sans);
@@ -721,6 +722,11 @@
     .toggle-switch input:checked + .toggle-track::after {
       transform: translateX(18px);
     }
+    /* ── Footer ─────────────────────────────────────────────── */
+    .ort-footer { margin-top: 2rem; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
+    .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
+    .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
+    .footer-text a:hover { text-decoration: underline; }
   </style>
 </head>
 
@@ -745,6 +751,7 @@
       <div id="monastic-section"></div>
       <div id="legend-section"></div>
       <div id="periods-section"></div>
+      <footer class="ort-footer"><p class="footer-text">Σε ανάπτυξη &nbsp;&middot;&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;&middot;&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a></p></footer>
     </div>
   </div>
 

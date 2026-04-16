@@ -44,6 +44,7 @@
 
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
+    html { overflow-y: scroll; }
 
     body {
       font-family: var(--font-sans);
@@ -224,7 +225,13 @@
     .empty-title { font-family: var(--font-serif); font-size: 15px; margin-bottom: 5px; }
     .empty-text  { font-size: 12px; }
 
-    /* ── Detail view ─────────────────────────────────────────────────── */
+    /* ── Detail view ─────────────────────────────────────────────── */
+    .detail-paper {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 1.5rem 1.75rem 1.25rem;
+    }
     .back-btn {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 13px; color: var(--color-text-secondary);
@@ -341,7 +348,41 @@
     @media (max-width: 600px) {
       .sermon-grid  { grid-template-columns: 1fr; }
       .detail-title { font-size: 18px; }
+      .detail-paper { padding: 1rem 1rem 0.75rem; }
     }
+
+    /* ── Active filter bar ──────────────────────────────────── */
+    .active-filter-bar {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 7px 10px;
+      background: var(--color-background-secondary);
+      border-radius: 8px;
+      font-size: 11px; color: var(--color-text-secondary);
+    }
+    .filter-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 999px; padding: 2px 8px;
+      font-size: 11px; color: var(--color-text-primary);
+    }
+    .filter-badge-x {
+      cursor: pointer; font-size: 10px; color: var(--color-text-tertiary);
+      background: none; border: none; padding: 0; line-height: 1; font-family: var(--font-sans);
+    }
+    .filter-badge-x:hover { color: var(--color-text-primary); }
+    .clear-all-btn {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      font-size: 10px; color: var(--color-text-tertiary);
+      text-decoration: underline; font-family: var(--font-sans);
+    }
+    .clear-all-btn:hover { color: var(--color-text-primary); }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .ort-footer { margin-top: 2rem; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
+    .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
+    .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
+    .footer-text a:hover { text-decoration: underline; }
     /* ── Add-sermon modal (local dev only) ──────────────────────────────── */
     .modal-overlay {
       display: none;
@@ -457,7 +498,10 @@
     <!-- ── DETAIL VIEW ───────────────────────────────────────────────── -->
     <div id="view-detail" class="view">
       <button class="back-btn" onclick="showList()">← Πίσω στη λίστα</button>
-      <div id="detail-content"></div>
+      <div class="detail-paper">
+        <div id="detail-content"></div>
+      </div>
+      <footer class="ort-footer"><p class="footer-text">Σε ανάπτυξη &nbsp;&middot;&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;&middot;&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a></p></footer>
     </div>
 
   </div>
@@ -680,7 +724,7 @@ function renderList() {
   const chipsEl     = document.getElementById('filter-chips');
   chipsEl.innerHTML = '';
 
-  if (allSpeakers.length > 1) {
+  if (allSpeakers.length > 1 || activeSpeaker !== null) {
     const row = document.createElement('div');
     row.className = 'chip-row';
     const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Ομιλητής';
@@ -698,6 +742,30 @@ function renderList() {
     row.appendChild(mkChip('Όλα', activeTag === null, () => filterByTag(null)));
     allTags.forEach(t => row.appendChild(mkChip(t, activeTag === t, () => filterByTag(t))));
     chipsEl.appendChild(row);
+  }
+
+  // Active filter indicator
+  if (activeSpeaker || activeTag) {
+    const bar = document.createElement('div');
+    bar.className = 'active-filter-bar';
+    const lbl = document.createElement('span'); lbl.textContent = 'Φίλτρο:';
+    bar.appendChild(lbl);
+    if (activeSpeaker) {
+      const badge = document.createElement('span'); badge.className = 'filter-badge';
+      badge.textContent = activeSpeaker;
+      const x = document.createElement('button'); x.className = 'filter-badge-x'; x.textContent = '✕';
+      x.onclick = () => filterBySpeaker(null); badge.appendChild(x); bar.appendChild(badge);
+    }
+    if (activeTag) {
+      const badge = document.createElement('span'); badge.className = 'filter-badge';
+      badge.textContent = activeTag;
+      const x = document.createElement('button'); x.className = 'filter-badge-x'; x.textContent = '✕';
+      x.onclick = () => filterByTag(null); badge.appendChild(x); bar.appendChild(badge);
+    }
+    const ca = document.createElement('button'); ca.className = 'clear-all-btn';
+    ca.textContent = 'Καθαρισμός';
+    ca.onclick = () => { activeSpeaker = null; activeTag = null; updateListHash(); renderList(); };
+    bar.appendChild(ca); chipsEl.appendChild(bar);
   }
 
   let filtered = SERMONS.filter(s => {
@@ -746,8 +814,10 @@ function renderList() {
       card.appendChild(spEl);
     }
 
+    const dur = getDuration(s);
     const meta = [
       s.date ? formatDate(s.date) : '',
+      dur || '',
       s.transcript && s.transcript.length > 0 ? '📜 ' + s.transcript.length + ' αποσπ.' : '',
     ].filter(Boolean).join(' · ');
     if (meta) {
@@ -806,11 +876,17 @@ function renderDetail(s) {
     content.appendChild(spEl);
   }
 
-  // Date
-  if (s.date) {
-    const dateEl = document.createElement('div');
-    dateEl.className = 'detail-meta'; dateEl.textContent = formatDate(s.date);
-    content.appendChild(dateEl);
+  // Date + duration
+  {
+    const metaParts = [];
+    if (s.date) metaParts.push(formatDate(s.date));
+    const dur = getDuration(s);
+    if (dur) metaParts.push('⌛ ' + dur);
+    if (metaParts.length > 0) {
+      const dateEl = document.createElement('div');
+      dateEl.className = 'detail-meta'; dateEl.textContent = metaParts.join(' · ');
+      content.appendChild(dateEl);
+    }
   }
 
   // Tags (clickable)
@@ -937,6 +1013,16 @@ function filterTranscript(q) {
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
+function getDuration(s) {
+  if (!s.transcript || !s.transcript.length) return null;
+  const ts = s.transcript[s.transcript.length - 1].ts;
+  const p = ts.split(':').map(Number);
+  if (p.length === 3) {
+    const [h, m] = p; return h > 0 ? '~' + h + 'h ' + m + 'm' : '~' + (m + 1) + 'min';
+  }
+  return '~' + (p[0] + 1) + 'min';
+}
+
 function tsToSec(ts) {
   const p = ts.split(':').map(Number);
   return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];

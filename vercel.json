@@ -2,7 +2,7 @@
   "buildCommand": "node generate-data.js",
   "outputDirectory": ".",
   "framework": null,
-  "rewrites": [
-    { "source": "/sermons-data.json", "destination": "/sermons-data.json" }
+  "redirects": [
+    { "source": "/", "destination": "/main.html", "permanent": false }
   ]
 }

@@ -252,10 +252,12 @@ function startServer(port) {
 
 server.on('error', e => {
   if (e.code === 'EADDRINUSE') {
-    const next = (server._port || PORT) + 1;
-    console.log(`Port ${server._port || PORT} busy, trying ${next}\u2026`);
-    server._port = next;
-    startServer(next);
+    console.error(`\n\u274C  Port ${server._port || PORT} is already in use.`);
+    console.error(`   Another dev server is probably still running.`);
+    console.error(`   Kill it first:\n`);
+    console.error(`     Get-Process node | Stop-Process -Force   (PowerShell)`);
+    console.error(`     taskkill /F /IM node.exe                 (CMD)\n`);
+    process.exit(1);
   } else {
     throw e;
   }
