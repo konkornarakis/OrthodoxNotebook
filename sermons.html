@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ορθόδοξες Ομιλίες</title>
+  <style>
+    /* ─── Design tokens (shared with main.html) ─────────────────────────── */
+    :root {
+      --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --font-serif: Georgia, "Times New Roman", serif;
+      --color-text-primary: #1f1f1f;
+      --color-text-secondary: #5b5b5b;
+      --color-border-secondary: #d8d1c7;
+      --color-border-tertiary: #e8e1d8;
+      --color-background-primary: #fffdfa;
+      --color-background-secondary: #f5f0e8;
+      --border-radius-md: 12px;
+      --border-radius-lg: 18px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #f3ede4;
+        --color-text-secondary: #c8bcae;
+        --color-border-secondary: #5f5141;
+        --color-border-tertiary: #4c4034;
+        --color-background-primary: #1f1a15;
+        --color-background-secondary: #2b241d;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      min-height: 100vh;
+    }
+
+    .site-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    .ort-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+    .ort-cross { font-size: 28px; line-height: 1; color: #7a4a14; }
+    .ort-title { font-family: var(--font-serif); font-size: 18px; font-weight: 600; }
+    .ort-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+    .header-nav-link {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      white-space: nowrap;
+      padding: 4px 10px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 999px;
+      transition: background 0.15s;
+    }
+    .header-nav-link:hover { background: var(--color-background-secondary); }
+
+    /* ─── View switching ─────────────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ─── Toolbar ────────────────────────────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .search-wrap { flex: 1; min-width: 160px; position: relative; }
+    .search-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px 0 32px;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 999px;
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      outline: none;
+    }
+    .search-input::placeholder { color: var(--color-text-secondary); }
+    .search-input:focus { border-color: #BA7517; }
+    .search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; color: var(--color-text-secondary); pointer-events: none;
+    }
+
+    /* ─── Buttons ────────────────────────────────────────────────────────── */
+    .btn {
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn-primary { background: #7a4a14; color: #fff; }
+    .btn-ghost {
+      background: none;
+      border: 0.5px solid var(--color-border-secondary);
+      color: var(--color-text-secondary);
+    }
+    .btn-danger {
+      background: none;
+      border: 0.5px solid #c0392b;
+      color: #c0392b;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 1.25rem;
+      font-family: var(--font-sans);
+    }
+    .back-btn:hover { color: var(--color-text-primary); }
+
+    /* ─── Filter chips ───────────────────────────────────────────────────── */
+    .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 0.5px solid var(--color-border-secondary);
+      background: none;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      font-family: var(--font-sans);
+      transition: all 0.12s;
+    }
+    .chip.active, .chip:hover {
+      background: var(--color-background-secondary);
+      border-color: #BA7517;
+      color: var(--color-text-primary);
+    }
+
+    /* ─── Sermon card grid ───────────────────────────────────────────────── */
+    .sermon-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .sermon-card {
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+      background: var(--color-background-primary);
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .sermon-card:hover {
+      border-color: var(--color-border-secondary);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .card-speaker { font-size: 12px; color: #7a4a14; margin-bottom: 6px; }
+    .card-meta { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 7px; }
+    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--color-background-secondary);
+      color: var(--color-text-secondary);
+    }
+    .card-summary {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ─── Empty state ────────────────────────────────────────────────────── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-text-secondary);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-title { font-family: var(--font-serif); font-size: 16px; margin-bottom: 6px; }
+    .empty-text { font-size: 13px; }
+
+    /* ─── Detail view ────────────────────────────────────────────────────── */
+    .detail-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+    .detail-speaker { font-size: 14px; color: #7a4a14; margin-bottom: 6px; }
+    .detail-meta {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .detail-meta a { color: #BA7517; text-decoration: none; }
+    .detail-meta a:hover { text-decoration: underline; }
+    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .detail-actions { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+
+    /* ─── Collapsible sections ───────────────────────────────────────────── */
+    .section {
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--color-background-secondary);
+    }
+    .section-header:hover { filter: brightness(0.97); }
+    .section-title { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
+    .section-arrow { font-size: 11px; color: var(--color-text-secondary); transition: transform 0.2s; }
+    .section.open .section-arrow { transform: rotate(90deg); }
+    .section-body { display: none; padding: 16px; }
+    .section.open .section-body { display: block; }
+
+    .summary-text {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--color-text-primary);
+      margin-bottom: 14px;
+    }
+    .key-points { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .key-points li {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .key-points li::before {
+      content: "✦";
+      color: #BA7517;
+      flex-shrink: 0;
+      font-size: 10px;
+      margin-top: 3px;
+    }
+
+    /* ─── Transcript ─────────────────────────────────────────────────────── */
+    .transcript-body { font-size: 13.5px; line-height: 1.75; }
+    .ts-block {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+    .ts-block:last-child { border-bottom: none; }
+    .ts-stamp {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-family: monospace;
+      color: #fff;
+      background: #7a4a14;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-top: 3px;
+      text-decoration: none;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .ts-stamp:hover { opacity: 0.78; }
+    .ts-text { flex: 1; color: var(--color-text-primary); }
+
+    /* ─── Add / Edit form ────────────────────────────────────────────────── */
+    .form-wrap { max-width: 640px; }
+    .form-title { font-family: var(--font-serif); font-size: 18px; font-weight: 600; margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+      margin-bottom: 5px;
+    }
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 8px;
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      outline: none;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: #BA7517; }
+    .form-textarea { min-height: 90px; resize: vertical; }
+    .form-textarea.tall { min-height: 220px; }
+    .form-hint { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; }
+
+    .key-points-editor { display: flex; flex-direction: column; gap: 6px; }
+    .kp-row { display: flex; gap: 6px; }
+    .kp-row .form-input { flex: 1; }
+    .kp-del {
+      background: none;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: 6px;
+      width: 32px;
+      height: 34px;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .kp-del:hover { border-color: #c0392b; color: #c0392b; }
+    .add-kp-btn {
+      font-size: 12px;
+      color: #7a4a14;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: var(--font-sans);
+      margin-top: 4px;
+    }
+    .add-kp-btn:hover { text-decoration: underline; }
+    .form-actions { display: flex; gap: 10px; margin-top: 24px; }
+
+    /* ─── Responsive ─────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .sermon-list { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .detail-title { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+<div class="site-wrap">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="ort-header">
+    <span class="ort-cross">☩</span>
+    <div style="flex:1">
+      <div class="ort-title">Ορθόδοξες Ομιλίες</div>
+      <div class="ort-subtitle">Αρχείο ομιλιών, αναλύσεων &amp; μεταγραφών</div>
+    </div>
+    <a href="main.html" class="header-nav-link">Ημερολόγιο ↗</a>
+  </div>
+
+  <!-- ── LIST VIEW ────────────────────────────────────────────────────────── -->
+  <div id="list-view" class="view active">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="search-input" class="search-input" type="search" placeholder="Αναζήτηση ομιλίας...">
+      </div>
+      <button class="btn btn-primary" onclick="showForm(null)">+ Νέα Ομιλία</button>
+    </div>
+    <div id="filter-chips" class="filter-chips"></div>
+    <div id="sermon-list" class="sermon-list"></div>
+  </div>
+
+  <!-- ── DETAIL VIEW ──────────────────────────────────────────────────────── -->
+  <div id="detail-view" class="view">
+    <button class="back-btn" onclick="showList()">← Πίσω στη λίστα</button>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ── FORM VIEW ────────────────────────────────────────────────────────── -->
+  <div id="form-view" class="view">
+    <button class="back-btn" onclick="cancelForm()">← Άκυρο</button>
+    <div class="form-wrap">
+      <div id="form-title-el" class="form-title">Νέα Ομιλία</div>
+      <form id="sermon-form" onsubmit="saveSermon(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-title">Τίτλος *</label>
+            <input class="form-input" id="f-title" required placeholder="π.χ. Περί Μετανοίας">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-speaker">Ομιλητής *</label>
+            <input class="form-input" id="f-speaker" required placeholder="π.χ. π. Γεώργιος Μεταλληνός">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-date">Ημερομηνία</label>
+            <input class="form-input" id="f-date" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-duration">Διάρκεια</label>
+            <input class="form-input" id="f-duration" placeholder="π.χ. 45:30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-source">Πηγή / URL (προαιρετικό)</label>
+          <input class="form-input" id="f-source" type="url" placeholder="https://youtube.com/...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-tags">Θεματικές ετικέτες</label>
+          <input class="form-input" id="f-tags" placeholder="Νηστεία, Μετάνοια, Αγάπη (με κόμμα)">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-summary">Αναλυτική περίληψη</label>
+          <textarea class="form-textarea" id="f-summary" placeholder="Γράψτε μια αναλυτική περίληψη της ομιλίας..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Βασικά σημεία</label>
+          <div id="key-points-editor" class="key-points-editor"></div>
+          <button type="button" class="add-kp-btn" onclick="addKeyPointRow('')">+ Προσθήκη σημείου</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-transcript">Μεταγραφή</label>
+          <textarea class="form-textarea tall" id="f-transcript"
+            placeholder="Επικολλήστε τη μεταγραφή. Χρησιμοποιήστε timestamps [00:02:15] ή [2:15] για χρονικά σημεία.&#10;&#10;Παράδειγμα:&#10;[00:00:00] Αδελφοί και αδελφές...&#10;[00:05:30] Η νηστεία είναι..."></textarea>
+          <div class="form-hint">Timestamps της μορφής [ΩΩ:ΛΛ:ΔΔ] αναγνωρίζονται αυτόματα. Αν η πηγή είναι YouTube, γίνονται συνδέσμοι.</div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Αποθήκευση</button>
+          <button type="button" class="btn btn-ghost" onclick="cancelForm()">Άκυρο</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /.site-wrap -->
+
+<script>
+// ─── Storage ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'orthodoxSermons';
+
+function loadSermons() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function persistSermons(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// ─── Sample data (inserted on first visit) ────────────────────────────────────
+(function injectSample() {
+  if (loadSermons().length > 0) return;
+  persistSermons([{
+    id: 'sample1',
+    title: 'Η σημασία της νηστείας στην ορθόδοξη πνευματική ζωή',
+    speaker: 'π. Γεώργιος Μεταλληνός',
+    date: '2024-03-10',
+    duration: '42:15',
+    sourceUrl: '',
+    tags: ['Νηστεία', 'Πνευματική ζωή', 'Μεγάλη Τεσσαρακοστή'],
+    summary: 'Ο ομιλητής αναπτύσσει τη θεολογική βάση της νηστείας ως πνευματική άσκηση που απελευθερώνει τον άνθρωπο από τη δουλεία των παθών. Ξεκινά με ιστορική αναδρομή στην πατερική παράδοση, περνά στην ψυχοσωματική διάσταση της εγκράτειας και καταλήγει στην εσχατολογική σημασία της νηστείας ως προγεύση της Βασιλείας.',
+    keyPoints: [
+      'Η νηστεία δεν είναι απλώς αποχή τροφών αλλά ολιστική στροφή προς τον Θεό.',
+      'Η πατερική παράδοση (Βασίλειος, Χρυσόστομος) βλέπει τη νηστεία ως φάρμακο ψυχής και σώματος.',
+      'Η συνύπαρξη νηστείας–προσευχής–ελεημοσύνης αποτελεί τον κλασικό τριπτύχο της ορθόδοξης άσκησης.',
+      'Η υπερβολική αυστηρότητα χωρίς πνευματική κατανόηση μπορεί να οδηγήσει σε υπερηφάνεια.',
+      'Εσχατολογική διάσταση: νηστεύουμε ως πολίτες Βασιλείας που δεν εξαρτώνται από υλικές ανάγκες.'
+    ],
+    transcript: `[00:00:00] Αδελφοί και αδελφές εν Χριστώ, σήμερα θα μιλήσουμε για ένα από τα θεμελιώδη στοιχεία της ορθόδοξης πνευματικής ζωής: τη νηστεία.
+
+[00:02:30] Η νηστεία δεν είναι ανθρώπινη εφεύρεση. Ξεκινά από τον Παράδεισο, όταν ο Θεός θέτει στον Αδάμ και την Εύα την πρώτη εντολή εγκράτειας: «Από παντός ξύλου του παραδείσου βρώσει φαγή, από δε του ξύλου του γινώσκειν καλόν και πονηρόν, ου φάγεσθε».
+
+[00:07:45] Οι Πατέρες της Εκκλησίας, και πρωτίστως ο Μέγας Βασίλειος στον «Λόγο περί νηστείας», μας διδάσκουν ότι η κατάπτωση του ανθρώπου ξεκίνησε από τη λαιμαργία. Άρα η νηστεία είναι η ανάκτηση της αξιοπρέπειάς μας.
+
+[00:14:20] Σε ψυχοσωματικό επίπεδο, η επιστήμη σήμερα επιβεβαιώνει αυτό που γνώριζαν οι ασκητές: η μείωση της τροφής οξύνει τον νου, καθαρίζει κυριολεκτικά τον εγκέφαλο — αυτό που σήμερα λέμε «autophagy».
+
+[00:21:00] Αλλά προσέξτε: η νηστεία χωρίς αγάπη και ταπείνωση γίνεται πνευματική παγίδα. Ο Χρυσόστομος λέει χαρακτηριστικά: «Τι ωφελεί να νηστεύεις από τροφές και να τρως τον αδελφό σου;»
+
+[00:29:15] Η νηστεία της Εκκλησίας — Τετάρτη και Παρασκευή, Μεγάλη Τεσσαρακοστή, νηστεία Αποστόλων, Δεκαπενταύγουστος, Χριστούγεννα — δεν είναι αυθαίρετη. Ακολουθεί το εορτολόγιο και προετοιμάζει για τη Χαρά.
+
+[00:36:40] Κλείνοντας: νηστεύουμε γιατί είμαστε πολίτες μιας άλλης Βασιλείας. Ο άνθρωπος που νηστεύει μαρτυρά ότι δεν ζει «επ' άρτω μόνο», ότι έχει πείνα για τον Θεό. Αυτή είναι η βαθύτερη σημασία.
+
+[00:40:10] Ευχαριστώ. Ερωτήσεις;`
+  }]);
+})();
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let activeTag = null;
+let prevViewId = 'list-view'; // for cancel-form navigation
+
+// ─── View helpers ─────────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showList() {
+  showView('list-view');
+  renderList();
+}
+
+function showDetail(id) {
+  const s = loadSermons().find(x => x.id === id);
+  if (!s) return showList();
+  renderDetail(s);
+  showView('detail-view');
+}
+
+function showForm(id) {
+  prevViewId = id ? 'detail-view' : 'list-view';
+  document.getElementById('form-title-el').textContent = id ? 'Επεξεργασία ομιλίας' : 'Νέα Ομιλία';
+  document.getElementById('edit-id').value = id || '';
+  document.getElementById('sermon-form').reset();
+  document.getElementById('key-points-editor').innerHTML = '';
+
+  if (id) {
+    const s = loadSermons().find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('f-title').value    = s.title;
+    document.getElementById('f-speaker').value  = s.speaker;
+    document.getElementById('f-date').value     = s.date || '';
+    document.getElementById('f-duration').value = s.duration || '';
+    document.getElementById('f-source').value   = s.sourceUrl || '';
+    document.getElementById('f-tags').value     = (s.tags || []).join(', ');
+    document.getElementById('f-summary').value  = s.summary || '';
+    document.getElementById('f-transcript').value = s.transcript || '';
+    (s.keyPoints || []).forEach(kp => addKeyPointRow(kp));
+  } else {
+    addKeyPointRow(''); // start with one blank row
+  }
+
+  showView('form-view');
+}
+
+function cancelForm() {
+  const editId = document.getElementById('edit-id').value;
+  if (editId) showDetail(editId);
+  else showList();
+}
+
+// ─── Key-points editor ────────────────────────────────────────────────────────
+function addKeyPointRow(value) {
+  const editor = document.getElementById('key-points-editor');
+  const row = document.createElement('div');
+  row.className = 'kp-row';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'form-input kp-input';
+  input.placeholder = 'Σημείο...';
+  input.value = value;
+  const del = document.createElement('button');
+  del.type = 'button';
+  del.className = 'kp-del';
+  del.textContent = '✕';
+  del.title = 'Αφαίρεση';
+  del.onclick = () => row.remove();
+  row.appendChild(input);
+  row.appendChild(del);
+  editor.appendChild(row);
+  if (!value) input.focus();
+}
+
+// ─── Save ─────────────────────────────────────────────────────────────────────
+function saveSermon(e) {
+  e.preventDefault();
+  const id = document.getElementById('edit-id').value || genId();
+  const keyPoints = Array.from(document.querySelectorAll('.kp-input'))
+    .map(el => el.value.trim()).filter(Boolean);
+  const rawSource = document.getElementById('f-source').value.trim();
+
+  const sermon = {
+    id,
+    title:     document.getElementById('f-title').value.trim(),
+    speaker:   document.getElementById('f-speaker').value.trim(),
+    date:      document.getElementById('f-date').value,
+    duration:  document.getElementById('f-duration').value.trim(),
+    sourceUrl: rawSource,
+    tags:      document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+    summary:   document.getElementById('f-summary').value.trim(),
+    keyPoints,
+    transcript: document.getElementById('f-transcript').value.trim(),
+  };
+
+  const list = loadSermons();
+  const idx = list.findIndex(s => s.id === id);
+  if (idx >= 0) list[idx] = sermon; else list.unshift(sermon);
+  persistSermons(list);
+  showDetail(id);
+}
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+function deleteSermon(id) {
+  if (!confirm('Να διαγραφεί οριστικά η ομιλία;')) return;
+  persistSermons(loadSermons().filter(s => s.id !== id));
+  showList();
+}
+
+// ─── Render list ──────────────────────────────────────────────────────────────
+function renderList() {
+  const all = loadSermons();
+  const q   = document.getElementById('search-input').value.toLowerCase();
+
+  // Filter chips from unique tags
+  const allTags = [...new Set(all.flatMap(s => s.tags || []))].sort();
+  const chipsEl = document.getElementById('filter-chips');
+  chipsEl.innerHTML = '';
+  if (allTags.length > 0) {
+    const allBtn = mkChip('Όλες', activeTag === null, () => { activeTag = null; renderList(); });
+    chipsEl.appendChild(allBtn);
+    allTags.forEach(tag => {
+      chipsEl.appendChild(mkChip(tag, activeTag === tag, () => { activeTag = tag; renderList(); }));
+    });
+  }
+
+  const filtered = all.filter(s => {
+    const matchTag = !activeTag || (s.tags || []).includes(activeTag);
+    const matchQ   = !q || [s.title, s.speaker, s.summary, ...(s.tags || [])].join(' ').toLowerCase().includes(q);
+    return matchTag && matchQ;
+  });
+
+  const listEl = document.getElementById('sermon-list');
+  listEl.innerHTML = '';
+
+  if (filtered.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `<div class="empty-icon">📖</div>
+      <div class="empty-title">${all.length === 0 ? 'Δεν υπάρχουν ομιλίες ακόμη' : 'Δεν βρέθηκαν αποτελέσματα'}</div>
+      <div class="empty-text">${all.length === 0 ? 'Προσθέστε την πρώτη ομιλία με το κουμπί «+ Νέα Ομιλία».' : 'Δοκιμάστε διαφορετικούς όρους αναζήτησης.'}</div>`;
+    listEl.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'sermon-card';
+    card.onclick = () => showDetail(s.id);
+    const meta = [s.date ? formatDate(s.date) : '', s.duration ? '⏱\u202f' + s.duration : ''].filter(Boolean).join('  ·  ');
+    const tagsHtml = (s.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    card.innerHTML = `
+      <div class="card-title">${esc(s.title)}</div>
+      <div class="card-speaker">${esc(s.speaker)}</div>
+      ${meta ? `<div class="card-meta">${esc(meta)}</div>` : ''}
+      ${tagsHtml ? `<div class="card-tags">${tagsHtml}</div>` : ''}
+      ${s.summary ? `<div class="card-summary">${esc(s.summary)}</div>` : ''}`;
+    listEl.appendChild(card);
+  });
+}
+
+function mkChip(label, isActive, onClick) {
+  const btn = document.createElement('button');
+  btn.className = 'chip' + (isActive ? ' active' : '');
+  btn.textContent = label;
+  btn.onclick = onClick;
+  return btn;
+}
+
+// ─── Render detail ────────────────────────────────────────────────────────────
+function renderDetail(s) {
+  const meta = [
+    s.date     ? `<span>${esc(formatDate(s.date))}</span>` : '',
+    s.duration ? `<span>⏱\u202f${esc(s.duration)}</span>` : '',
+    s.sourceUrl ? `<a href="${escAttr(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">Ηχητικό / Βίντεο ↗</a>` : '',
+  ].filter(Boolean).join('');
+
+  const tagsHtml = (s.tags || [])
+    .map(t => `<span class="tag" style="font-size:11px;padding:3px 9px">${esc(t)}</span>`).join('');
+  const kpHtml = (s.keyPoints || []).length
+    ? `<ul class="key-points">${s.keyPoints.map(kp => `<li>${esc(kp)}</li>`).join('')}</ul>` : '';
+
+  const hasSummarySection = s.summary || kpHtml;
+  const hasTranscript = s.transcript && s.transcript.trim();
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-title">${esc(s.title)}</div>
+    <div class="detail-speaker">${esc(s.speaker)}</div>
+    ${meta ? `<div class="detail-meta">${meta}</div>` : ''}
+    ${tagsHtml ? `<div class="detail-tags">${tagsHtml}</div>` : ''}
+    <div class="detail-actions">
+      <button class="btn btn-ghost" onclick="showForm('${escAttr(s.id)}')">✏ Επεξεργασία</button>
+      <button class="btn btn-danger" onclick="deleteSermon('${escAttr(s.id)}')">Διαγραφή</button>
+    </div>
+
+    ${hasSummarySection ? `
+    <div class="section open" id="sec-summary">
+      <div class="section-header" onclick="toggleSection('sec-summary')">
+        <div class="section-title">Αναλυτική Περίληψη</div>
+        <span class="section-arrow">▶</span>
+      </div>
+      <div class="section-body">
+        ${s.summary ? `<div class="summary-text">${esc(s.summary).replace(/\n/g,'<br>')}</div>` : ''}
+        ${kpHtml}
+      </div>
+    </div>` : ''}
+
+    ${hasTranscript ? `
+    <div class="section open" id="sec-transcript">
+      <div class="section-header" onclick="toggleSection('sec-transcript')">
+        <div class="section-title">Μεταγραφή</div>
+        <span class="section-arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="transcript-body">${parseTranscript(s.transcript, s.sourceUrl || '')}</div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ─── Transcript parser ────────────────────────────────────────────────────────
+function parseTranscript(raw, sourceUrl) {
+  if (!raw) return '';
+  const TS_RE = /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g;
+  const segments = [];
+  let currentTs = null;
+  let currentStart = 0;
+  let match;
+
+  while ((match = TS_RE.exec(raw)) !== null) {
+    if (currentTs !== null) {
+      const text = raw.slice(currentStart, match.index).replace(/^\n+|\n+$/, '');
+      segments.push({ ts: currentTs, text });
+    } else {
+      const leading = raw.slice(0, match.index).trim();
+      if (leading) segments.push({ ts: null, text: leading });
+    }
+    currentTs = match[1];
+    currentStart = match.index + match[0].length;
+  }
+
+  if (currentTs !== null) {
+    segments.push({ ts: currentTs, text: raw.slice(currentStart).replace(/^\n+|\n+$/, '') });
+  } else if (segments.length === 0) {
+    // No timestamps: render plain paragraphs
+    return raw.split(/\n\n+/)
+      .map(p => `<p style="margin-bottom:0.9em">${esc(p.trim()).replace(/\n/g,'<br>')}</p>`)
+      .join('');
+  }
+
+  return segments.map(seg => {
+    const stamp = seg.ts ? buildStamp(seg.ts, sourceUrl) : '';
+    const body  = esc(seg.text).replace(/\n/g, '<br>');
+    return `<div class="ts-block">${stamp ? `<span>${stamp}</span>` : ''}<div class="ts-text">${body}</div></div>`;
+  }).join('');
+}
+
+function buildStamp(ts, sourceUrl) {
+  const ytId = extractYtId(sourceUrl);
+  if (ytId) {
+    const sec = tsToSec(ts);
+    const href = `https://www.youtube.com/watch?v=${encodeURIComponent(ytId)}&t=${sec}s`;
+    return `<a class="ts-stamp" href="${escAttr(href)}" target="_blank" rel="noopener noreferrer" title="YouTube ${ts}">${esc(ts)}</a>`;
+  }
+  return `<span class="ts-stamp">${esc(ts)}</span>`;
+}
+
+function tsToSec(ts) {
+  const p = ts.split(':').map(Number);
+  return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1];
+}
+
+function extractYtId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ─── Accordion ────────────────────────────────────────────────────────────────
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ─── Escape helpers ───────────────────────────────────────────────────────────
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(str) { return esc(str); }
+
+// ─── Date formatting ──────────────────────────────────────────────────────────
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-').map(Number);
+  const months = ['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'];
+  return `${day} ${months[m-1]} ${y}`;
+}
+
+// ─── Search live ──────────────────────────────────────────────────────────────
+document.getElementById('search-input').addEventListener('input', renderList);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+showList();
+</script>
+</body>
+</html>
