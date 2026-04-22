@@ -198,6 +198,25 @@
     .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
     .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
     .footer-text a:hover { text-decoration: underline; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #f3ede4;
+        --color-text-secondary: #c8bcae;
+        --color-text-tertiary: #9b8f81;
+        --color-text-warning: #ffd58a;
+        --color-border-secondary: #5f5141;
+        --color-border-tertiary: #4c4034;
+        --color-background-primary: #1f1a15;
+        --color-background-secondary: #2b241d;
+        --color-background-warning: #49310b;
+      }
+      body {
+        background:
+          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
+          linear-gradient(180deg, #17130f 0%, #211a14 100%);
+      }
+    }
   </style>
 </head>
 

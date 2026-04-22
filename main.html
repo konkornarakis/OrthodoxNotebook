@@ -738,13 +738,8 @@
     .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
     .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
     .footer-text a:hover { text-decoration: underline; }
-    /* ── Namedays & Vestment Colour ──────────────────────────────── */
-    .lit-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 2px; pointer-events: none; opacity: 0.85; border: 0.5px solid rgba(255,255,255,0.25); }
-    .tooltip-lit { display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 11px; color: var(--color-text-secondary); }
-    .tooltip-lit-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.15); }
+    /* ── Namedays ──────────────────────────────────────────────── */
     .tooltip-names { display: block; margin-top: 3px; padding-top: 3px; border-top: 0.5px solid var(--color-border-tertiary); font-size: 11px; color: var(--color-text-secondary); }
-    .today-lit { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 13px; color: var(--color-text-secondary); }
-    .today-lit-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.15); }
     /* ── iCal inline button ─────────────────────────────────────────── */
     .ical-inline-btn { font-size: 11px; opacity: 0.5; letter-spacing: 0.02em; }
     .ical-inline-btn:hover { opacity: 1; }
@@ -963,47 +958,8 @@
     };
 
     function getLiturgicalColor(date, fi) {
-      const mo = date.getMonth() + 1, da = date.getDate();
-      const mmdd = String(mo).padStart(2,'0') + '-' + String(da).padStart(2,'0');
-      const dow = date.getDay();
-      const per = fi.period || '';
-      // Vestment colours follow Byzantine Orthodox tradition:
-      // White/Gold: Lord's feasts | Red: Martyrs & Holy Cross | Blue: Theotokos
-      // Green: Palm Sunday, Pentecost | Purple: Lenten fasting | Dark: Holy Week
-      const FEAST = {
-        '01-06': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Θεοφάνεια' },
-        '01-07': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Αγ. Ιωάννη Προδρόμου' },
-        '03-25': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Ευαγγελισμός Θεοτόκου' },
-        '04-23': { hex: '#9B2335', label: 'Κόκκινο — Άγ. Γεώργιος' },
-        '05-21': { hex: '#9B2335', label: 'Κόκκινο — Κωνσταντίνος & Ελένη' },
-        '06-24': { hex: '#9B2335', label: 'Κόκκινο — Γέννηση Αγ. Ιωάννη Βαπτιστή' },
-        '06-29': { hex: '#9B2335', label: 'Κόκκινο — Αγ. Πέτρος & Παύλος' },
-        '06-30': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Δώδεκα Αποστόλων' },
-        '08-06': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Μεταμόρφωση Σωτήρος' },
-        '08-15': { hex: '#1A4B8C', label: 'Μπλε — Κοίμηση Θεοτόκου' },
-        '08-29': { hex: '#9B2335', label: 'Κόκκινο — Αποτομή Κεφαλής Προδρόμου' },
-        '09-08': { hex: '#1A4B8C', label: 'Μπλε — Γέννηση Θεοτόκου' },
-        '09-14': { hex: '#9B2335', label: 'Κόκκινο — Ύψωση Τιμίου Σταυρού' },
-        '11-08': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Σύναξη Αρχαγγέλων' },
-        '11-21': { hex: '#1A4B8C', label: 'Μπλε — Εισόδια Θεοτόκου' },
-        '12-25': { hex: '#C8A800', label: 'Χρυσό/Λευκό — Χριστούγεννα' },
-        '12-26': { hex: '#9B2335', label: 'Κόκκινο — Σύναξη Θεοτόκου' },
-        '12-27': { hex: '#9B2335', label: 'Κόκκινο — Άγ. Στέφανος Πρωτομάρτυρας' },
-      };
-      if (FEAST[mmdd]) return FEAST[mmdd];
-      // Movable periods
-      if (per === 'Κυριακή Βαϊν') return { hex: '#2A5C38', label: 'Πράσινο — Κυριακή Βαϊν' };
-      if (per === 'Μεγάλη Παρασκευή' || per === 'Μεγάλο Σάββατο') return { hex: '#2D1245', label: 'Σκούρο Μωβ — Μεγάλη Εβδομάδα' };
-      if (per === 'Μεγάλη Εβδομάδα') return { hex: '#2D1245', label: 'Σκούρο Μωβ — Μεγάλη Εβδομάδα' };
-      if (per === 'Διακαινήσιμος Εβδομάδα') return { hex: '#C8A800', label: 'Χρυσό/Λευκό — Διακαινήσιμος' };
-      if (per === 'Εβδομάδα Πεντηκοστής') return { hex: '#2A5C38', label: 'Πράσινο — Πεντηκοστή' };
-      if (per && per.includes('Μεγάλη Τεσσαρακοστή')) return { hex: '#4A1A6A', label: 'Μωβ — Μεγάλη Τεσσαρακοστή' };
-      // Other fasting periods
-      if (fi.calCls === 'cal-strict') return { hex: '#4A1A6A', label: 'Μωβ — αυστηρή νηστεία' };
-      if (['cal-dry','cal-oil','cal-fish'].includes(fi.calCls)) return { hex: '#5A2080', label: 'Μωβ — νηστεία' };
-      // Default
-      if (dow === 0) return { hex: '#B8860B', label: 'Χρυσό — Κυριακή' };
-      return { hex: '#4A7C59', label: 'Πράσινο' };
+      // Vestment color feature removed — keep stub for compatibility
+      return { hex: '', label: '' };
     }
 
     function exportIcal(year) {
@@ -1035,7 +991,6 @@
 
     function renderToday() {
       const fi = getFasting(TODAY);
-      const litColor = getLiturgicalColor(TODAY, fi);
       const mmddT = String(TODAY.getMonth()+1).padStart(2,'0') + '-' + String(TODAY.getDate()).padStart(2,'0');
       const ndToday = (NAMEDAYS[mmddT] || []).join(', ');
       const el = document.getElementById('today-section');
@@ -1046,7 +1001,6 @@
       <div class="today-period">${fi.period || 'Κανονική ημέρα'}</div>
       <div class="today-desc">${fi.desc}</div>
       ${fi.note ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px;">* ${fi.note}</div>` : ''}
-      <div class="today-lit"><span class="today-lit-swatch" style="background:${litColor.hex}"></span>${litColor.label}</div>
       ${ndToday ? `<div style="margin-top:6px;font-size:13px;color:var(--color-text-secondary);">☩ ${ndToday}</div>` : ''}
     </div>
   `;
@@ -1066,14 +1020,12 @@
         const isToday = sameDay(date, TODAY);
         const dow = (date.getDay() + 6) % 7;
         const ttCls = dow <= 1 ? ' tt-left' : dow >= 5 ? ' tt-right' : '';
-        const litColor = getLiturgicalColor(date, fi);
         const mmdd2 = String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
         const ndStr = (NAMEDAYS[mmdd2] || []).join(', ');
         days += `<div class="cal-day ${fi.calCls}${isToday ? ' today-marker' : ''}">
       <span class="cal-num">${d}</span>
       <span class="cal-dot"></span>
-      <span class="lit-dot" style="background:${litColor.hex}" title="${litColor.label}"></span>
-      <span class="tooltip${ttCls}"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span><span class="tooltip-lit"><span class="tooltip-lit-dot" style="background:${litColor.hex}"></span>${litColor.label}</span>${ndStr ? '<span class="tooltip-names">☩ ' + ndStr + '</span>' : ''}</span>
+      <span class="tooltip${ttCls}"><span class="tooltip-label">${fi.label}</span>${fi.period ? '<span class="tooltip-period">' + fi.period + '</span>' : ''}<span class="tooltip-desc">${fi.desc}</span>${ndStr ? '<span class="tooltip-names">☩ ' + ndStr + '</span>' : ''}</span>`
     </div>`;
       }
 
