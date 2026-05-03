@@ -23,7 +23,7 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme]) {
         --color-text-primary: #f3ede4;
         --color-text-secondary: #c8bcae;
         --color-text-tertiary: #9b8f81;
@@ -34,7 +34,7 @@
         --color-background-secondary: #2b241d;
         --color-background-warning: #49310b;
       }
-      body {
+      :root:not([data-theme]) body {
         background:
           radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
           linear-gradient(180deg, #17130f 0%, #211a14 100%);
@@ -57,9 +57,12 @@
       background:
         radial-gradient(circle at top, rgba(186,117,23,0.10), transparent 32%),
         linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .ort-root { padding: 0 0 2rem; }
-    .ort-shell { width: min(100%, 860px); margin: 0 auto; padding: 2rem 1rem 2.5rem; }
+    .ort-root { padding: 0 0 2rem; flex: 1; display: flex; flex-direction: column; }
+    .ort-shell { width: min(100%, 860px); margin: 0 auto; padding: 2rem 1rem 2.5rem; flex: 1; display: flex; flex-direction: column; }
     .ort-header {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 1.5rem; padding-bottom: 1rem;
@@ -80,6 +83,19 @@
       color: var(--color-text-primary); cursor: default; pointer-events: none;
     }
     .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
+    .theme-toggle-btn {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 999px;
+      background: transparent;
+      height: 30px;
+      padding: 0 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .theme-toggle-btn:hover { background: var(--color-background-secondary); }
 
     /* ── Page content ────────────────────────────────────────── */
     .page-intro {
@@ -194,29 +210,29 @@
     }
     .callout strong { color: var(--color-text-primary); }
 
-    .ort-footer { margin-top: 2rem; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
+    .ort-footer { margin-top: auto; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
     .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
     .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
     .footer-text a:hover { text-decoration: underline; }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-text-primary: #f3ede4;
-        --color-text-secondary: #c8bcae;
-        --color-text-tertiary: #9b8f81;
-        --color-text-warning: #ffd58a;
-        --color-border-secondary: #5f5141;
-        --color-border-tertiary: #4c4034;
-        --color-background-primary: #1f1a15;
-        --color-background-secondary: #2b241d;
-        --color-background-warning: #49310b;
-      }
-      body {
-        background:
-          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-          linear-gradient(180deg, #17130f 0%, #211a14 100%);
-      }
+    :root[data-theme="dark"] {
+      --color-text-primary: #f3ede4;
+      --color-text-secondary: #c8bcae;
+      --color-text-tertiary: #9b8f81;
+      --color-text-warning: #ffd58a;
+      --color-border-secondary: #5f5141;
+      --color-border-tertiary: #4c4034;
+      --color-background-primary: #1f1a15;
+      --color-background-secondary: #2b241d;
+      --color-background-warning: #49310b;
+      color-scheme: dark;
     }
+    :root[data-theme="dark"] body {
+      background:
+        radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
+        linear-gradient(180deg, #17130f 0%, #211a14 100%);
+    }
+    :root[data-theme="light"] { color-scheme: light; }
   </style>
 </head>
 
@@ -235,6 +251,7 @@
           <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
           <a href="fasting.html" class="nav-pill active">Περί νηστείας</a>
         </nav>
+        <button id="theme-toggle" class="theme-toggle-btn" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος">Σκοτεινό</button>
       </div>
 
       <div class="page-intro">
@@ -540,5 +557,30 @@
 
     </div>
   </div>
+
+  <script>
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme);
+      else root.removeAttribute('data-theme');
+
+      const btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      const toLabel = effective === 'dark' ? 'Φωτεινό' : 'Σκοτεινό';
+      btn.textContent = toLabel;
+      btn.setAttribute('aria-label', 'Εναλλαγή θέματος σε ' + toLabel.toLowerCase());
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const current = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('themeMode', next);
+      applyTheme(next);
+    }
+
+    applyTheme(localStorage.getItem('themeMode'));
+  </script>
 </body>
 </html>
