@@ -83,19 +83,18 @@
       color: var(--color-text-primary); cursor: default; pointer-events: none;
     }
     .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
-    .theme-toggle-btn {
-      font-size: 12px;
+    .theme-toggle-float {
+      position: fixed; bottom: 28px; left: 28px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--color-background-secondary);
       color: var(--color-text-secondary);
       border: 0.5px solid var(--color-border-tertiary);
-      border-radius: 999px;
-      background: transparent;
-      height: 30px;
-      padding: 0 10px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s;
+      cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 997; transition: background 0.15s;
     }
-    .theme-toggle-btn:hover { background: var(--color-background-secondary); }
+    .theme-toggle-float:hover { background: var(--color-background-primary); }
 
     /* ── Page content ────────────────────────────────────────── */
     .page-intro {
@@ -251,7 +250,6 @@
           <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
           <a href="fasting.html" class="nav-pill active">Περί νηστείας</a>
         </nav>
-        <button id="theme-toggle" class="theme-toggle-btn" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος">Σκοτεινό</button>
       </div>
 
       <div class="page-intro">
@@ -567,9 +565,10 @@
       const btn = document.getElementById('theme-toggle');
       if (!btn) return;
       const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const toLabel = effective === 'dark' ? 'Φωτεινό' : 'Σκοτεινό';
-      btn.textContent = toLabel;
-      btn.setAttribute('aria-label', 'Εναλλαγή θέματος σε ' + toLabel.toLowerCase());
+      const isDark = effective === 'dark';
+      btn.textContent = isDark ? '☀' : '🌙';
+      btn.title = isDark ? 'Φωτεινό θέμα' : 'Σκοτεινό θέμα';
+      btn.setAttribute('aria-label', isDark ? 'Εναλλαγή σε φωτεινό θέμα' : 'Εναλλαγή σε σκοτεινό θέμα');
     }
 
     function toggleTheme() {
@@ -582,5 +581,6 @@
 
     applyTheme(localStorage.getItem('themeMode'));
   </script>
+<button id="theme-toggle" class="theme-toggle-float" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος" title="Σκοτεινό θέμα">🌙</button>
 </body>
 </html>

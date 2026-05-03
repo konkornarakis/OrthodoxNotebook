@@ -107,19 +107,18 @@
       cursor: default; pointer-events: none;
     }
     .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
-    .theme-toggle-btn {
-      font-size: 12px;
+    .theme-toggle-float {
+      position: fixed; bottom: 28px; left: 28px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--color-background-secondary);
       color: var(--color-text-secondary);
       border: 0.5px solid var(--color-border-tertiary);
-      border-radius: 999px;
-      background: transparent;
-      height: 30px;
-      padding: 0 10px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s;
+      cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 997; transition: background 0.15s;
     }
-    .theme-toggle-btn:hover { background: var(--color-background-secondary); }
+    .theme-toggle-float:hover { background: var(--color-background-primary); }
 
     /* ── Views ───────────────────────────────────────────────────────── */
     .view        { display: none; }
@@ -331,6 +330,9 @@
     .action-btn:hover { opacity: 0.78; }
     .btn-wayin  { background: #7a4a14; color: #fff; }
     .btn-source { background: none; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+    .download-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 0.5px solid var(--color-border-tertiary); }
+    .btn-download { background: none; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-tertiary); font-size: 12px; }
+    .btn-download:hover { border-color: var(--color-border-secondary); color: var(--color-text-secondary); opacity: 1; }
 
     /* ── YouTube embed (16:9) ────────────────────────────────────────── */
     .yt-wrap {
@@ -618,7 +620,6 @@
         <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
         <a href="fasting.html" class="nav-pill">Περί νηστείας</a>
       </nav>
-      <button id="theme-toggle" class="theme-toggle-btn" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος">Σκοτεινό</button>
     </div>
 
     <!-- ── LIST VIEW ─────────────────────────────────────────────────── -->
@@ -1171,6 +1172,30 @@ function renderDetail(s) {
       </div>`;
     content.appendChild(sec.firstChild);
   }
+
+  // Download section
+  const hasTranscript = s.transcript && s.transcript.length > 0;
+  const hasSummary = s.summary && s.summary.trim();
+  if (hasTranscript || hasSummary) {
+    const dlEl = document.createElement('div'); dlEl.className = 'download-actions';
+    if (hasTranscript) {
+      const dlTs = document.createElement('button');
+      dlTs.className = 'action-btn btn-download'; dlTs.textContent = '⬇ Μεταγραφή με χρονοσήμανση';
+      dlTs.onclick = () => downloadTranscriptWithTimestamps(s);
+      dlEl.appendChild(dlTs);
+      const dlTxt = document.createElement('button');
+      dlTxt.className = 'action-btn btn-download'; dlTxt.textContent = '⬇ Μεταγραφή κειμένου';
+      dlTxt.onclick = () => downloadTranscriptText(s);
+      dlEl.appendChild(dlTxt);
+    }
+    if (hasSummary) {
+      const dlSum = document.createElement('button');
+      dlSum.className = 'action-btn btn-download'; dlSum.textContent = '⬇ Λήψη περίληψης';
+      dlSum.onclick = () => downloadSummary(s);
+      dlEl.appendChild(dlSum);
+    }
+    content.appendChild(dlEl);
+  }
 }
 
 function renderSummary(text) {
@@ -1191,6 +1216,40 @@ function renderTranscript(segments, sourceUrl) {
     return `<div class="ts-block" data-search="${escAttr(seg.text.toLowerCase())}">` +
            `${stamp}<div class="ts-text">${escapedText}</div></div>`;
   }).join('');
+}
+
+function safeFilename(title) {
+  return title.replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, '_').slice(0, 80);
+}
+
+function downloadBlob(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadTranscriptWithTimestamps(s) {
+  const lines = s.transcript.map(seg => `[${seg.ts}]  ${seg.text}`).join('\n\n');
+  const sep = '\u2015'.repeat(60);
+  const header = [s.title, s.speaker, s.date ? formatDate(s.date) : ''].filter(Boolean).join('\n') + '\n' + sep + '\n\n';
+  downloadBlob(header + lines, safeFilename(s.title) + '_\u03bc\u03b5\u03c4\u03b1\u03b3\u03c1\u03b1\u03c6\u03ae_\u03bc\u03b5_\u03c7\u03c1\u03bf\u03bd\u03bf\u03c3\u03ae\u03bc\u03b1\u03bd\u03c3\u03b7.txt');
+}
+
+function downloadTranscriptText(s) {
+  const lines = s.transcript.map(seg => seg.text).join('\n\n');
+  const sep = '\u2015'.repeat(60);
+  const header = [s.title, s.speaker, s.date ? formatDate(s.date) : ''].filter(Boolean).join('\n') + '\n' + sep + '\n\n';
+  downloadBlob(header + lines, safeFilename(s.title) + '_\u03bc\u03b5\u03c4\u03b1\u03b3\u03c1\u03b1\u03c6\u03ae.txt');
+}
+
+function downloadSummary(s) {
+  const sep = '\u2015'.repeat(60);
+  const header = [s.title, s.speaker, s.date ? formatDate(s.date) : ''].filter(Boolean).join('\n') + '\n' + sep + '\n\n\u03a0\u0395\u03a1\u0399\u039b\u0397\u03a8\u0397\n\n';
+  downloadBlob(header + s.summary, safeFilename(s.title) + '_\u03c0\u03b5\u03c1\u03af\u03bb\u03b7\u03c8\u03b7.txt');
 }
 
 function filterTranscript(q) {
@@ -1255,9 +1314,10 @@ function applyTheme(theme) {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;
   const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  const toLabel = effective === 'dark' ? 'Φωτεινό' : 'Σκοτεινό';
-  btn.textContent = toLabel;
-  btn.setAttribute('aria-label', 'Εναλλαγή θέματος σε ' + toLabel.toLowerCase());
+  const isDark = effective === 'dark';
+  btn.textContent = isDark ? '☀' : '🌙';
+  btn.title = isDark ? 'Φωτεινό θέμα' : 'Σκοτεινό θέμα';
+  btn.setAttribute('aria-label', isDark ? 'Εναλλαγή σε φωτεινό θέμα' : 'Εναλλαγή σε σκοτεινό θέμα');
 }
 
 function toggleTheme() {
@@ -1460,5 +1520,6 @@ window.addEventListener('scroll', () => {
   if (btn) btn.classList.toggle('visible', window.scrollY > 400);
 });
 </script>
+<button id="theme-toggle" class="theme-toggle-float" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος" title="Σκοτεινό θέμα">🌙</button>
 </body>
 </html>
