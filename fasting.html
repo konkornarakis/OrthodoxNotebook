@@ -4,583 +4,287 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Περί Νηστείας — Ορθόδοξο Νηστειοδρόμιο</title>
+  <title>Περί νηστείας — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
   <style>
-    :root {
-      color-scheme: light dark;
-      --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      --font-serif: Georgia, "Times New Roman", serif;
-      --color-text-primary: #1f1f1f;
-      --color-text-secondary: #5b5b5b;
-      --color-text-tertiary: #8a8a8a;
-      --color-text-warning: #7a4f0d;
-      --color-border-secondary: #d8d1c7;
-      --color-border-tertiary: #e8e1d8;
-      --color-background-primary: #fffdfa;
-      --color-background-secondary: #f5f0e8;
-      --border-radius-md: 12px;
-      --border-radius-lg: 18px;
-    }
+    .toc { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 0 0 .5rem; font-size: 14.5px; }
+    .toc a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--rule); }
+    .toc a:hover { color: var(--cinnabar); border-bottom-color: var(--cinnabar); }
 
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme]) {
-        --color-text-primary: #f3ede4;
-        --color-text-secondary: #c8bcae;
-        --color-text-tertiary: #9b8f81;
-        --color-text-warning: #ffd58a;
-        --color-border-secondary: #5f5141;
-        --color-border-tertiary: #4c4034;
-        --color-background-primary: #1f1a15;
-        --color-background-secondary: #2b241d;
-        --color-background-warning: #49310b;
-      }
-      :root:not([data-theme]) body {
-        background:
-          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-          linear-gradient(180deg, #17130f 0%, #211a14 100%);
-      }
-    }
+    .levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 1rem; }
+    .level { display: flex; gap: 12px; padding: .9rem 1rem; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); }
+    .level .seal { margin-top: 6px; }
+    .level-name { font-weight: 600; margin-bottom: 2px; color: var(--ink); }
+    .level-desc { font-size: 14.5px; line-height: 1.55; color: var(--ink-soft); }
 
-    @media (max-width: 620px) {
-      .ort-header { flex-wrap: wrap; }
-      .nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
-      .nav-links::-webkit-scrollbar { display: none; }
-      .nav-pill { flex-shrink: 0; }
-    }
+    .fast { display: flex; gap: 16px; padding: 1.1rem 0; border-bottom: 1px solid var(--rule-soft); }
+    .fast:first-of-type { border-top: 1px solid var(--rule-soft); }
+    .fast-bar { width: 4px; border-radius: 2px; background: currentColor; flex: none; }
+    .fast-body { flex: 1; min-width: 0; color: var(--ink); }
+    .fast-name { font-family: var(--font-display); font-size: 22px; line-height: 1.25; }
+    .fast-dates { font-size: 14.5px; color: var(--ink-soft); font-style: italic; margin: 2px 0 .5rem; }
+    .fast-body p { margin: 0 0 .5rem; line-height: 1.7; }
+    .rules { list-style: none; margin: .4rem 0 0; padding: 0; font-size: 15px; }
+    .rules li { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; }
+    .rules li .seal { width: 9px; height: 9px; position: relative; top: -1px; }
+    .rules li b { font-weight: 600; }
 
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    html { overflow-y: scroll; }
-    body {
-      font-family: var(--font-sans);
-      color: var(--color-text-primary);
-      background:
-        radial-gradient(circle at top, rgba(186,117,23,0.10), transparent 32%),
-        linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .ort-root { padding: 0 0 2rem; flex: 1; display: flex; flex-direction: column; }
-    .ort-shell { width: min(100%, 860px); margin: 0 auto; padding: 2rem 1rem 2.5rem; flex: 1; display: flex; flex-direction: column; }
-    .ort-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 1.5rem; padding-bottom: 1rem;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .ort-cross { font-size: 22px; color: #BA7517; }
-    .ort-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-serif); }
-    .nav-pill {
-      font-size: 12px; color: var(--color-text-secondary); text-decoration: none;
-      white-space: nowrap; padding: 4px 10px;
-      border: 0.5px solid var(--color-border-tertiary); border-radius: 999px;
-      transition: background 0.15s;
-    }
-    .nav-pill:hover { background: var(--color-background-secondary); }
-    .nav-pill.active {
-      background: var(--color-background-secondary);
-      border-color: var(--color-border-secondary);
-      color: var(--color-text-primary); cursor: default; pointer-events: none;
-    }
-    .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
-    .theme-toggle-float {
-      position: fixed; bottom: 28px; left: 28px;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--color-background-secondary);
-      color: var(--color-text-secondary);
-      border: 0.5px solid var(--color-border-tertiary);
-      cursor: pointer; font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      z-index: 997; transition: background 0.15s;
-    }
-    .theme-toggle-float:hover { background: var(--color-background-primary); }
+    .table-wrap { overflow-x: auto; margin-top: .8rem; }
+    table.feasts { width: 100%; border-collapse: collapse; font-size: 15px; }
+    table.feasts th, table.feasts td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+    table.feasts th { font-family: var(--font-display); font-weight: 400; font-size: 15px; color: var(--ink-soft); letter-spacing: .04em; border-bottom-color: var(--rule); }
+    table.feasts td:first-child { white-space: nowrap; color: var(--ink-soft); }
+    table.feasts td.r { color: var(--cinnabar); }
 
-    /* ── Page content ────────────────────────────────────────── */
-    .page-intro {
-      padding: 1.25rem 0 1.5rem;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-      margin-bottom: 1.5rem;
-    }
-    .page-intro-title {
-      font-size: 26px; font-weight: 500; font-family: var(--font-serif);
-      color: var(--color-text-primary); margin-bottom: 0.5rem;
-    }
-    .page-intro-text {
-      font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);
-      max-width: 680px;
-    }
-
-    .section {
-      margin-bottom: 2rem;
-    }
-    .section-heading {
-      font-size: 18px; font-weight: 600; font-family: var(--font-serif);
-      color: var(--color-text-primary); margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .section-text {
-      font-size: 15px; line-height: 1.75; color: var(--color-text-secondary);
-    }
-    .section-text p { margin: 0 0 0.8rem; }
-    .section-text p:last-child { margin-bottom: 0; }
-
-    /* ── Fast type cards ─────────────────────────────────────── */
-    .fast-types {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      margin-top: 0.75rem;
-    }
-    .fast-type-card {
-      display: flex; gap: 12px; align-items: flex-start;
-      padding: 0.9rem 1rem;
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-md);
-      background: var(--color-background-primary);
-    }
-    .fast-type-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      flex-shrink: 0; margin-top: 4px;
-    }
-    .fast-type-name {
-      font-size: 13px; font-weight: 600; color: var(--color-text-primary);
-      margin-bottom: 3px;
-    }
-    .fast-type-desc {
-      font-size: 12px; line-height: 1.45; color: var(--color-text-secondary);
-    }
-
-    /* ── Fasting period rows ─────────────────────────────────── */
-    .fast-periods { margin-top: 0.75rem; }
-    .fast-period-item {
-      display: flex; gap: 14px; align-items: flex-start;
-      padding: 1rem 0;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .fast-period-item:first-child { border-top: 0.5px solid var(--color-border-tertiary); }
-    .fast-period-bar {
-      width: 4px; border-radius: 4px; flex-shrink: 0;
-      align-self: stretch; min-height: 40px;
-    }
-    .fast-period-name {
-      font-size: 15px; font-weight: 600; color: var(--color-text-primary);
-      margin-bottom: 3px;
-    }
-    .fast-period-dates {
-      font-size: 13px; color: var(--color-text-secondary); margin-bottom: 5px;
-    }
-    .fast-period-desc {
-      font-size: 13px; line-height: 1.6; color: var(--color-text-secondary);
-    }
-
-    /* ── Exemptions table ────────────────────────────────────── */
-    .exemptions {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 8px; margin-top: 0.75rem;
-    }
-    .exemption-item {
-      padding: 0.75rem 1rem;
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-md);
-      background: var(--color-background-primary);
-    }
-    .exemption-date {
-      font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 2px;
-    }
-    .exemption-name {
-      font-size: 14px; font-weight: 600; color: var(--color-text-primary);
-      margin-bottom: 2px;
-    }
-    .exemption-rule {
-      font-size: 12px; color: var(--color-text-secondary);
-    }
-
-    /* ── Notes / callout ─────────────────────────────────────── */
-    .callout {
-      padding: 1rem 1.25rem;
-      border-left: 3px solid #BA7517;
-      border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
-      background: var(--color-background-secondary);
-      font-size: 14px; line-height: 1.65; color: var(--color-text-secondary);
-      margin-top: 0.75rem;
-    }
-    .callout strong { color: var(--color-text-primary); }
-
-    .ort-footer { margin-top: auto; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
-    .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
-    .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
-    .footer-text a:hover { text-decoration: underline; }
-
-    :root[data-theme="dark"] {
-      --color-text-primary: #f3ede4;
-      --color-text-secondary: #c8bcae;
-      --color-text-tertiary: #9b8f81;
-      --color-text-warning: #ffd58a;
-      --color-border-secondary: #5f5141;
-      --color-border-tertiary: #4c4034;
-      --color-background-primary: #1f1a15;
-      --color-background-secondary: #2b241d;
-      --color-background-warning: #49310b;
-      color-scheme: dark;
-    }
-    :root[data-theme="dark"] body {
-      background:
-        radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-        linear-gradient(180deg, #17130f 0%, #211a14 100%);
-    }
-    :root[data-theme="light"] { color-scheme: light; }
+    .quote-tr { font-size: 15px; color: var(--ink-soft); font-style: italic; margin: .45rem 0 0; }
   </style>
 </head>
 
 <body>
   <div class="ort-root">
     <div class="ort-shell">
+      <header data-page="fasting" data-title="Περί νηστείας" data-subtitle="Τι είναι, πότε και πώς νηστεύουμε"></header>
 
-      <div class="ort-header">
-        <span class="ort-cross">☩</span>
-        <div style="flex:1">
-          <div class="ort-title">Περί Νηστείας</div>
-        </div>
-        <nav class="nav-links">
-          <a href="main.html" class="nav-pill">Νηστειοδρόμιο</a>
-          <a href="sermons.html" class="nav-pill">Ομιλίες</a>
-          <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
-          <a href="fasting.html" class="nav-pill active">Περί νηστείας</a>
+      <main>
+        <nav class="toc" aria-label="Περιεχόμενα">
+          <a href="#noima">Το νόημα</a>
+          <a href="#vathmides">Οι βαθμίδες</a>
+          <a href="#tetarti">Τετάρτη και Παρασκευή</a>
+          <a href="#tesseris">Οι τέσσερις νηστείες</a>
+          <a href="#katalysi">Εβδομάδες κατάλυσης</a>
+          <a href="#imeres">Ημέρες νηστείας</a>
+          <a href="#eortes">Εορτές και κατάλυση</a>
+          <a href="#klimakos">Ιωάννης της Κλίμακος</a>
+          <a href="#diakrisi">Με διάκριση</a>
         </nav>
-      </div>
 
-      <div class="page-intro">
-        <div class="page-intro-title">Η Ορθόδοξη Νηστεία</div>
-        <p class="page-intro-text">
-          Η νηστεία είναι μία από τις πιο αρχαίες και θεμελιώδεις πρακτικές της Ορθόδοξης
-          Εκκλησίας. Δεν αποτελεί απλώς διατροφικό σχήμα, αλλά πνευματική άσκηση που
-          συνδυάζει εγκράτεια σώματος και ψυχής, αυξημένη προσευχή και ελεημοσύνη.
-          Ο ίδιος ο Κύριος νήστευσε σαράντα ημέρες (Ματθ. 4:2), αφήνοντάς μας παράδειγμα.
-        </p>
-      </div>
-
-      <!-- ── Τι είναι η νηστεία ──────────────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Τι είναι η νηστεία;</div>
-        <div class="section-text">
-          <p>
-            Σύμφωνα με την Ορθόδοξη διδασκαλία, η νηστεία έχει τρεις διαστάσεις:
-            την <strong>εγκράτεια</strong> (αποχή από τροφές και ηδονές),
-            την <strong>προσευχή</strong> (αυξημένη επικοινωνία με τον Θεό)
-            και την <strong>ελεημοσύνη</strong> (προσφορά στον πλησίον).
-            Η σωματική νηστεία χωρίς πνευματικό περιεχόμενο δεν έχει αξία από μόνη της.
-          </p>
-          <p>
-            Η νηστεία αποτελεί «φάρμακο της ψυχής» κατά τους Ιερούς Πατέρες.
-            Βοηθά τον άνθρωπο να ελέγχει τις παρορμήσεις του, να νεκρώνει τα πάθη
-            και να ανοίγει την καρδιά στη χάρη του Θεού.
-          </p>
-        </div>
-      </div>
-
-      <!-- ── Τι τρώμε — είδη νηστείας ───────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Βαθμίδες νηστείας</div>
-        <p class="section-text" style="margin-bottom:0.75rem">
-          Το τυπικό της Ορθόδοξης Εκκλησίας ορίζει διαφορετικές βαθμίδες αποχής.
-          Από την πληρέστερη κατάλυση έως την αυστηρότερη νηστεία:
-        </p>
-        <div class="fast-types">
-          <div class="fast-type-card">
-            <span class="fast-type-dot" style="background:#3B6D11"></span>
-            <div>
-              <div class="fast-type-name">Κατάλυση εις πάντα</div>
-              <div class="fast-type-desc">Επιτρέπονται όλες οι τροφές, συμπεριλαμβανομένων κρέατος, γαλακτοκομικών, αυγών και ψαριού.</div>
-            </div>
+        <!-- ── Το νόημα ───────────────────────────────────────────── -->
+        <section class="section" id="noima">
+          <h2 class="section-heading">Το νόημα της νηστείας</h2>
+          <div class="prose">
+            <p class="initial">Η νηστεία είναι από τις αρχαιότερες πράξεις της Εκκλησίας. Ο ίδιος ο Κύριος νήστεψε σαράντα ημέρες στην έρημο (Ματθ. 4:2), και οι Απόστολοι νήστευαν και προσεύχονταν πριν από κάθε σημαντική απόφαση (Πράξ. 13:2–3). Δεν είναι δίαιτα ούτε κανόνας τροφίμων· είναι άσκηση ολόκληρου του ανθρώπου, που μαθαίνει να μην υποτάσσεται στις επιθυμίες του, για να γίνει ελεύθερος να αγαπήσει τον Θεό και τον πλησίον.</p>
+            <p>Γι’ αυτό η νηστεία δεν στέκεται ποτέ μόνη της. Συνοδεύεται από την <strong>προσευχή</strong>, την <strong>ελεημοσύνη</strong> και τη <strong>μετάνοια</strong>, και οδηγεί στη Θεία Κοινωνία. Όπως ψάλλει η Εκκλησία την πρώτη εβδομάδα της Σαρακοστής:</p>
           </div>
-          <div class="fast-type-card">
-            <span class="fast-type-dot" style="background:#185FA5"></span>
-            <div>
-              <div class="fast-type-name">Κατάλυση ιχθύος</div>
-              <div class="fast-type-desc">Νηστεία αλλά επιτρέπεται ψάρι (με πτερύγια και λέπια), λάδι και κρασί.</div>
-            </div>
-          </div>
-          <div class="fast-type-card">
-            <span class="fast-type-dot" style="background:#BA7517"></span>
-            <div>
-              <div class="fast-type-name">Κατάλυση οίνου &amp; ελαίου</div>
-              <div class="fast-type-desc">Νηστεία χωρίς ψάρι. Επιτρέπεται λάδι και κρασί, καθώς και θαλασσινά χωρίς αίμα (χταπόδι, καλαμάρι κ.ά.).</div>
-            </div>
-          </div>
-          <div class="fast-type-card">
-            <span class="fast-type-dot" style="background:#A32D2D"></span>
-            <div>
-              <div class="fast-type-name">Νηστεία (ξηροφαγία)</div>
-              <div class="fast-type-desc">Αυστηρή νηστεία χωρίς ψάρι, χωρίς λάδι, χωρίς κρασί. Κατανάλωση ξηρών τροφών (όσπρια, λαχανικά, ψωμί, φρούτα).</div>
-            </div>
-          </div>
-          <div class="fast-type-card">
-            <span class="fast-type-dot" style="background:#4A148C"></span>
-            <div>
-              <div class="fast-type-name">Αυστηρή νηστεία</div>
-              <div class="fast-type-desc">Κατά τη Μεγάλη Εβδομάδα. Ορισμένες ημέρες (π.χ. Μεγάλη Παρασκευή) η παράδοση ορίζει αποχή ακόμα και από νερό μέχρι τον Εσπερινό.</div>
-            </div>
-          </div>
-        </div>
-      </div>
+          <blockquote class="hymn">
+            <p class="hymn-text">Νηστεύοντες σωματικῶς, ἀδελφοί, νηστεύσωμεν καὶ πνευματικῶς· διαλύσωμεν πάντα σύνδεσμον ἀδικίας.</p>
+            <cite class="hymn-src">Τριώδιο, Α΄ εβδομάδα των Νηστειών</cite>
+          </blockquote>
+          <blockquote class="hymn">
+            <p class="hymn-text">Ἀληθὴς νηστεία ἡ τῶν κακῶν ἀλλοτρίωσις, ἐγκράτεια γλώσσης, θυμοῦ ἀποχή, ἐπιθυμιῶν χωρισμός, καταλαλιᾶς, ψεύδους, ἐπιορκίας.</p>
+            <cite class="hymn-src">Μέγας Βασίλειος, Περί νηστείας, Λόγος Β΄</cite>
+            <p class="quote-tr">Αληθινή νηστεία είναι η απομάκρυνση από το κακό: η εγκράτεια της γλώσσας, η αποχή από τον θυμό, ο χωρισμός από τις επιθυμίες, την κατάκριση, το ψέμα και την επιορκία.</p>
+          </blockquote>
+        </section>
 
-      <!-- ── Τετάρτη και Παρασκευή ──────────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Τετάρτη και Παρασκευή</div>
-        <div class="section-text">
-          <p>
-            Κάθε Τετάρτη και Παρασκευή είναι ημέρες νηστείας καθ' όλη τη διάρκεια
-            του έτους (εκτός από τις αναλυτικές εβδομάδες).
-          </p>
-          <p>
-            <strong>Τετάρτη:</strong> Την ημέρα αυτή ο Ιούδας συνομολόγησε με τους
-            αρχιερείς να παραδώσει τον Χριστό (Ματθ. 26:14–16). Νηστεύουμε εις
-            ανάμνηση αυτής της προδοσίας.
-          </p>
-          <p>
-            <strong>Παρασκευή:</strong> Η ημέρα της Σταυρώσεως του Κυρίου. Νηστεύουμε
-            εις ανάμνηση των Παθών Του και ως έκφραση ευγνωμοσύνης για τη Θυσία Του.
-          </p>
-        </div>
-        <div class="callout">
-          <strong>Σε περιόδους ανάλυσης</strong> (π.χ. Διακαινήσιμη Εβδομάδα, Χριστουγεννιάτικη
-          αναλυτική εβδομάδα κ.ά.) η νηστεία Τετάρτης και Παρασκευής αίρεται.
-          Υπάρχουν επίσης ειδικές εορτές κατά τις οποίες, ακόμα και αν πέφτουν
-          Τετάρτη ή Παρασκευή, επιτρέπεται κατάλυση ψαριού ή ελαίου.
-        </div>
-      </div>
+        <!-- ── Βαθμίδες ───────────────────────────────────────────── -->
+        <section class="section" id="vathmides">
+          <h2 class="section-heading">Οι βαθμίδες της νηστείας</h2>
+          <div class="prose">
+            <p>Στα εκκλησιαστικά ημερολόγια κάθε ημέρα σημειώνεται με το τι «καταλύεται», δηλαδή τι επιτρέπεται να φάμε. Από την πιο ελαφριά προς την αυστηρότερη:</p>
+          </div>
+          <div class="levels">
+            <div class="level"><span class="seal lv-none"></span><div><div class="level-name">Χωρίς νηστεία</div><div class="level-desc">Επιτρέπονται όλες οι τροφές. Όταν αυτό ισχύει για ολόκληρη εβδομάδα, μιλάμε για «κατάλυση εις πάντα».</div></div></div>
+            <div class="level"><span class="seal lv-dairy"></span><div><div class="level-name">Κατάλυση γαλακτερών</div><div class="level-desc">Μόνο την εβδομάδα της Τυρινής: γαλακτερά, αυγά και ψάρι, όχι κρέας.</div></div></div>
+            <div class="level"><span class="seal lv-fish"></span><div><div class="level-name">Κατάλυση ιχθύος</div><div class="level-desc">Νηστεία, αλλά επιτρέπονται ψάρι, λάδι και κρασί.</div></div></div>
+            <div class="level"><span class="seal lv-oil"></span><div><div class="level-name">Κατάλυση οίνου και ελαίου</div><div class="level-desc">Νηστήσιμα φαγητά με λάδι, και κρασί. Όχι ψάρι.</div></div></div>
+            <div class="level"><span class="seal lv-dry"></span><div><div class="level-name">Αλάδωτη νηστεία</div><div class="level-desc">Νηστήσιμα χωρίς λάδι και κρασί. Κατά το αυστηρό Τυπικό λέγεται ξηροφαγία: ψωμί, όσπρια και λαχανικά χωρίς λάδι, φρούτα, ξηροί καρποί.</div></div></div>
+            <div class="level"><span class="seal lv-strict"></span><div><div class="level-name">Ολική νηστεία</div><div class="level-desc">Η Μεγάλη Παρασκευή: κατά την παράδοση δεν τρώμε τίποτα έως το απόγευμα· όποιος δεν αντέχει, τρώει λίγο και χωρίς λάδι.</div></div></div>
+          </div>
+          <div class="prose" style="margin-top:1rem">
+            <p class="muted">Τα θαλασσινά χωρίς αίμα (καλαμάρια, χταπόδι, σουπιές, γαρίδες, μύδια) θεωρούνται κατά την κοινή πράξη νηστήσιμα. Η χρήση τους όμως για πολυτελή τραπέζια αντιστρατεύεται το πνεύμα της νηστείας.</p>
+          </div>
+        </section>
 
-      <!-- ── Τέσσερις μεγάλες νηστείες ──────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Τέσσερις μεγάλες νηστείες</div>
-        <div class="fast-periods">
+        <!-- ── Τετάρτη και Παρασκευή ──────────────────────────────── -->
+        <section class="section" id="tetarti">
+          <h2 class="section-heading">Τετάρτη και Παρασκευή</h2>
+          <div class="prose">
+            <p>Ήδη από την εποχή των Αποστόλων (Διδαχή, 8) οι χριστιανοί νηστεύουν κάθε <strong>Τετάρτη</strong>, σε ανάμνηση της συμφωνίας του Ιούδα με τους αρχιερείς για την προδοσία του Κυρίου (Ματθ. 26:14–16), και κάθε <strong>Παρασκευή</strong>, σε ανάμνηση της Σταύρωσης. Η νηστεία είναι αλάδωτη σε όλο το έτος, με τις εξής εξαιρέσεις:</p>
+            <ul>
+              <li>στις τέσσερις <a href="#katalysi">εβδομάδες κατάλυσης</a> δεν νηστεύουμε καθόλου·</li>
+              <li>την εβδομάδα της Τυρινής τρώμε γαλακτερά, αυγά και ψάρι·</li>
+              <li>από την Κυριακή του Θωμά έως την Πεντηκοστή, λόγω της χαράς της Αναστάσεως, έχουμε κατάλυση οίνου και ελαίου· τη Μεσοπεντηκοστή και την Απόδοση του Πάσχα και ψάρι·</li>
+              <li>όταν σε Τετάρτη ή Παρασκευή πέσει μεγάλη εορτή, η νηστεία ελαφρύνει (δείτε <a href="#eortes">παρακάτω</a>).</li>
+            </ul>
+          </div>
+        </section>
 
-          <div class="fast-period-item">
-            <div class="fast-period-bar" style="background:#A32D2D"></div>
-            <div>
-              <div class="fast-period-name">Μεγάλη Τεσσαρακοστή</div>
-              <div class="fast-period-dates">Καθαρά Δευτέρα — Μεγάλο Σάββατο (κινητή)</div>
-              <div class="fast-period-desc">
-                Η πιο σημαντική και αυστηρή νηστεία του έτους. Διαρκεί 48 ημέρες
-                και ολοκληρώνεται με τον εορτασμό της Αναστάσεως. Κατά την
-                Καθαρά Δευτέρα και τη Μεγάλη Εβδομάδα η νηστεία είναι ιδιαίτερα
-                αυστηρή. Η Μεγάλη Παρασκευή είναι αυστηρότατη νηστεία.
-              </div>
+        <!-- ── Οι τέσσερις νηστείες ───────────────────────────────── -->
+        <section class="section" id="tesseris">
+          <h2 class="section-heading">Οι τέσσερις μεγάλες νηστείες</h2>
+
+          <div class="fast lv-dry">
+            <span class="fast-bar"></span>
+            <div class="fast-body">
+              <div class="fast-name">Μεγάλη Τεσσαρακοστή και Μεγάλη Εβδομάδα</div>
+              <div class="fast-dates">Από την Καθαρά Δευτέρα έως το Μεγάλο Σάββατο (κινητή, εξαρτάται από το Πάσχα)</div>
+              <p>Η αρχαιότερη και αυστηρότερη νηστεία. Η Τεσσαρακοστή είναι σαράντα ημέρες, από την Καθαρά Δευτέρα έως την Παρασκευή πριν από το Σάββατο του Λαζάρου· ακολουθούν το Σάββατο του Λαζάρου, η Κυριακή των Βαΐων και η Μεγάλη Εβδομάδα, συνολικά σαράντα οκτώ ημέρες νηστείας.</p>
+              <ul class="rules">
+                <li><span class="seal lv-dry"></span><span><b>Δευτέρα έως Παρασκευή:</b> αλάδωτα. Την Καθαρά Δευτέρα τρώμε λαγάνα, ταραμά και θαλασσινά.</span></li>
+                <li><span class="seal lv-oil"></span><span><b>Σάββατο και Κυριακή:</b> λάδι και κρασί. Το ίδιο τις εορτές της Ευρέσεως της Κεφαλής του Προδρόμου (24/2) και των Αγίων Τεσσαράκοντα (9/3), και την Πέμπτη του Μεγάλου Κανόνα.</span></li>
+                <li><span class="seal lv-fish"></span><span><b>Ευαγγελισμός (25/3) και Κυριακή των Βαΐων:</b> ψάρι.</span></li>
+                <li><span class="seal lv-oil"></span><span><b>Σάββατο του Λαζάρου:</b> λάδι και κρασί· κατά την παράδοση και αυγοτάραχο.</span></li>
+                <li><span class="seal lv-dry"></span><span><b>Μεγάλη Δευτέρα, Τρίτη, Τετάρτη:</b> αλάδωτα.</span></li>
+                <li><span class="seal lv-oil"></span><span><b>Μεγάλη Πέμπτη:</b> λάδι και κρασί, για τη μνήμη του Μυστικού Δείπνου.</span></li>
+                <li><span class="seal lv-strict"></span><span><b>Μεγάλη Παρασκευή:</b> ολική νηστεία.</span></li>
+                <li><span class="seal lv-dry"></span><span><b>Μεγάλο Σάββατο:</b> αλάδωτα· το μόνο Σάββατο του έτους χωρίς λάδι.</span></li>
+              </ul>
             </div>
           </div>
 
-          <div class="fast-period-item">
-            <div class="fast-period-bar" style="background:#185FA5"></div>
-            <div>
-              <div class="fast-period-name">Νηστεία Αγίων Αποστόλων</div>
-              <div class="fast-period-dates">Δευτέρα μετά την Κυριακή των Αγίων Πάντων — 28 Ιουνίου</div>
-              <div class="fast-period-desc">
-                Αρχίζει μία εβδομάδα μετά την Πεντηκοστή και ολοκληρώνεται
-                την παραμονή της εορτής των Αγίων Αποστόλων Πέτρου και Παύλου
-                (29 Ιουνίου). Η διάρκειά της ποικίλλει από χρόνο σε χρόνο ανάλογα
-                με την ημερομηνία του Πάσχα.
-              </div>
+          <div class="fast lv-fish">
+            <span class="fast-bar"></span>
+            <div class="fast-body">
+              <div class="fast-name">Νηστεία των Αγίων Αποστόλων</div>
+              <div class="fast-dates">Από τη Δευτέρα μετά την Κυριακή των Αγίων Πάντων έως τις 28 Ιουνίου</div>
+              <p>Η διάρκειά της εξαρτάται από την ημερομηνία του Πάσχα: όσο νωρίτερα το Πάσχα, τόσο μεγαλύτερη. Μπορεί να κρατήσει σχεδόν ένα μήνα ή, όταν το Πάσχα είναι πολύ αργά, να μην υπάρχει καθόλου. Τελειώνει με την εορτή των Αγίων Αποστόλων Πέτρου και Παύλου (29 Ιουνίου).</p>
+              <ul class="rules">
+                <li><span class="seal lv-fish"></span><span><b>Όλες τις ημέρες:</b> ψάρι, λάδι και κρασί.</span></li>
+                <li><span class="seal lv-dry"></span><span><b>Τετάρτη και Παρασκευή:</b> αλάδωτα.</span></li>
+                <li><span class="seal lv-fish"></span><span><b>Γενέθλιο του Προδρόμου (24/6):</b> ψάρι, όποια ημέρα κι αν πέσει.</span></li>
+              </ul>
             </div>
           </div>
 
-          <div class="fast-period-item">
-            <div class="fast-period-bar" style="background:#BA7517"></div>
-            <div>
-              <div class="fast-period-name">Νηστεία Θεοτόκου (Δεκαπενταύγουστος)</div>
-              <div class="fast-period-dates">1 — 14 Αυγούστου</div>
-              <div class="fast-period-desc">
-                Δεκαπενθήμερη νηστεία που αφιερώνεται στην Υπεραγία Θεοτόκο
-                και ολοκληρώνεται με την εορτή της Κοιμήσεώς Της (15 Αυγούστου).
-                Σε ένταση η νηστεία αυτή μοιάζει με τη Μεγάλη Τεσσαρακοστή —
-                Τετάρτη και Παρασκευή αυστηρή ξηροφαγία, τα Σάββατα και
-                Κυριακές επιτρέπεται κατάλυση ελαίου και οίνου.
-              </div>
+          <div class="fast lv-dry">
+            <span class="fast-bar"></span>
+            <div class="fast-body">
+              <div class="fast-name">Νηστεία της Θεοτόκου (Δεκαπενταύγουστος)</div>
+              <div class="fast-dates">1 – 14 Αυγούστου</div>
+              <p>Δεκατέσσερις ημέρες νηστείας προς τιμήν της Θεοτόκου, πριν από την εορτή της Κοιμήσεώς της (15 Αυγούστου). Είναι αυστηρή, όπως η Μεγάλη Τεσσαρακοστή, και συνοδεύεται από τις Παρακλήσεις στην Παναγία.</p>
+              <ul class="rules">
+                <li><span class="seal lv-dry"></span><span><b>Δευτέρα έως Παρασκευή:</b> αλάδωτα.</span></li>
+                <li><span class="seal lv-oil"></span><span><b>Σάββατο και Κυριακή:</b> λάδι και κρασί.</span></li>
+                <li><span class="seal lv-fish"></span><span><b>Μεταμόρφωση του Σωτήρος (6/8):</b> ψάρι, όποια ημέρα κι αν πέσει.</span></li>
+              </ul>
             </div>
           </div>
 
-          <div class="fast-period-item">
-            <div class="fast-period-bar" style="background:#4A148C"></div>
-            <div>
-              <div class="fast-period-name">Νηστεία Χριστουγέννων</div>
-              <div class="fast-period-dates">15 Νοεμβρίου — 24 Δεκεμβρίου</div>
-              <div class="fast-period-desc">
-                Σαραντάλεπτη νηστεία που προετοιμάζει τους πιστούς για τη
-                Γέννηση του Χριστού. Η νηστεία αυτή είναι σχετικά επιεικής
-                τις πρώτες εβδομάδες, αυστηροποιείται όμως την τελευταία
-                εβδομάδα πριν τα Χριστούγεννα.
-              </div>
+          <div class="fast lv-fish">
+            <span class="fast-bar"></span>
+            <div class="fast-body">
+              <div class="fast-name">Νηστεία των Χριστουγέννων</div>
+              <div class="fast-dates">15 Νοεμβρίου – 24 Δεκεμβρίου</div>
+              <p>Σαράντα ημέρες προετοιμασίας για τη Γέννηση του Κυρίου, γι’ αυτό λέγεται και «Σαρανταήμερο». Είναι ελαφρύτερη στην αρχή και γίνεται αυστηρότερη όσο πλησιάζουν τα Χριστούγεννα.</p>
+              <ul class="rules">
+                <li><span class="seal lv-fish"></span><span><b>15 Νοεμβρίου – 17 Δεκεμβρίου:</b> ψάρι, λάδι και κρασί, εκτός Τετάρτης και Παρασκευής.</span></li>
+                <li><span class="seal lv-fish"></span><span><b>Εισόδια της Θεοτόκου (21/11):</b> ψάρι, όποια ημέρα κι αν πέσει.</span></li>
+                <li><span class="seal lv-oil"></span><span><b>18 – 23 Δεκεμβρίου:</b> λάδι και κρασί, όχι ψάρι, εκτός Τετάρτης και Παρασκευής.</span></li>
+                <li><span class="seal lv-dry"></span><span><b>Τετάρτη και Παρασκευή:</b> αλάδωτα σε όλη τη διάρκεια.</span></li>
+                <li><span class="seal lv-dry"></span><span><b>Παραμονή των Χριστουγέννων (24/12):</b> αλάδωτα· αν πέσει Σάββατο ή Κυριακή, λάδι.</span></li>
+              </ul>
+              <p class="muted" style="margin-top:.5rem">Κατά την αγιορείτικη τάξη το ψάρι σταματά νωρίτερα, στις 12 Δεκεμβρίου, την εορτή του Αγίου Σπυρίδωνος.</p>
             </div>
           </div>
+        </section>
 
-        </div>
-      </div>
+        <!-- ── Εβδομάδες κατάλυσης ────────────────────────────────── -->
+        <section class="section" id="katalysi">
+          <h2 class="section-heading">Οι εβδομάδες κατάλυσης</h2>
+          <div class="prose">
+            <p>Τέσσερις φορές τον χρόνο η Εκκλησία καταργεί ακόμη και τη νηστεία της Τετάρτης και της Παρασκευής («κατάλυση εις πάντα»):</p>
+            <ul>
+              <li><strong>Το Δωδεκαήμερο</strong>, από τα Χριστούγεννα έως τις 4 Ιανουαρίου.</li>
+              <li><strong>Την εβδομάδα του Τελώνου και του Φαρισαίου</strong>, την πρώτη του Τριωδίου, για να μη μοιάσουμε στον Φαρισαίο που καυχιόταν «νηστεύω δὶς τοῦ σαββάτου» (Λουκ. 18:12).</li>
+              <li><strong>Τη Διακαινήσιμη εβδομάδα</strong>, από το Πάσχα έως την Κυριακή του Θωμά.</li>
+              <li><strong>Την εβδομάδα μετά την Πεντηκοστή</strong>, έως την Κυριακή των Αγίων Πάντων.</li>
+            </ul>
+            <p>Την εβδομάδα της Απόκρεω (του Ασώτου) η Τετάρτη και η Παρασκευή νηστεύονται κανονικά. Την επόμενη, της Τυρινής, δεν τρώμε κρέας, αλλά επιτρέπονται κάθε ημέρα γαλακτερά, αυγά και ψάρι.</p>
+          </div>
+        </section>
 
-      <!-- ── Εορτές που αίρουν ──────────────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Αναλύσεις σε εορτές</div>
-        <p class="section-text" style="margin-bottom:0.75rem">
-          Ορισμένες μεγάλες εορτές αίρουν ή χαλαρώνουν τη νηστεία, ακόμα και
-          εντός νηστείας περιόδου:
-        </p>
-        <div class="exemptions">
-          <div class="exemption-item">
-            <div class="exemption-date">25 Μαρτίου</div>
-            <div class="exemption-name">Ευαγγελισμός Θεοτόκου</div>
-            <div class="exemption-rule">Κατάλυση ιχθύος (ακόμα και κατά τη Μεγάλη Τεσσαρακοστή)</div>
+        <!-- ── Ημέρες νηστείας ────────────────────────────────────── -->
+        <section class="section" id="imeres">
+          <h2 class="section-heading">Ημέρες νηστείας μέσα στο έτος</h2>
+          <div class="prose">
+            <p>Εκτός από τις μεγάλες περιόδους, τέσσερις ημέρες νηστεύονται αλάδωτα όποια ημέρα της εβδομάδας κι αν πέσουν. Αν πέσουν Σάββατο ή Κυριακή, επιτρέπεται το λάδι.</p>
           </div>
-          <div class="exemption-item">
-            <div class="exemption-date">Κυριακή Βαΐων</div>
-            <div class="exemption-name">Είσοδος εις Ιερουσαλήμ</div>
-            <div class="exemption-rule">Κατάλυση ιχθύος</div>
+          <div class="table-wrap">
+            <table class="feasts">
+              <thead><tr><th>Ημερομηνία</th><th>Ημέρα</th></tr></thead>
+              <tbody>
+                <tr><td>5 Ιανουαρίου</td><td>Παραμονή των Θεοφανείων</td></tr>
+                <tr><td>29 Αυγούστου</td><td>Αποτομή της Τιμίας Κεφαλής του Τιμίου Προδρόμου</td></tr>
+                <tr><td>14 Σεπτεμβρίου</td><td>Ύψωση του Τιμίου Σταυρού</td></tr>
+                <tr><td>24 Δεκεμβρίου</td><td>Παραμονή των Χριστουγέννων</td></tr>
+              </tbody>
+            </table>
           </div>
-          <div class="exemption-item">
-            <div class="exemption-date">29 Ιουνίου</div>
-            <div class="exemption-name">Αγ. Πέτρος &amp; Παύλος</div>
-            <div class="exemption-rule">Τέλος νηστείας Αποστόλων — κατάλυση εις πάντα</div>
-          </div>
-          <div class="exemption-item">
-            <div class="exemption-date">6 Αυγούστου</div>
-            <div class="exemption-name">Μεταμόρφωση του Σωτήρος</div>
-            <div class="exemption-rule">Κατάλυση ιχθύος (εντός νηστείας Θεοτόκου)</div>
-          </div>
-          <div class="exemption-item">
-            <div class="exemption-date">Διακαινήσιμη Εβδομάδα</div>
-            <div class="exemption-name">Μετά το Πάσχα</div>
-            <div class="exemption-rule">Κατάλυση εις πάντα καθ' όλη την εβδομάδα</div>
-          </div>
-          <div class="exemption-item">
-            <div class="exemption-date">Μεσοπεντηκοστή — Πεντηκοστή</div>
-            <div class="exemption-name">Αναλυτική εβδομάδα</div>
-            <div class="exemption-rule">Κατάλυση εις πάντα</div>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- ── Ο Άγιος Ιωάννης της Κλίμακος ─────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Ο Άγιος Ιωάννης ο Κλίμακος για τη Νηστεία</div>
-        <div class="section-text">
-          <p>
-            Ο Άγιος Ιωάννης ο Σιναΐτης (περ. 579–649 μ.Χ.), γνωστός ως <em>Κλίμακος</em>
-            από το μνημειώδες έργο του <em>Κλίμαξ Παραδείσου</em>, αφιέρωσε ολόκληρη
-            την <strong>ΙΔ΄ Βαθμίδα</strong> (από τις 30) στη νηστεία. Για τον Κλίμακο,
-            η νηστεία δεν είναι απλή αποχή από τροφές, αλλά θεμέλιο κάθε πνευματικής
-            ανάβασης — η «μητέρα των αρετών».
-          </p>
-          <p>
-            Ορίζει τη νηστεία ως <em>«βία φύσεως»</em>: συνειδητή αντίσταση στις φυσικές
-            ορέξεις που καθιστά τον νου ελεύθερο για προσευχή. Σβήνει, κατά τη διδασκαλία
-            του, τις «πυρφόρες φλόγες» της αργίας και των παθών, και φέρνει καθαρότητα
-            στον εσωτερικό άνθρωπο.
-          </p>
-        </div>
-        <div class="callout">
-          <strong>«Νηστεία ἐστι βία φύσεως, ἀποκοπὴ τοῦ γαργαλισμοῦ τοῦ λάρυγγος,
-          σβέσις πυρφόρου φλογός, κακῶν λογισμῶν ἀπόνοια, καθαρότης προσευχῆς,
-          φωτισμὸς ψυχῆς, φυλακὴ νοός, σωφροσύνης τρόφος, ἡσυχίας διδάσκαλος,
-          ἀρετῶν ἐργαστήριον.»</strong><br>
-          — Κλίμαξ Παραδείσου, ΙΔ΄ Βαθμίς
-        </div>
-        <div class="section-text" style="margin-top:1.25rem">
-          <p>
-            Κεντρική επισήμανση του Κλίμακος είναι η σύνδεση <strong>γαστριμαργίας
-            και πτώσης</strong>. Θεωρεί τη γαστριμαργία «αρχή» (πρωταρχία) των οκτώ
-            παθών, διότι ένα χορτασμένο σώμα γεννά λήθαργο, κενοδοξία και ακαθαρσία.
-            Αντίθετα, η νηστεία οξύνει τον νου και κάνει την ψυχή «ελαφρά ωσεί πτηνόν»,
-            ικανή να ανυψωθεί στη θεωρία.
-          </p>
-          <p>
-            Ωστόσο, ο Κλίμακος φυλάσσεται από κάθε άκρο. Διδάσκει ότι η νηστεία
-            πρέπει να είναι <strong>«κατά δύναμιν»</strong> — ανάλογη με την ηλικία,
-            την υγεία και την πνευματική κατάσταση του καθενός, πάντοτε υπό την
-            καθοδήγηση πνευματικού πατέρα. Η αυθαίρετη ή υπερβολική νηστεία έξω
-            από υπακοή μπορεί να γεννήσει υπερηφάνεια — βαρύτερη ασθένεια από
-            αυτήν που επιχειρεί να θεραπεύσει.
-          </p>
-        </div>
-        <div class="callout">
-          <strong>«Μὴ ἀπατηθῇς, ἀδελφέ· εἶδον ἄνδρας φιλήδονοι μοι φαινομένους ἐκ
-          πολυφαγίας, οἳ διὰ τοῦτο αὐτὸ κατεφρόνησαν τοῦ ἁγνισμοῦ τῆς ψυχῆς.
-          Πείνα καὶ δίψα ψυχῆς κτᾶται ταπείνωσιν· κόρος δὲ ἐνδόσιμα παθῶν.»</strong><br>
-          — Κλίμαξ Παραδείσου, ΙΔ΄ Βαθμίς
-        </div>
-        <div class="section-text" style="margin-top:1.25rem">
-          <p>
-            Στην <em>Επιστολή προς Ποιμένα</em> του, ο Κλίμακος αναφέρει επίσης ότι ο
-            ποιμένας οφείλει να προσαρμόζει τη νηστεία στην ιδιαιτερότητα κάθε
-            ψυχής: δεν υπάρχει ένα και μόνο μέτρο για όλους. Η νηστεία επιτελεί
-            τον σκοπό της μόνο όταν συνοδεύεται από <em>ταπείνωση, προσευχή
-            και διάκριση</em> — χωρίς αυτά, μένει σωματική άσκηση χωρίς πνευματικό
-            καρπό.
-          </p>
-        </div>
-      </div>
+        <!-- ── Εορτές ─────────────────────────────────────────────── -->
+        <section class="section" id="eortes">
+          <h2 class="section-heading">Εορτές που ελαφρύνουν τη νηστεία</h2>
+          <div class="prose">
+            <p>Όταν μεγάλη εορτή πέσει σε Τετάρτη ή Παρασκευή, η νηστεία ελαφρύνει. Στις εορτές του Κυρίου, της Θεοτόκου και του Τιμίου Προδρόμου καταλύεται ψάρι· στις εορτές μεγάλων αγίων λάδι και κρασί.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="feasts">
+              <thead><tr><th>Ημερομηνία</th><th>Εορτή</th><th>Τετάρτη ή Παρασκευή</th></tr></thead>
+              <tbody>
+                <tr><td>6 Ιανουαρίου</td><td class="r">Θεοφάνεια</td><td>Κατάλυση εις πάντα</td></tr>
+                <tr><td>7 Ιανουαρίου</td><td>Σύναξη του Τιμίου Προδρόμου</td><td>Ψάρι</td></tr>
+                <tr><td>2 Φεβρουαρίου</td><td class="r">Υπαπαντή του Κυρίου</td><td>Ψάρι</td></tr>
+                <tr><td>25 Μαρτίου</td><td class="r">Ευαγγελισμός της Θεοτόκου</td><td>Ψάρι (και μέσα στη Σαρακοστή)</td></tr>
+                <tr><td>24 Ιουνίου</td><td>Γενέθλιο του Τιμίου Προδρόμου</td><td>Ψάρι</td></tr>
+                <tr><td>29 Ιουνίου</td><td>Άγιοι Απόστολοι Πέτρος και Παύλος</td><td>Ψάρι</td></tr>
+                <tr><td>6 Αυγούστου</td><td class="r">Μεταμόρφωση του Σωτήρος</td><td>Ψάρι (και μέσα στον Δεκαπενταύγουστο)</td></tr>
+                <tr><td>15 Αυγούστου</td><td class="r">Κοίμηση της Θεοτόκου</td><td>Ψάρι</td></tr>
+                <tr><td>8 Σεπτεμβρίου</td><td class="r">Γενέθλιο της Θεοτόκου</td><td>Ψάρι</td></tr>
+                <tr><td>21 Νοεμβρίου</td><td class="r">Εισόδια της Θεοτόκου</td><td>Ψάρι</td></tr>
+                <tr><td>25 Δεκεμβρίου</td><td class="r">Χριστούγεννα</td><td>Κατάλυση εις πάντα</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="prose" style="margin-top:1rem">
+            <p>Λάδι και κρασί, όταν πέσουν Τετάρτη ή Παρασκευή: Άγιος Αντώνιος (17/1), Άγιοι Αθανάσιος και Κύριλλος (18/1), Άγιος Γρηγόριος ο Θεολόγος (25/1), Τρεις Ιεράρχες (30/1), Άγιος Χαράλαμπος (10/2), Άγιος Γεώργιος (23/4), Άγιος Ιωάννης ο Θεολόγος (8/5 και 26/9), Άγιοι Κωνσταντίνος και Ελένη (21/5), Σύναξη των Αποστόλων (30/6), Προφήτης Ηλίας (20/7), Αγία Παρασκευή (26/7), Άγιος Παντελεήμων (27/7), Άγιος Δημήτριος (26/10), Αρχάγγελοι (8/11), Άγιος Ιωάννης ο Χρυσόστομος (13/11), Αγία Αικατερίνη (25/11), Άγιος Ανδρέας (30/11), Άγιος Νικόλαος (6/12), Άγιος Σπυρίδων (12/12).</p>
+            <p class="muted">Η πανήγυρη του ναού της ενορίας ή του πολιούχου αγίου κάθε τόπου ακολουθεί την τοπική τάξη.</p>
+          </div>
+        </section>
 
-      <!-- ── Πρακτικές οδηγίες ──────────────────────────────── -->
-      <div class="section">
-        <div class="section-heading">Πρακτικές οδηγίες</div>
-        <div class="section-text">
-          <p>
-            Η νηστεία δεν είναι αυτοσκοπός, αλλά <em>μέσον</em> πνευματικής άσκησης.
-            Ο Μέγας Βασίλειος γράφει: «Η αρχή της νηστείας είναι η αποχή από την
-            κακία· γιατί νηστεύουμε από τις τροφές μόνο για να νηστεύουμε και από
-            τα πάθη.»
-          </p>
-          <p>
-            Μερικές βασικές κατευθύνσεις:
-          </p>
-          <ul style="margin:0 0 0 1.25rem; padding:0; line-height:1.8">
-            <li>Η νηστεία τηρείται πάντα <strong>με την ευλογία και καθοδήγηση του πνευματικού</strong>.</li>
-            <li>Εξαιρούνται βρέφη, μικρά παιδιά, ασθενείς, έγκυοι και θηλάζουσες γυναίκες.</li>
-            <li>Οι ηλικιωμένοι και οι έχοντες σοβαρά προβλήματα υγείας νηστεύουν «κατά δύναμιν».</li>
-            <li>Η νηστεία συνοδεύεται πάντα από αυξημένη προσευχή και εξομολόγησή.</li>
-            <li>Η αποχή από κρέας ή γαλακτοκομικά χωρίς εσωτερική μεταστροφή δεν είναι νηστεία — είναι απλώς δίαιτα.</li>
-          </ul>
-        </div>
-        <div class="callout" style="margin-top:1rem">
-          <strong>«Νήστευσον από κακίας, αποσχού κακογνωμοσύνης, μη νηστεύῃς πρὸς κρίσεις καὶ δίκας.»</strong><br>
-          — Μέγας Βασίλειος, Περί Νηστείας
-        </div>
-      </div>
+        <!-- ── Ιωάννης της Κλίμακος ───────────────────────────────── -->
+        <section class="section" id="klimakos">
+          <h2 class="section-heading">Ο Άγιος Ιωάννης της Κλίμακος για τη νηστεία</h2>
+          <div class="prose">
+            <p class="initial">Ο Άγιος Ιωάννης, ηγούμενος του Σινά (7ος αι.), ονομάστηκε «της Κλίμακος» από το βιβλίο του, την <em>Κλίμακα</em>, που περιγράφει σε τριάντα «λόγους» την πνευματική άνοδο του ανθρώπου προς τον Θεό. Η Εκκλησία τιμά τη μνήμη του στις 30 Μαρτίου και την Δ΄ Κυριακή των Νηστειών.</p>
+            <p>Στον ΙΔ΄ λόγο, «Περί γαστριμαργίας», εξηγεί ότι η γαστριμαργία δεν είναι μικρό πάθος: η χορτασμένη κοιλιά γεννά ραθυμία και ανοίγει τον δρόμο στα άλλα πάθη, ενώ η εγκράτεια ελαφρύνει τον άνθρωπο και καθαρίζει την προσευχή του. Στο τέλος του λόγου συνοψίζει τι είναι η νηστεία:</p>
+          </div>
+          <blockquote class="hymn">
+            <p class="hymn-text" style="font-size:18px">Η νηστεία είναι βία της φύσεως και περικοπή των ηδονών του λάρυγγα, καθαρότητα της προσευχής, φωστήρας της ψυχής, φύλακας του νου, θύρα της κατανύξεως, ησυχία της σκέψεως, φρουρός της υπακοής, υγεία του σώματος, άφεση αμαρτιών, θύρα και τρυφή του Παραδείσου.</p>
+            <cite class="hymn-src">Κλίμαξ, Λόγος ΙΔ΄ — σε ελεύθερη νεοελληνική απόδοση</cite>
+          </blockquote>
+          <div class="prose" style="margin-top:1rem">
+            <p>Ο ίδιος όμως προειδοποιεί ότι η νηστεία χωρίς ταπείνωση γεννά υπερηφάνεια. Γι’ αυτό, στον <em>Λόγο προς τον Ποιμένα</em>, ζητά από τον πνευματικό να δίνει σε κάθε ψυχή το μέτρο που της ταιριάζει: δεν υπάρχει ένα μέτρο για όλους.</p>
+          </div>
+        </section>
 
-      <footer class="ort-footer">
-        <p class="footer-text">
-          Υπό ανάπτυξη &nbsp;·&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;·&nbsp;
-          <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a>
-        </p>
-      </footer>
+        <!-- ── Διάκριση ───────────────────────────────────────────── -->
+        <section class="section" id="diakrisi">
+          <h2 class="section-heading">Με διάκριση</h2>
+          <div class="prose">
+            <ul>
+              <li>Η νηστεία κρατιέται με την ευλογία και την καθοδήγηση του πνευματικού, «κατά δύναμιν».</li>
+              <li>Οι ασθενείς, οι ηλικιωμένοι, οι έγκυες και οι θηλάζουσες μητέρες και τα μικρά παιδιά νηστεύουν όσο μπορούν ή καθόλου, πάντα σε συνεννόηση με τον πνευματικό τους.</li>
+              <li>Η νηστεία πριν από τη Θεία Κοινωνία ορίζεται από τον πνευματικό, ανάλογα με τη ζωή και την ανάγκη του καθενός.</li>
+              <li>Δεν κρίνουμε τους άλλους για το πώς νηστεύουν· η νηστεία χωρίς αγάπη και ταπείνωση χάνει το νόημά της.</li>
+              <li>Η τοπική πράξη (μητρόπολη, ενορία, μοναστήρι) μπορεί να διαφέρει σε λεπτομέρειες από όσα γράφονται εδώ.</li>
+            </ul>
+          </div>
+          <blockquote class="hymn">
+            <p class="hymn-text">Οὐχὶ τοιαύτην νηστείαν ἐγὼ ἐξελεξάμην, λέγει Κύριος, ἀλλὰ λῦε πάντα σύνδεσμον ἀδικίας.</p>
+            <cite class="hymn-src">Ησαΐας 58:6</cite>
+            <p class="quote-tr">«Δεν είναι αυτή η νηστεία που διάλεξα», λέει ο Κύριος, «αλλά να λύνεις κάθε δεσμό αδικίας».</p>
+          </blockquote>
+        </section>
+      </main>
 
+      <footer data-site-footer></footer>
     </div>
   </div>
-
-  <script>
-    function applyTheme(theme) {
-      const root = document.documentElement;
-      if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme);
-      else root.removeAttribute('data-theme');
-
-      const btn = document.getElementById('theme-toggle');
-      if (!btn) return;
-      const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const isDark = effective === 'dark';
-      btn.textContent = isDark ? '☀' : '🌙';
-      btn.title = isDark ? 'Φωτεινό θέμα' : 'Σκοτεινό θέμα';
-      btn.setAttribute('aria-label', isDark ? 'Εναλλαγή σε φωτεινό θέμα' : 'Εναλλαγή σε σκοτεινό θέμα');
-    }
-
-    function toggleTheme() {
-      const root = document.documentElement;
-      const current = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const next = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('themeMode', next);
-      applyTheme(next);
-    }
-
-    applyTheme(localStorage.getItem('themeMode'));
-  </script>
-<button id="theme-toggle" class="theme-toggle-float" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος" title="Σκοτεινό θέμα">🌙</button>
 </body>
+
 </html>

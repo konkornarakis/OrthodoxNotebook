@@ -1,0 +1,337 @@
+/* assets/site.css — κοινή αισθητική όλων των σελίδων
+   Χειρόγραφο-περγαμηνή, κιννάβαρι για τα «ερυθρά» (Κυριακές, εορτές, αρχικά),
+   χρυσό φύλλο για τα κοσμήματα. Σκοτεινό θέμα: εικόνα στο φως του κεριού. */
+
+:root {
+  color-scheme: light;
+
+  --font-display: "GFS Didot", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-body: "Noto Serif", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+
+  --parchment: #f2e8d2;
+  --parchment-deep: #e8d9b8;
+  --vellum: #fbf6ea;
+  --ink: #2b1d12;
+  --ink-soft: #5c4837;
+  --ink-faint: #8c7660;
+  --rule: #d6c29a;
+  --rule-soft: #e6d8b9;
+  --gold: #a8812f;
+  --gold-bright: #d2ab55;
+  --gold-deep: #7d5f1f;
+  --cinnabar: #a3281b;
+  --porphyra: #5e1a33;
+  --lapis: #1f3d63;
+  --shadow: 0 1px 2px rgba(60, 40, 15, .08), 0 8px 24px rgba(60, 40, 15, .08);
+
+  /* Βαθμίδες νηστείας: φόντο κελιού / χρώμα σήμανσης */
+  --f-none-bg: var(--vellum);       --f-none: #9a8770;
+  --f-dairy-bg: #f5ebc9;            --f-dairy: #b8902a;
+  --f-fish-bg: #dde7f0;             --f-fish: #2c5a8a;
+  --f-oil-bg: #e5e9cc;              --f-oil: #66762a;
+  --f-dry-bg: #f2dcd2;              --f-dry: #a3361f;
+  --f-strict-bg: #5e1a33;           --f-strict: #5e1a33;  --f-strict-ink: #f8e8dc;
+
+  /* Συμβατότητα με τα παλαιότερα ονόματα μεταβλητών */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --color-text-primary: var(--ink);
+  --color-text-secondary: var(--ink-soft);
+  --color-text-tertiary: var(--ink-faint);
+  --color-border-secondary: var(--rule);
+  --color-border-tertiary: var(--rule-soft);
+  --color-background-primary: var(--vellum);
+  --color-background-secondary: #f4ebd6;
+  --color-background-warning: #f5e6c4;
+  --color-text-warning: var(--gold-deep);
+  --accent: var(--cinnabar);
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --parchment: #15100c;
+  --parchment-deep: #0f0b08;
+  --vellum: #1e1712;
+  --ink: #efe3cc;
+  --ink-soft: #c9b796;
+  --ink-faint: #94816a;
+  --rule: #4a3a28;
+  --rule-soft: #33281d;
+  --gold: #d1ad5c;
+  --gold-bright: #ecd08a;
+  --gold-deep: #b38f40;
+  --cinnabar: #e0705a;
+  --porphyra: #c46a8c;
+  --lapis: #84a9d6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 28px rgba(0, 0, 0, .35);
+
+  --f-none-bg: var(--vellum);       --f-none: #8d7b63;
+  --f-dairy-bg: #2f2814;            --f-dairy: #e1c36a;
+  --f-fish-bg: #15263a;             --f-fish: #7fa8d8;
+  --f-oil-bg: #232a13;              --f-oil: #adbd62;
+  --f-dry-bg: #3a1a13;              --f-dry: #e57a60;
+  --f-strict-bg: #4c1428;           --f-strict: #d2789a;  --f-strict-ink: #f8e2ea;
+
+  --color-background-secondary: #251d16;
+  --color-background-warning: #3a2d12;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --parchment: #15100c;
+    --parchment-deep: #0f0b08;
+    --vellum: #1e1712;
+    --ink: #efe3cc;
+    --ink-soft: #c9b796;
+    --ink-faint: #94816a;
+    --rule: #4a3a28;
+    --rule-soft: #33281d;
+    --gold: #d1ad5c;
+    --gold-bright: #ecd08a;
+    --gold-deep: #b38f40;
+    --cinnabar: #e0705a;
+    --porphyra: #c46a8c;
+    --lapis: #84a9d6;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 28px rgba(0, 0, 0, .35);
+
+    --f-none-bg: var(--vellum);       --f-none: #8d7b63;
+    --f-dairy-bg: #2f2814;            --f-dairy: #e1c36a;
+    --f-fish-bg: #15263a;             --f-fish: #7fa8d8;
+    --f-oil-bg: #232a13;              --f-oil: #adbd62;
+    --f-dry-bg: #3a1a13;              --f-dry: #e57a60;
+    --f-strict-bg: #4c1428;           --f-strict: #d2789a;  --f-strict-ink: #f8e2ea;
+
+    --color-background-secondary: #251d16;
+    --color-background-warning: #3a2d12;
+  }
+}
+
+/* ── Βάση ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { overflow-y: scroll; -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 50% -10%, rgba(210, 171, 85, .22), transparent 55%),
+    radial-gradient(ellipse at 0% 100%, rgba(120, 80, 30, .07), transparent 50%),
+    radial-gradient(ellipse at 100% 60%, rgba(120, 80, 30, .06), transparent 45%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-theme="dark"] body {
+  background-image:
+    radial-gradient(ellipse at 50% -15%, rgba(209, 173, 92, .16), transparent 55%),
+    radial-gradient(ellipse at 50% 120%, rgba(94, 26, 51, .25), transparent 55%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body {
+    background-image:
+      radial-gradient(ellipse at 50% -15%, rgba(209, 173, 92, .16), transparent 55%),
+      radial-gradient(ellipse at 50% 120%, rgba(94, 26, 51, .25), transparent 55%);
+  }
+}
+
+a { color: var(--cinnabar); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+button { font-family: inherit; }
+::selection { background: rgba(210, 171, 85, .35); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Κοσμητική ταινία στην κορυφή της σελίδας (βυζαντινό πλοχμοειδές) */
+.orn-band {
+  height: 14px;
+  background-color: var(--porphyra);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cg fill='none' stroke='%23d2ab55' stroke-width='1.3'%3E%3Ccircle cx='7' cy='7' r='4.6'/%3E%3Ccircle cx='21' cy='7' r='4.6'/%3E%3Cpath d='M0 7h2.4M11.6 7h4.8M25.6 7H28'/%3E%3C/g%3E%3Ccircle cx='14' cy='7' r='1.1' fill='%23d2ab55'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  border-bottom: 2px solid var(--gold);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .15);
+}
+
+/* ── Διάταξη ──────────────────────────────────────────────────────────── */
+.ort-root { flex: 1; display: flex; flex-direction: column; }
+.ort-shell {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  padding: 1.5rem 16px 2.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Κεφαλίδα ─────────────────────────────────────────────────────────── */
+.site-header { position: relative; text-align: center; margin-bottom: 1.75rem; }
+.site-cross { display: block; width: 64px; height: 64px; margin: 0 auto .35rem; color: var(--gold); }
+.site-brand {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  text-decoration: none;
+}
+.site-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(30px, 6vw, 44px);
+  line-height: 1.1;
+  margin: .2rem 0 .1rem;
+  color: var(--ink);
+}
+.site-subtitle { font-style: italic; color: var(--ink-soft); font-size: 15px; margin: .1rem 0 0; }
+
+.orn-divider {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: .9rem auto 1rem; max-width: 420px; color: var(--gold);
+}
+.orn-divider::before, .orn-divider::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+}
+.orn-divider svg { width: 18px; height: 18px; flex: none; }
+
+.site-nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 2px; }
+.site-nav a {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 4px 12px 5px;
+  border-bottom: 1.5px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.site-nav a:hover { color: var(--cinnabar); }
+.site-nav a[aria-current="page"] { color: var(--cinnabar); border-bottom-color: var(--cinnabar); }
+.site-nav .sep { color: var(--gold); opacity: .7; align-self: center; font-size: 10px; }
+
+.theme-toggle {
+  position: absolute; top: 0; right: 0;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--gold-deep);
+  border: 1px solid var(--rule);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.theme-toggle:hover { background: var(--vellum); color: var(--cinnabar); }
+.theme-toggle svg { width: 18px; height: 18px; }
+
+/* ── Κοινά στοιχεία ───────────────────────────────────────────────────── */
+.panel {
+  background: var(--vellum);
+  border: 1px solid var(--rule);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow), inset 0 0 0 4px var(--vellum), inset 0 0 0 5px var(--rule-soft);
+  padding: 1.4rem 1.5rem;
+}
+
+.section { margin: 2.25rem 0 0; }
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0 0 .8rem;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-heading::before {
+  content: ""; width: 14px; height: 14px; flex: none;
+  background: var(--cinnabar);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 12.5px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.prose { font-size: 16.5px; line-height: 1.75; color: var(--ink); }
+.prose p { margin: 0 0 .9rem; }
+.prose p:last-child { margin-bottom: 0; }
+.prose strong { font-weight: 600; }
+.prose ul { margin: 0 0 .9rem 1.2rem; padding: 0; }
+.prose li { margin-bottom: .35rem; }
+.prose li::marker { color: var(--cinnabar); }
+.muted { color: var(--ink-soft); }
+
+/* Ερυθρό αρχικό γράμμα, όπως στα χειρόγραφα */
+.initial::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.4em;
+  line-height: .82;
+  padding: .06em .1em 0 0;
+  color: var(--cinnabar);
+}
+
+/* Παράθεμα ύμνου ή Πατέρα (πολυτονικό) */
+.hymn {
+  margin: 1rem 0 0;
+  padding: .9rem 1.1rem .85rem 1.25rem;
+  border-left: 2px solid var(--gold);
+  background: linear-gradient(90deg, rgba(210, 171, 85, .12), transparent 85%);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+}
+.hymn-text { font-family: var(--font-display); font-size: 19px; line-height: 1.5; color: var(--ink); margin: 0; }
+.hymn-src { display: block; margin-top: .35rem; font-size: 13px; font-style: italic; color: var(--ink-faint); }
+
+/* Σήμανση βαθμίδας νηστείας */
+.seal {
+  display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+  flex: none; vertical-align: middle;
+  box-shadow: 0 0 0 2px var(--vellum), 0 0 0 3px currentColor;
+  background: currentColor;
+}
+.lv-none   { color: var(--f-none); }
+.lv-dairy  { color: var(--f-dairy); }
+.lv-fish   { color: var(--f-fish); }
+.lv-oil    { color: var(--f-oil); }
+.lv-dry    { color: var(--f-dry); }
+.lv-strict { color: var(--f-strict); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid var(--rule);
+  background: var(--vellum); color: var(--ink-soft);
+  font-family: var(--font-body); font-size: 14px;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.btn:hover { border-color: var(--gold); color: var(--cinnabar); }
+.btn-accent { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+.btn-accent:hover { color: #fff8ef; filter: brightness(1.08); }
+
+.link-btn {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: var(--cinnabar); text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* ── Υποσέλιδο ────────────────────────────────────────────────────────── */
+.site-footer { margin-top: auto; padding-top: 2.5rem; text-align: center; }
+.site-footer .orn-divider { margin-top: 0; }
+.footer-text { font-size: 13px; line-height: 1.8; color: var(--ink-faint); margin: 0; }
+.footer-text a { color: var(--ink-soft); text-decoration: none; }
+.footer-text a:hover { color: var(--cinnabar); text-decoration: underline; }
+
+@media (max-width: 620px) {
+  .ort-shell { padding-top: 1.1rem; }
+  .theme-toggle { width: 34px; height: 34px; }
+  .site-nav a { font-size: 14px; padding: 4px 8px 5px; }
+  .site-nav .sep { display: none; }
+  .panel { padding: 1.1rem 1rem; }
+  .section-heading { font-size: 21px; }
+  .hymn-text { font-size: 17.5px; }
+}
