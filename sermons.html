@@ -3,123 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ορθόδοξες Ομιλίες</title>
+  <title>Ομιλίες — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
   <style>
-    /* ── Design tokens — identical to main.html ──────────────────────────── */
-    :root {
-      color-scheme: light dark;
-      --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      --font-serif: Georgia, "Times New Roman", serif;
-      --color-text-primary: #1f1f1f;
-      --color-text-secondary: #5b5b5b;
-      --color-text-tertiary: #8a8a8a;
-      --color-text-warning: #7a4f0d;
-      --color-border-secondary: #d8d1c7;
-      --color-border-tertiary: #e8e1d8;
-      --color-background-primary: #fffdfa;
-      --color-background-secondary: #f5f0e8;
-      --color-background-warning: #fff0d6;
-      --border-radius-md: 12px;
-      --border-radius-lg: 18px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme]) {
-        --color-text-primary: #f3ede4;
-        --color-text-secondary: #c8bcae;
-        --color-text-tertiary: #9b8f81;
-        --color-text-warning: #ffd58a;
-        --color-border-secondary: #5f5141;
-        --color-border-tertiary: #4c4034;
-        --color-background-primary: #1f1a15;
-        --color-background-secondary: #2b241d;
-        --color-background-warning: #49310b;
-      }
-      :root:not([data-theme]) body {
-        background:
-          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-          linear-gradient(180deg, #17130f 0%, #211a14 100%);
-      }
-    }
-
-    @media (max-width: 620px) {
-      .ort-header { flex-wrap: wrap; }
-      .nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
-      .nav-links::-webkit-scrollbar { display: none; }
-      .nav-pill { flex-shrink: 0; }
-    }
-
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    html { overflow-y: scroll; }
-
-    body {
-      font-family: var(--font-sans);
-      color: var(--color-text-primary);
-      background:
-        radial-gradient(circle at top, rgba(186, 117, 23, 0.10), transparent 32%),
-        linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Layout shell — identical to main.html ─────────────────────────── */
-    .ort-root  { padding: 0 0 2rem; flex: 1; display: flex; flex-direction: column; }
-    .ort-shell {
-      width: min(100%, 860px);
-      margin: 0 auto;
-      padding: 2rem 1rem 2.5rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Header — identical to main.html ──────────────────────────────── */
-    .ort-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .ort-cross    { font-size: 22px; color: #BA7517; }
-    .ort-title    { font-size: 20px; font-weight: 500; font-family: var(--font-serif); }
-    .ort-subtitle { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
-
-    /* ── Nav pill ────────────────────────────────────────────────────── */
-    .nav-pill {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      text-decoration: none;
-      white-space: nowrap;
-      padding: 4px 10px;
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: 999px;
-      transition: background 0.15s;
-    }
-    .nav-pill:hover { background: var(--color-background-secondary); }
-    .nav-pill.active {
-      background: var(--color-background-secondary);
-      border-color: var(--color-border-secondary);
-      color: var(--color-text-primary);
-      cursor: default; pointer-events: none;
-    }
-    .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
-    .theme-toggle-float {
-      position: fixed; bottom: 28px; left: 28px;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--color-background-secondary);
-      color: var(--color-text-secondary);
-      border: 0.5px solid var(--color-border-tertiary);
-      cursor: pointer; font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      z-index: 997; transition: background 0.15s;
-    }
-    .theme-toggle-float:hover { background: var(--color-background-primary); }
-
     /* ── Views ───────────────────────────────────────────────────────── */
     .view        { display: none; }
     .view.active { display: block; }
@@ -172,7 +62,7 @@
       outline: none;
     }
     .search-input::placeholder { color: var(--color-text-tertiary); }
-    .search-input:focus         { border-color: #BA7517; }
+    .search-input:focus         { border-color: var(--gold); }
 
     /* ── Filter chips ────────────────────────────────────────────────── */
     .filter-chips { margin-bottom: 1rem; }
@@ -199,7 +89,7 @@
       border-radius: 999px; transition: color 0.12s, background 0.12s;
       white-space: nowrap;
     }
-    .fp-clear:hover { color: #BA7517; background: rgba(186,117,23,0.08); }
+    .fp-clear:hover { color: var(--gold); background: rgba(210,171,85,.14); }
 
     /* ── Sort dropdown ───────────────────────────────────────────────────────── */
     .sort-select {
@@ -226,9 +116,9 @@
       color: var(--color-text-primary);
     }
     .chip.active {
-      background: rgba(186,117,23,0.12);
-      border-color: #BA7517;
-      color: #7a4a14;
+      background: rgba(210,171,85,.18);
+      border-color: var(--gold);
+      color: var(--cinnabar);
       font-weight: 600;
     }
 
@@ -251,8 +141,8 @@
       box-shadow: 0 2px 16px rgba(0,0,0,0.08);
       transform: translateY(-1px);
     }
-    .card-title   { font-family: var(--font-serif); font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
-    .card-speaker { font-size: 14px; color: #BA7517; margin-bottom: 5px; }
+    .card-title   { font-family: var(--font-serif); font-size: 20px; font-weight: 400; line-height: 1.4; margin-bottom: 4px; }
+    .card-speaker { font-size: 14px; color: var(--cinnabar); margin-bottom: 5px; }
     .card-meta    { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 6px; }
     .card-tags    { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 7px; }
     .tag {
@@ -291,16 +181,16 @@
     }
     .back-btn:hover { color: var(--color-text-primary); }
 
-    .detail-title   { font-family: var(--font-serif); font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
-    .detail-speaker { font-size: 15px; color: #BA7517; margin-bottom: 7px; }
+    .detail-title   { font-family: var(--font-serif); font-size: 30px; font-weight: 400; line-height: 1.3; margin-bottom: 4px; }
+    .detail-speaker { font-size: 15px; color: var(--cinnabar); margin-bottom: 7px; }
     .detail-speaker-link { cursor: pointer; transition: opacity 0.12s; }
     .detail-speaker-link:hover { opacity: 0.72; text-decoration: underline; }
     .detail-tag-link  { cursor: pointer; }
-    .detail-tag-link:hover { border-color: #BA7517; }
+    .detail-tag-link:hover { border-color: var(--gold); }
     .card-speaker-link { cursor: pointer; }
     .card-speaker-link:hover { text-decoration: underline; opacity: 0.8; }
     .tag-link { cursor: pointer; }
-    .tag-link:hover { border-color: #BA7517; }
+    .tag-link:hover { border-color: var(--gold); }
     /* ── Dev edit/delete actions ─────────────────────────────────────────── */
     .dev-actions { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
     .dev-btn {
@@ -310,11 +200,11 @@
       background: none; transition: all 0.12s;
     }
     .dev-btn-edit  { color: var(--color-text-secondary); }
-    .dev-btn-edit:hover  { border-color: #BA7517; color: var(--color-text-primary); }
+    .dev-btn-edit:hover  { border-color: var(--gold); color: var(--color-text-primary); }
     .dev-btn-delete { color: #c0392b; border-color: rgba(192,57,43,0.4); }
     .dev-btn-delete:hover { background: rgba(192,57,43,0.08); }
     .detail-meta    { font-size: 13px; color: var(--color-text-secondary); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-    .detail-meta a  { color: #BA7517; text-decoration: none; }
+    .detail-meta a  { color: var(--cinnabar); text-decoration: none; }
     .detail-meta a:hover { text-decoration: underline; }
     .detail-tags    { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 1rem; }
 
@@ -328,7 +218,7 @@
       border: none; transition: opacity 0.15s;
     }
     .action-btn:hover { opacity: 0.78; }
-    .btn-wayin  { background: #7a4a14; color: #fff; }
+    .btn-wayin  { background: var(--cinnabar); color: #fff; }
     .btn-source { background: none; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
     .download-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 0.5px solid var(--color-border-tertiary); }
     .btn-download { background: none; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-tertiary); font-size: 12px; }
@@ -367,7 +257,7 @@
       height: 26px;
       border-radius: 50%;
       border: 2px solid var(--color-border-secondary);
-      border-top-color: #BA7517;
+      border-top-color: var(--gold);
       animation: ytspin 0.9s linear infinite;
     }
     .yt-loader-text { font-size: 12px; }
@@ -381,7 +271,7 @@
       background: var(--color-background-secondary);
     }
     .section-header:hover { filter: brightness(0.97); }
-    .section-title  { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
+    .section-title  { font-family: var(--font-serif); font-size: 14px; font-weight: 400; }
     .section-arrow  { font-size: 10px; color: var(--color-text-tertiary); transition: transform 0.18s; }
     .section.open .section-arrow { transform: rotate(90deg); }
     .section-body   { display: none; padding: 14px 16px; }
@@ -405,7 +295,7 @@
       color: var(--color-text-primary);
       font-size: 12px; font-family: var(--font-sans); outline: none;
     }
-    .transcript-search:focus { border-color: #BA7517; }
+    .transcript-search:focus { border-color: var(--gold); }
 
     .transcript-body { font-size: 13.5px; line-height: 1.75; }
     .ts-block {
@@ -416,7 +306,7 @@
     .ts-block.ts-hidden  { display: none; }
     .ts-stamp {
       flex-shrink: 0; font-size: 10px; font-family: monospace;
-      color: #fff; background: #7a4a14;
+      color: #fff8ef; background: var(--cinnabar);
       border-radius: 4px; padding: 2px 5px;
       margin-top: 3px; white-space: nowrap;
       text-decoration: none; display: inline-block;
@@ -458,11 +348,6 @@
     }
     .clear-all-btn:hover { color: var(--color-text-primary); }
 
-    /* ── Footer ─────────────────────────────────────────────── */
-    .ort-footer { margin-top: auto; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
-    .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
-    .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
-    .footer-text a:hover { text-decoration: underline; }
     /* ── Add-sermon modal (local dev only) ──────────────────────────────── */
     .modal-overlay {
       display: none;
@@ -488,7 +373,7 @@
       font-size: 16px; color: var(--color-text-tertiary); line-height: 1; padding: 4px;
     }
     .modal-close:hover { color: var(--color-text-primary); }
-    .modal-title { font-family: var(--font-serif); font-size: 17px; font-weight: 600; margin-bottom: 1.25rem; }
+    .modal-title { font-family: var(--font-serif); font-size: 22px; font-weight: 400; margin-bottom: 1.25rem; }
     .form-group  { margin-bottom: 12px; }
     .form-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .form-label  {
@@ -504,7 +389,7 @@
       color: var(--color-text-primary);
       font-family: var(--font-sans); font-size: 13px; outline: none;
     }
-    .form-input:focus, .form-textarea:focus { border-color: #BA7517; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--gold); }
     .form-textarea      { min-height: 72px; resize: vertical; }
     .form-textarea.tall { min-height: 160px; }
     .form-hint { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
@@ -512,7 +397,7 @@
     .url-row .form-input { flex: 1; min-width: 0; }
     .btn-primary {
       height: 34px; padding: 0 16px; border-radius: 999px;
-      background: #7a4a14; color: #fff;
+      background: var(--cinnabar); color: #fff;
       border: none; cursor: pointer; font-family: var(--font-sans); font-size: 13px;
       white-space: nowrap; transition: opacity 0.15s;
     }
@@ -530,7 +415,7 @@
     .form-error   { font-size: 12px; color: #c0392b; margin-top: 6px; display: none; }
     .add-sermon-btn {
       height: 36px; padding: 0 14px; border-radius: 999px;
-      background: #7a4a14; color: #fff;
+      background: var(--cinnabar); color: #fff;
       border: none; cursor: pointer; font-family: var(--font-sans); font-size: 13px;
       white-space: nowrap; flex-shrink: 0;
     }
@@ -543,7 +428,7 @@
     .search-input, .sort-select { font-size: 14px; }
     .transcript-body { font-size: 15px; line-height: 1.8; }
     .summary-para { font-size: 15px; line-height: 1.9; }
-    .section-title { font-size: 15px; }
+    .section-title { font-size: 18px; }
     .detail-meta  { font-size: 14px; }
 
     /* ── Date range filter ─────────────────────────────────────────── */
@@ -553,7 +438,7 @@
       background: var(--color-background-primary); color: var(--color-text-primary);
       font-family: var(--font-sans); font-size: 12px; outline: none; cursor: pointer;
     }
-    .date-input:focus { border-color: #BA7517; }
+    .date-input:focus { border-color: var(--gold); }
     .date-sep { font-size: 12px; color: var(--color-text-tertiary); }
 
     /* ── Clear filters button ──────────────────────────────────────── */
@@ -563,20 +448,20 @@
       font-size: 18px; line-height: 1; padding: 4px 6px;
       color: var(--color-text-tertiary); transition: color 0.12s;
     }
-    .bookmark-btn.active { color: #BA7517; }
+    .bookmark-btn.active { color: var(--gold); }
     .bookmark-btn:hover  { color: var(--color-text-primary); }
     .card-bm-btn { position: absolute; top: 8px; right: 10px; font-size: 17px; padding: 2px 4px; }
     .detail-bm-btn {
       font-size: 13px; height: 32px; padding: 0 14px;
       display: inline-flex; align-items: center; gap: 5px;
     }
-    .detail-bm-btn.active { background: rgba(186,117,23,0.08); border-color: #BA7517; color: #7a4a14; }
+    .detail-bm-btn.active { background: rgba(210,171,85,.14); border-color: var(--gold); color: var(--cinnabar); }
 
     /* ── Back to top ───────────────────────────────────────────────── */
     .back-to-top {
       position: fixed; bottom: 28px; right: 28px;
       width: 44px; height: 44px; border-radius: 50%;
-      background: #7a4a14; color: #fff; border: none;
+      background: var(--cinnabar); color: #fff; border: none;
       cursor: pointer; font-size: 22px;
       display: none; align-items: center; justify-content: center;
       box-shadow: 0 4px 16px rgba(0,0,0,0.28);
@@ -584,43 +469,13 @@
     }
     .back-to-top.visible { display: flex; }
 
-    :root[data-theme="dark"] {
-      --color-text-primary: #f3ede4;
-      --color-text-secondary: #c8bcae;
-      --color-text-tertiary: #9b8f81;
-      --color-text-warning: #ffd58a;
-      --color-border-secondary: #5f5141;
-      --color-border-tertiary: #4c4034;
-      --color-background-primary: #1f1a15;
-      --color-background-secondary: #2b241d;
-      --color-background-warning: #49310b;
-      color-scheme: dark;
-    }
-    :root[data-theme="dark"] body {
-      background:
-        radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-        linear-gradient(180deg, #17130f 0%, #211a14 100%);
-    }
-    :root[data-theme="light"] { color-scheme: light; }
   </style>
 </head>
 <body>
 <div class="ort-root">
   <div class="ort-shell">
 
-    <!-- ── Header ───────────────────────────────────────────────────── -->
-    <div class="ort-header">
-      <span class="ort-cross">☩</span>
-      <div style="flex:1">
-        <div class="ort-title">Ορθόδοξες Ομιλίες</div>
-      </div>
-      <nav class="nav-links">
-        <a href="main.html" class="nav-pill">Νηστειοδρόμιο</a>
-        <a href="sermons.html" class="nav-pill active">Ομιλίες</a>
-        <a href="synaxarion.html" class="nav-pill">Εορτολόγιο</a>
-        <a href="fasting.html" class="nav-pill">Περί νηστείας</a>
-      </nav>
-    </div>
+    <header data-page="sermons" data-title="Ομιλίες" data-subtitle="Λόγοι πνευματικής ωφέλειας, με περίληψη και απομαγνητοφώνηση"></header>
 
     <!-- ── LIST VIEW ─────────────────────────────────────────────────── -->
     <div id="view-list" class="view active">
@@ -634,7 +489,7 @@
             <option value="date-asc">Ημερομηνία ↑</option>
             <option value="alpha">Αλφαβητικά</option>
           </select>
-          <button id="add-btn" class="add-sermon-btn" onclick="openAddModal()" style="display:none">+ Νέα Ομιλία</button>
+          <button id="add-btn" class="add-sermon-btn" onclick="openAddModal()" style="display:none">+ Νέα ομιλία</button>
         </div>
       <div id="filter-chips" class="filter-chips"></div>
       <div id="sermon-grid" class="sermon-grid">
@@ -646,13 +501,13 @@
 
     <!-- ── DETAIL VIEW ───────────────────────────────────────────────── -->
     <div id="view-detail" class="view">
-      <button class="back-btn" onclick="showList()">← Πίσω στη λίστα</button>
+      <button class="back-btn" onclick="showList()">← Όλες οι ομιλίες</button>
       <div class="detail-paper">
         <div id="detail-content"></div>
       </div>
     </div>
 
-    <footer class="ort-footer"><p class="footer-text">Υπό ανάπτυξη &nbsp;&middot;&nbsp; Οι πληροφορίες ενδέχεται να είναι ελλιπείς ή ανακριβείς &nbsp;&middot;&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a></p></footer>
+    <footer data-site-footer></footer>
   </div>
 </div>
 
@@ -660,7 +515,7 @@
 <div id="add-modal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeAddModal()" title="Κλείσιμο">✕</button>
-    <div class="modal-title">Νέα Ομιλία</div>
+    <div class="modal-title">Νέα ομιλία</div>
     <form id="add-form" onsubmit="submitAddForm(event)">
 
       <div class="form-group">
@@ -699,9 +554,9 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="f-transcript">Μεταγραφή</label>
-        <textarea class="form-textarea tall" id="f-transcript" placeholder="Επικολλήστε τη μεταγραφή από το Wayin ή αφήστε κενό για να προσθέσετε αργότερα…"></textarea>
-        <div class="form-hint">Αποθηκεύεται ως _Transcript.txt. Μπορείτε να το επεξεργαστείτε αργότερα με οποιοδήποτε text editor.</div>
+        <label class="form-label" for="f-transcript">Απομαγνητοφώνηση</label>
+        <textarea class="form-textarea tall" id="f-transcript" placeholder="Επικολλήστε την απομαγνητοφώνηση από το Wayin ή αφήστε το κενό για αργότερα…"></textarea>
+        <div class="form-hint">Αποθηκεύεται ως _Transcript.txt και μπορεί να διορθωθεί αργότερα με οποιονδήποτε επεξεργαστή κειμένου.</div>
       </div>
 
       <div id="form-error" class="form-error"></div>
@@ -717,7 +572,7 @@
 <div id="edit-modal" class="modal-overlay" onclick="closeEditModalOnOverlay(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeEditModal()" title="Κλείσιμο">✕</button>
-    <div class="modal-title">Επεξεργασία Ομιλίας</div>
+    <div class="modal-title">Επεξεργασία ομιλίας</div>
     <form id="edit-form" onsubmit="submitEditForm(event)">
       <input type="hidden" id="ef-id">
 
@@ -754,9 +609,9 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="ef-transcript">Μεταγραφή</label>
+        <label class="form-label" for="ef-transcript">Απομαγνητοφώνηση</label>
         <textarea class="form-textarea tall" id="ef-transcript" placeholder="HH:MM:SS&#10;Κείμενο…&#10;&#10;HH:MM:SS&#10;Κείμενο…"></textarea>
-        <div class="form-hint">Κάθε απόσπασμα: timestamp σε νέα γραμμή, μετά κείμενο. Αδειο = χωρίς μεταγραφή.</div>
+        <div class="form-hint">Κάθε απόσπασμα: χρονοσήμανση σε δική της γραμμή και από κάτω το κείμενο. Κενό πεδίο σημαίνει χωρίς απομαγνητοφώνηση.</div>
       </div>
 
       <div id="edit-form-error" class="form-error"></div>
@@ -949,7 +804,7 @@ function renderList() {
   grid.innerHTML = '';
 
   if (filtered.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div>' +
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">☩</div>' +
       '<div class="empty-title">Δεν βρέθηκαν αποτελέσματα</div>' +
       '<div class="empty-text">Δοκιμάστε διαφορετικούς όρους αναζήτησης.</div></div>';
     return;
@@ -970,7 +825,7 @@ function renderList() {
     const bmBtn = document.createElement('button');
     bmBtn.className = 'bookmark-btn card-bm-btn' + (bookmarks.has(s.id) ? ' active' : '');
     bmBtn.textContent = bookmarks.has(s.id) ? '★' : '☆';
-    bmBtn.title = bookmarks.has(s.id) ? 'Αφαίρεση από αποθηκευμένα' : 'Αποθήκευση';
+    bmBtn.title = bookmarks.has(s.id) ? 'Αφαίρεση από τα αγαπημένα' : 'Προσθήκη στα αγαπημένα';
     bmBtn.onclick = e => { e.stopPropagation(); toggleBookmark(s.id); };
     card.appendChild(bmBtn);
 
@@ -989,7 +844,7 @@ function renderList() {
     const meta = [
       s.date ? formatDate(s.date) : '',
       dur || '',
-      s.transcript && s.transcript.length > 0 ? '📜 ' + s.transcript.length + ' αποσπ.' : '',
+      s.transcript && s.transcript.length > 0 ? '📜 ' + s.transcript.length + ' αποσπάσματα' : '',
     ].filter(Boolean).join(' · ');
     if (meta) {
       const metaEl = document.createElement('div');
@@ -1080,7 +935,7 @@ function renderDetail(s) {
         encodeURIComponent(s.url) + '&input_t=URL&v_t_t=transcript_tool_task';
       const wa = document.createElement('a');
       wa.className = 'action-btn btn-wayin'; wa.href = wayinUrl;
-      wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '✦ Δημιουργία Μεταγραφής';
+      wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '✦ Δημιουργία απομαγνητοφώνησης';
       actionsEl.appendChild(wa);
     }
     const yt = document.createElement('a');
@@ -1096,11 +951,11 @@ function renderDetail(s) {
   // Bookmark button (always visible)
   const bmDetailBtn = document.createElement('button');
   bmDetailBtn.className = 'bookmark-btn detail-bm-btn btn-secondary' + (bookmarks.has(s.id) ? ' active' : '');
-  bmDetailBtn.innerHTML = (bookmarks.has(s.id) ? '★ ' : '☆ ') + 'Αποθήκευση';
+  bmDetailBtn.innerHTML = (bookmarks.has(s.id) ? '★ ' : '☆ ') + 'Αγαπημένη';
   bmDetailBtn.onclick = () => {
     toggleBookmark(s.id);
     const on = bookmarks.has(s.id);
-    bmDetailBtn.innerHTML = (on ? '★ ' : '☆ ') + 'Αποθήκευση';
+    bmDetailBtn.innerHTML = (on ? '★ ' : '☆ ') + 'Αγαπημένη';
     bmDetailBtn.classList.toggle('active', on);
   };
   actionsEl.appendChild(bmDetailBtn);
@@ -1155,14 +1010,14 @@ function renderDetail(s) {
     sec.innerHTML =
       `<div class="section open" id="sec-transcript">
         <div class="section-header" onclick="this.parentElement.classList.toggle('open')">
-          <div class="section-title">Μεταγραφή (${s.transcript.length} αποσπάσματα)</div>
+          <div class="section-title">Απομαγνητοφώνηση (${s.transcript.length} αποσπάσματα)</div>
           <span class="section-arrow">▶</span>
         </div>
         <div class="section-body">
           <div class="transcript-search-wrap">
             <span class="transcript-search-icon">⌕</span>
             <input class="transcript-search" type="search"
-              placeholder="Αναζήτηση στη μεταγραφή…"
+              placeholder="Αναζήτηση στο κείμενο…"
               oninput="filterTranscript(this.value)">
           </div>
           <div class="transcript-body" id="transcript-body">
@@ -1180,17 +1035,17 @@ function renderDetail(s) {
     const dlEl = document.createElement('div'); dlEl.className = 'download-actions';
     if (hasTranscript) {
       const dlTs = document.createElement('button');
-      dlTs.className = 'action-btn btn-download'; dlTs.textContent = '⬇ Μεταγραφή με χρονοσήμανση';
+      dlTs.className = 'action-btn btn-download'; dlTs.textContent = '⬇ Κείμενο με χρονοσημάνσεις';
       dlTs.onclick = () => downloadTranscriptWithTimestamps(s);
       dlEl.appendChild(dlTs);
       const dlTxt = document.createElement('button');
-      dlTxt.className = 'action-btn btn-download'; dlTxt.textContent = '⬇ Μεταγραφή κειμένου';
+      dlTxt.className = 'action-btn btn-download'; dlTxt.textContent = '⬇ Σκέτο κείμενο';
       dlTxt.onclick = () => downloadTranscriptText(s);
       dlEl.appendChild(dlTxt);
     }
     if (hasSummary) {
       const dlSum = document.createElement('button');
-      dlSum.className = 'action-btn btn-download'; dlSum.textContent = '⬇ Λήψη περίληψης';
+      dlSum.className = 'action-btn btn-download'; dlSum.textContent = '⬇ Περίληψη';
       dlSum.onclick = () => downloadSummary(s);
       dlEl.appendChild(dlSum);
     }
@@ -1274,9 +1129,9 @@ function getDuration(s) {
   const p = ts.split(':').map(Number);
   if (p.length === 3) {
     const [h, m] = p;
-    return h > 0 ? '~' + h + ' ώ ' + m + ' λ.' : '~' + (m + 1) + ' λ.';
+    return h > 0 ? '~' + h + ' ώρ. ' + m + ' λεπ.' : '~' + (m + 1) + ' λεπ.';
   }
-  return '~' + (p[0] + 1) + ' λ.';
+  return '~' + (p[0] + 1) + ' λεπ.';
 }
 
 function tsToSec(ts) {
@@ -1305,30 +1160,6 @@ function formatDate(d) {
   const months = ['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'];
   return `${day} ${months[m - 1]} ${y}`;
 }
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme);
-  else root.removeAttribute('data-theme');
-
-  const btn = document.getElementById('theme-toggle');
-  if (!btn) return;
-  const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  const isDark = effective === 'dark';
-  btn.textContent = isDark ? '☀' : '🌙';
-  btn.title = isDark ? 'Φωτεινό θέμα' : 'Σκοτεινό θέμα';
-  btn.setAttribute('aria-label', isDark ? 'Εναλλαγή σε φωτεινό θέμα' : 'Εναλλαγή σε σκοτεινό θέμα');
-}
-
-function toggleTheme() {
-  const root = document.documentElement;
-  const current = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('themeMode', next);
-  applyTheme(next);
-}
-
-applyTheme(localStorage.getItem('themeMode'));
 
 document.getElementById('search-input').addEventListener('input', () => { updateListHash(); renderList(); });
 
@@ -1520,6 +1351,5 @@ window.addEventListener('scroll', () => {
   if (btn) btn.classList.toggle('visible', window.scrollY > 400);
 });
 </script>
-<button id="theme-toggle" class="theme-toggle-float" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος" title="Σκοτεινό θέμα">🌙</button>
 </body>
 </html>

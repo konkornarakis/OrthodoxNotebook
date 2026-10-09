@@ -4,473 +4,234 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Εορτολόγιο — Ορθόδοξο Ημερολόγιο</title>
+  <title>Εορτολόγιο — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="assets/calendar.js"></script>
   <style>
-    :root {
-      color-scheme: light dark;
-      --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      --font-serif: Georgia, "Times New Roman", serif;
-      --color-text-primary: #1f1f1f;
-      --color-text-secondary: #5b5b5b;
-      --color-text-tertiary: #8a8a8a;
-      --color-text-warning: #7a4f0d;
-      --color-border-secondary: #d8d1c7;
-      --color-border-tertiary: #e8e1d8;
-      --color-background-primary: #fffdfa;
-      --color-background-secondary: #f5f0e8;
-      --color-background-warning: #fff0d6;
-      --border-radius-md: 12px;
-      --border-radius-lg: 18px;
+    .date-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .date-arrow {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft);
+      font-size: 18px; line-height: 1; cursor: pointer;
+    }
+    .date-arrow:hover { border-color: var(--gold); color: var(--cinnabar); }
+    .date-input {
+      height: 36px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--rule); background: var(--vellum); color: var(--ink);
+      font-family: var(--font-body); font-size: 15px;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme]) {
-        --color-text-primary: #f3ede4;
-        --color-text-secondary: #c8bcae;
-        --color-text-tertiary: #9b8f81;
-        --color-text-warning: #ffd58a;
-        --color-border-secondary: #5f5141;
-        --color-border-tertiary: #4c4034;
-        --color-background-primary: #1f1a15;
-        --color-background-secondary: #2b241d;
-        --color-background-warning: #49310b;
-      }
-      :root:not([data-theme]) body {
-        background:
-          radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-          linear-gradient(180deg, #17130f 0%, #211a14 100%);
-      }
+    .syn-head { text-align: center; }
+    .syn-wd { font-family: var(--font-display); font-size: 18px; color: var(--ink-soft); }
+    .syn-date { font-family: var(--font-display); font-size: clamp(28px, 5vw, 38px); line-height: 1.15; color: var(--ink); }
+    .syn-date.red { color: var(--cinnabar); }
+    .syn-fast {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: .6rem;
+      padding: 4px 14px; border: 1px solid var(--rule-soft); border-radius: 999px;
+      font-size: 14.5px; color: var(--ink);
     }
+    .syn-fast a { color: inherit; text-decoration: none; }
+    .syn-feasts { list-style: none; margin: 1rem 0 0; padding: 0; text-align: center; }
+    .syn-feasts li { font-family: var(--font-display); font-size: 20px; line-height: 1.35; color: var(--ink); }
+    .syn-feasts li.red { color: var(--cinnabar); }
+    .syn-names { text-align: center; margin: .5rem 0 0; color: var(--ink-soft); font-size: 15px; }
+    .syn-names b { font-weight: 600; color: var(--ink); }
 
-    @media (max-width: 620px) {
-      .ort-header { flex-wrap: wrap; }
-      .nav-links { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
-      .nav-links::-webkit-scrollbar { display: none; }
-      .nav-pill { flex-shrink: 0; }
+    .saints-title { margin-top: 1.6rem; }
+    .saints { list-style: none; margin: 0; padding: 0; columns: 2 300px; column-gap: 2rem; }
+    .saints li {
+      break-inside: avoid; display: flex; gap: 10px; align-items: baseline;
+      padding: .45rem 0; border-bottom: 1px solid var(--rule-soft); font-size: 16px;
     }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    html { overflow-y: scroll; }
-    body {
-      font-family: var(--font-sans);
-      color: var(--color-text-primary);
-      background:
-        radial-gradient(circle at top, rgba(186,117,23,0.10), transparent 32%),
-        linear-gradient(180deg, #f7f2ea 0%, #fdfbf7 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .ort-root { padding: 0 0 2rem; flex: 1; display: flex; flex-direction: column; }
-    .ort-shell { width: min(100%, 860px); margin: 0 auto; padding: 2rem 1rem 2.5rem; flex: 1; display: flex; flex-direction: column; }
-    .ort-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 1.5rem; padding-bottom: 1rem;
-      border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .ort-cross { font-size: 22px; color: #BA7517; }
-    .ort-title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-serif); }
-    .nav-pill {
-      font-size: 12px; color: var(--color-text-secondary); text-decoration: none;
-      white-space: nowrap; padding: 4px 10px;
-      border: 0.5px solid var(--color-border-tertiary); border-radius: 999px;
-      transition: background 0.15s;
-    }
-    .nav-pill:hover { background: var(--color-background-secondary); }
-    .nav-pill.active {
-      background: var(--color-background-secondary);
-      border-color: var(--color-border-secondary);
-      color: var(--color-text-primary); cursor: default; pointer-events: none;
-    }
-    .nav-links { display: flex; gap: 6px; flex-shrink: 0; }
-    .theme-toggle-float {
-      position: fixed; bottom: 28px; left: 28px;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--color-background-secondary);
-      color: var(--color-text-secondary);
-      border: 0.5px solid var(--color-border-tertiary);
-      cursor: pointer; font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      z-index: 997; transition: background 0.15s;
-    }
-    .theme-toggle-float:hover { background: var(--color-background-primary); }
-
-    /* ── Date navigation ─────────────────────────────────────── */
-    .date-nav {
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap;
-    }
-    .date-nav-btn {
-      background: none; border: 0.5px solid var(--color-border-secondary);
-      border-radius: 999px; padding: 5px 14px; cursor: pointer;
-      font-size: 13px; color: var(--color-text-secondary);
-      transition: background 0.15s;
-    }
-    .date-nav-btn:hover { background: var(--color-background-secondary); }
-    .date-nav-btn.today-btn { color: var(--color-text-primary); font-weight: 500; }
-    .date-input-wrap {
-      display: flex; align-items: center; gap: 6px;
-      border: 0.5px solid var(--color-border-secondary);
-      border-radius: var(--border-radius-md); padding: 5px 12px;
-      background: var(--color-background-primary);
-      font-size: 14px; color: var(--color-text-primary);
-    }
-    .date-input-wrap input[type="date"] {
-      border: none; background: transparent; font-family: inherit;
-      font-size: 14px; color: var(--color-text-primary); outline: none;
-    }
-
-    /* ── Content cards ───────────────────────────────────────── */
-    .syn-card {
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-lg);
-      background: var(--color-background-primary);
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .syn-day-title {
-      font-size: 22px; font-weight: 500; font-family: var(--font-serif);
-      color: var(--color-text-primary); margin-bottom: 4px;
-    }
-    .syn-day-subtitle {
-      font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1rem;
-    }
-    .syn-meta-row {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 0.75rem;
-    }
-    .syn-badge {
-      font-size: 12px; padding: 3px 10px;
-      border-radius: 999px; border: 0.5px solid var(--color-border-secondary);
-      color: var(--color-text-secondary); background: var(--color-background-secondary);
-      white-space: nowrap;
-    }
-    .syn-section-title {
-      font-size: 13px; font-weight: 600; color: var(--color-text-secondary);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      margin: 1rem 0 0.5rem;
-      padding-top: 0.75rem; border-top: 0.5px solid var(--color-border-tertiary);
-    }
-    .syn-saints-list {
-      list-style: none; margin: 0; padding: 0;
-    }
-    .syn-saints-list li {
-      font-size: 15px; color: var(--color-text-primary);
-      padding: 4px 0; border-bottom: 0.5px solid var(--color-border-tertiary);
-    }
-    .syn-saints-list li:last-child { border-bottom: none; }
-    .syn-saints-list li::before { content: '☩ '; color: #BA7517; }
-    .syn-story {
-      font-size: 14px; line-height: 1.7; color: var(--color-text-secondary);
-    }
-    .syn-story p { margin: 0 0 0.75rem; }
-    .syn-story p:last-child { margin-bottom: 0; }
-    .syn-readings-row {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.25rem;
-    }
-    .syn-reading-chip {
-      font-size: 13px; padding: 4px 12px;
-      border: 0.5px solid var(--color-border-tertiary);
-      border-radius: var(--border-radius-md);
-      color: var(--color-text-secondary);
-      background: var(--color-background-secondary);
-    }
-    .syn-reading-source {
-      font-weight: 600; margin-right: 4px;
-    }
-    .syn-loading {
-      text-align: center; padding: 3rem 0;
-      color: var(--color-text-tertiary); font-size: 15px;
-    }
-    .syn-error {
-      padding: 1.25rem 1.5rem;
-      border: 0.5px solid #e8d0d0; border-radius: var(--border-radius-lg);
-      background: #fff8f8; color: #9a3a3a; font-size: 14px;
-    }
-    .syn-source-note {
-      margin-top: 1rem; font-size: 11px;
-      color: var(--color-text-tertiary); text-align: right;
-    }
-    .syn-source-note a { color: var(--color-text-tertiary); }
-
-    .ort-footer { margin-top: auto; padding: 1.25rem 0 0.25rem; border-top: 0.5px solid var(--color-border-tertiary); text-align: center; }
-    .footer-text { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.8; }
-    .footer-text a { color: var(--color-text-secondary); text-decoration: none; }
-    .footer-text a:hover { text-decoration: underline; }
-
-    :root[data-theme="dark"] {
-      --color-text-primary: #f3ede4;
-      --color-text-secondary: #c8bcae;
-      --color-text-tertiary: #9b8f81;
-      --color-text-warning: #ffd58a;
-      --color-border-secondary: #5f5141;
-      --color-border-tertiary: #4c4034;
-      --color-background-primary: #1f1a15;
-      --color-background-secondary: #2b241d;
-      --color-background-warning: #49310b;
-      color-scheme: dark;
-    }
-    :root[data-theme="dark"] body {
-      background:
-        radial-gradient(circle at top, rgba(250, 199, 117, 0.10), transparent 32%),
-        linear-gradient(180deg, #17130f 0%, #211a14 100%);
-    }
-    :root[data-theme="light"] { color-scheme: light; }
+    .saints li a { color: var(--ink); text-decoration: none; }
+    .saints li a:hover { color: var(--cinnabar); text-decoration: underline; }
+    .saints li svg { width: 10px; height: 10px; color: var(--cinnabar); flex: none; position: relative; top: 1px; }
+    .loading { text-align: center; padding: 2.5rem 0; color: var(--ink-faint); font-style: italic; }
+    .error { padding: 1rem 1.2rem; border: 1px solid var(--rule); border-left: 3px solid var(--cinnabar); border-radius: 6px; background: var(--vellum); color: var(--ink-soft); font-size: 15px; }
+    .source-note { margin-top: .8rem; font-size: 13px; color: var(--ink-faint); text-align: right; }
+    .source-note a { color: var(--ink-soft); }
   </style>
 </head>
 
 <body>
   <div class="ort-root">
     <div class="ort-shell">
+      <header data-page="synaxarion" data-title="Εορτολόγιο" data-subtitle="Οι άγιοι και οι εορτές κάθε ημέρας"></header>
 
-      <div class="ort-header">
-        <span class="ort-cross">☩</span>
-        <div style="flex:1">
-          <div class="ort-title">Εορτολόγιο</div>
+      <main>
+        <div class="date-nav">
+          <button class="date-arrow" type="button" onclick="shiftDay(-1)" aria-label="Προηγούμενη ημέρα">‹</button>
+          <input type="date" id="date-picker" class="date-input" onchange="pickDate()" aria-label="Ημερομηνία">
+          <button class="date-arrow" type="button" onclick="shiftDay(1)" aria-label="Επόμενη ημέρα">›</button>
+          <button class="btn" type="button" onclick="goToday()">Σήμερα</button>
         </div>
-        <nav class="nav-links">
-          <a href="main.html" class="nav-pill">Νηστειοδρόμιο</a>
-          <a href="sermons.html" class="nav-pill">Ομιλίες</a>
-          <a href="synaxarion.html" class="nav-pill active">Εορτολόγιο</a>
-          <a href="fasting.html" class="nav-pill">Περί νηστείας</a>
-        </nav>
-      </div>
 
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="shiftDay(-1)" aria-label="Προηγούμενη ημέρα">←</button>
-        <div class="date-input-wrap">
-          <input type="date" id="date-picker" onchange="pickDate()">
-        </div>
-        <button class="date-nav-btn" onclick="shiftDay(1)" aria-label="Επόμενη ημέρα">→</button>
-        <button class="date-nav-btn today-btn" onclick="goToday()">Σήμερα</button>
-      </div>
+        <section id="day-head" class="panel"></section>
 
-      <div id="syn-content"><div class="syn-loading">Φόρτωση…</div></div>
+        <section class="section saints-title">
+          <h2 class="section-heading">Οι άγιοι της ημέρας</h2>
+          <div id="saints"><div class="loading">Φόρτωση…</div></div>
+        </section>
+      </main>
 
-      <footer class="ort-footer">
-        <p class="footer-text">
-          Υπό ανάπτυξη &nbsp;·&nbsp;
-          Δεδομένα αγιολογίου: <a href="https://www.saint.gr" target="_blank" rel="noopener">saint.gr</a>
-          &nbsp;·&nbsp; <a href="mailto:konkornarakis@gmail.com">konkornarakis@gmail.com</a>
-        </p>
-      </footer>
-
+      <footer data-site-footer>Ο κατάλογος των αγίων προέρχεται από τον Ορθόδοξο Συναξαριστή <a href="https://www.saint.gr" target="_blank" rel="noopener">saint.gr</a>.</footer>
     </div>
   </div>
 
   <script>
+    const C = window.OrthoCal;
+    const CROSS = window.OrthoSite ? window.OrthoSite.SMALL_CROSS : '';
     const now = new Date();
     let viewDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let requestId = 0;
 
-    const GR_DAYS_FULL = ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
-    const GR_MONTHS_GEN = ['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function toISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function readMonastic() { try { return localStorage.getItem('monasticMode') === 'true'; } catch (e) { return false; } }
 
-    function formatDateGR(d) {
-      return GR_DAYS_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + GR_MONTHS_GEN[d.getMonth()] + ' ' + d.getFullYear();
+    function renderHead(d) {
+      const f = C.fasting(d, { monastic: readMonastic() });
+      const feasts = C.feastsOf(d);
+      const names = C.namedaysOf(d);
+      const hymn = C.hymnOf(d);
+      const red = d.getDay() === 0 || feasts.some(x => x.rank !== 'minor');
+      document.getElementById('day-head').innerHTML = `
+        <div class="syn-head">
+          <div class="syn-wd">${C.DAYS[d.getDay()]}</div>
+          <div class="syn-date${red ? ' red' : ''}">${d.getDate()} ${C.MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}</div>
+          <div class="syn-fast"><span class="seal lv-${f.level}"></span><a href="main.html" title="Άνοιγμα στο νηστειοδρόμιο">${esc(f.label)}${f.period ? ' · ' + esc(f.period) : ''}</a></div>
+          ${feasts.length ? `<ul class="syn-feasts">${feasts.map(x => `<li class="${x.rank !== 'minor' ? 'red' : ''}">${esc(x.name)}</li>`).join('')}</ul>` : ''}
+          ${names.length ? `<p class="syn-names"><b>Εορτάζουν:</b> ${esc(names.join(', '))}</p>` : ''}
+        </div>
+        <blockquote class="hymn">
+          <p class="hymn-text">${esc(hymn.text)}</p>
+          <cite class="hymn-src">${esc(hymn.src)}</cite>
+        </blockquote>`;
     }
 
-    function toISODate(d) {
-      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    }
+    // ── Άγιοι της ημέρας ─────────────────────────────────────────────────
+    // 1) το δικό μας endpoint (/api/saints, Vercel ή dev-server)· 2) δημόσιοι CORS proxies ως εφεδρεία.
+    const PROXIES = [
+      u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+      u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+      u => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+    ];
 
-    function fastLevelLabel(level, desc) {
-      if (!desc) return null;
-      return desc;
-    }
-
-    const TONE_GR = ['','Α\'','Β\'','Γ\'','Δ\'','Πλ. Α\'','Βαρύς','Πλ. Δ\'','Α\''];
-
-    async function fetchAndRender(date) {
-      const picker = document.getElementById('date-picker');
-      picker.value = toISODate(date);
-
-      const el = document.getElementById('syn-content');
-      el.innerHTML = '<div class="syn-loading">Φόρτωση…</div>';
-
-      const mo = date.getMonth() + 1, d = date.getDate();
-      const mm = String(mo).padStart(2, '0');
-      const dd = String(d).padStart(2, '0');
-
-      // Greek calendar data via saint.gr (CORS proxy required for browser fetch)
-      const saintUrl = `https://www.saint.gr/${mm}/${dd}/index.aspx`;
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(saintUrl)}`;
-
-      let saints = [];
+    async function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 12000);
-        const resp = await fetch(proxyUrl, { signal: ctrl.signal });
-        clearTimeout(timer);
+        const resp = await fetch(url, { signal: ctrl.signal });
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp;
+      } finally { clearTimeout(timer); }
+    }
+
+    function undouble(name) {
+      const w = name.split(' ');
+      if (w.length % 2 === 0 && w.slice(0, w.length / 2).join(' ') === w.slice(w.length / 2).join(' ')) return w.slice(0, w.length / 2).join(' ');
+      const half = name.length / 2;
+      if (Number.isInteger(half) && name.slice(0, half).trim() === name.slice(half).trim()) return name.slice(0, half).trim();
+      return name;
+    }
+
+    function decodePage(buf, contentType) {
+      let charset = (/charset=([\w-]+)/i.exec(contentType || '') || [])[1];
+      if (!charset) {
+        const head = new TextDecoder('latin1').decode(buf.slice(0, 4096));
+        charset = (/<meta[^>]+charset=["']?([\w-]+)/i.exec(head) || [])[1];
+      }
+      try { return new TextDecoder((charset || 'utf-8').toLowerCase()).decode(buf); }
+      catch (e) { return new TextDecoder('utf-8').decode(buf); }
+    }
+
+    function parseSaints(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const out = [], seen = new Set();
+      for (const a of doc.querySelectorAll('a[href*="saint.aspx"]')) {
+        const href = a.getAttribute('href') || '';
+        const id = (/\/(\d+)\/saint\.aspx/i.exec(href) || [])[1];
+        const name = undouble(a.textContent.replace(/\s+/g, ' ').trim());
+        if (!id || !name || seen.has(id)) continue;
+        seen.add(id);
+        out.push({ name, url: new URL(href, 'https://www.saint.gr/').href });
+      }
+      return out;
+    }
+
+    async function loadSaints(m, d) {
+      const key = 'saints-' + m + '-' + d;
+      try { const c = sessionStorage.getItem(key); if (c) return JSON.parse(c); } catch (e) { /* χωρίς αποθήκευση */ }
+
+      const errors = [];
+      let saints = null;
+      try {
+        const resp = await fetchWithTimeout(`/api/saints?m=${m}&d=${d}`, 12000);
         const json = await resp.json();
+        if (!json.ok) throw new Error(json.error || 'σφάλμα');
+        saints = json.saints;
+      } catch (e) { errors.push('api: ' + e.message); }
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(json.contents || '', 'text/html');
-
-        // Extract saint/feast links — href pattern: /{id}/saint.aspx
-        const seen = new Set();
-        for (const a of doc.querySelectorAll('a[href*="/saint.aspx"]')) {
-          let name = a.textContent.trim();
-          // saint.gr renders each name twice in the link node — deduplicate
-          const n = name.length;
-          if (n > 0 && n % 2 === 0) {
-            const half = n / 2;
-            if (name.slice(0, half).trimEnd() === name.slice(half).trimStart()) {
-              name = name.slice(0, half).trim();
-            }
-          }
-          if (name && !seen.has(name)) { seen.add(name); saints.push(name); }
+      if (!saints || !saints.length) {
+        const src = `https://www.saint.gr/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/index.aspx`;
+        for (const proxy of PROXIES) {
+          try {
+            const resp = await fetchWithTimeout(proxy(src), 12000);
+            const list = parseSaints(decodePage(await resp.arrayBuffer(), resp.headers.get('content-type')));
+            if (list.length) { saints = list; break; }
+            errors.push('proxy: κενή απάντηση');
+          } catch (e) { errors.push('proxy: ' + e.message); }
         }
-      } catch (err) {
-        el.innerHTML = `<div class="syn-error">
-          <strong>Δεν ήταν δυνατή η φόρτωση των δεδομένων.</strong><br>
-          Ελέγξτε τη σύνδεσή σας ή δοκιμάστε αργότερα.<br>
-          <small style="opacity:0.7">${err.message}</small>
-        </div>`;
-        return;
       }
-
-      let html = `<div class="syn-card">
-  <div class="syn-day-title">${escHtml(formatDateGR(date))}</div>
-  <div class="syn-day-subtitle"></div>`;
-
-      if (saints.length) {
-        html += `<div class="syn-section-title">Εορτάζοντες</div>
-  <ul class="syn-saints-list">
-    ${saints.map(s => `<li>${escHtml(s)}</li>`).join('\n    ')}
-  </ul>`;
-      } else {
-        html += `<div style="color:var(--color-text-secondary);font-size:14px;padding:0.5rem 0">Δεν βρέθηκαν στοιχεία για αυτή την ημέρα.</div>`;
-      }
-
-      html += '</div>'; // close main card
-      html += `<div class="syn-source-note">Δεδομένα: <a href="${escHtml(saintUrl)}" target="_blank" rel="noopener">saint.gr</a></div>`;
-
-      el.innerHTML = html;
+      if (!saints || !saints.length) throw new Error(errors.join(' · '));
+      try { sessionStorage.setItem(key, JSON.stringify(saints)); } catch (e) { /* χωρίς αποθήκευση */ }
+      return saints;
     }
 
-    /* ─────────────────────────────────────────────────────────────────────
-       BACKUP: English API (orthocal.info) — uncomment for the English version
-       ─────────────────────────────────────────────────────────────────────
-    async function fetchAndRender(date) {
-      const picker = document.getElementById('date-picker');
-      picker.value = toISODate(date);
-      const el = document.getElementById('syn-content');
-      el.innerHTML = '<div class="syn-loading">Φόρτωση…</div>';
-      const y = date.getFullYear(), mo = date.getMonth() + 1, d = date.getDate();
-      const url = `https://orthocal.info/api/gregorian/${y}/${mo}/${d}/?lang=el`;
-      let data;
+    async function render(date) {
+      document.getElementById('date-picker').value = toISO(date);
+      renderHead(date);
+
+      const el = document.getElementById('saints');
+      el.innerHTML = '<div class="loading">Φόρτωση του συναξαριστή…</div>';
+      const myId = ++requestId;
+      const m = date.getMonth() + 1, d = date.getDate();
+      const saintUrl = `https://www.saint.gr/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/index.aspx`;
+
+      let saints;
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 10000);
-        const resp = await fetch(url, { signal: ctrl.signal, headers: { 'Accept-Language': 'el' } });
-        clearTimeout(timer);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        data = await resp.json();
+        saints = await loadSaints(m, d);
       } catch (err) {
-        el.innerHTML = `<div class="syn-error">
-          <strong>Δεν ήταν δυνατή η φόρτωση των δεδομένων.</strong><br>
-          Ελέγξτε τη σύνδεσή σας ή δοκιμάστε αργότερα.<br>
-          <small style="opacity:0.7">${err.message}</small>
-        </div>`;
+        if (myId !== requestId) return;
+        el.innerHTML = `<div class="error"><strong>Δεν ήταν δυνατή η φόρτωση του συναξαριστή.</strong><br>
+          Δοκιμάστε ξανά σε λίγο ή δείτε τον απευθείας στο <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a>.
+          <br><button class="link-btn" type="button" onclick="render(viewDate)">Νέα προσπάθεια</button>
+          <div style="font-size:12px;opacity:.7;margin-top:.4rem">${esc(err.message)}</div></div>`;
         return;
       }
-      const toneLabel = data.tone > 0 ? (TONE_GR[data.tone] || ('Ήχος ' + data.tone)) : null;
-      const saints = data.saints || [];
-      const feasts = (data.feasts && data.feasts.length) ? data.feasts : [];
-      const stories = data.stories || [];
-      const readings = data.readings || [];
-      const title = data.summary_title || (data.titles && data.titles[0]) || '';
-      const badges = [];
-      if (toneLabel) badges.push(`Ήχος ${toneLabel}`);
-      let html = `<div class="syn-card">
-  <div class="syn-day-title">${escHtml(title) || formatDateGR(date)}</div>
-  <div class="syn-day-subtitle">${formatDateGR(date)}</div>
-  <div class="syn-meta-row">
-    ${badges.map(b => `<span class="syn-badge">${escHtml(b)}</span>`).join('')}
-  </div>`;
-      if (feasts.length) {
-        html += `<div class="syn-section-title">Feasts</div>
-  <ul class="syn-saints-list">${feasts.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul>`;
-      }
-      if (saints.length) {
-        html += `<div class="syn-section-title">Saints</div>
-  <ul class="syn-saints-list">${saints.map(s => `<li>${escHtml(s)}</li>`).join('')}</ul>`;
-      }
-      html += '</div>';
-      stories.forEach(story => {
-        if (!story.story) return;
-        html += `<div class="syn-card">
-  <div style="font-size:16px;font-weight:600;margin-bottom:0.75rem;font-family:var(--font-serif)">${escHtml(story.title || '')}</div>
-  <div class="syn-story">${story.story}</div>
-</div>`;
-      });
-      if (readings.length) {
-        html += `<div class="syn-card">
-  <div class="syn-section-title" style="margin-top:0;padding-top:0;border-top:none">Readings</div>
-  <div class="syn-readings-row">
-    ${readings.map(r => `<div class="syn-reading-chip"><span class="syn-reading-source">${escHtml(r.source)}:</span>${escHtml(r.display || '')}</div>`).join('')}
-  </div>
-</div>`;
-      }
-      html += '<div class="syn-source-note">Data: <a href="https://orthocal.info" target="_blank" rel="noopener">orthocal.info</a> (New Calendar / Gregorian)</div>';
-      el.innerHTML = html;
-    }
-    ───────────────────────────────────────────────────────────────────── */
+      if (myId !== requestId) return;
 
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;');
+      el.innerHTML = `<ul class="saints">${saints.map(s =>
+          `<li>${CROSS}<a href="${esc(s.url)}" target="_blank" rel="noopener" title="Ο βίος στο saint.gr">${esc(s.name)}</a></li>`).join('')}</ul>
+         <div class="source-note">Πηγή: <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a></div>`;
     }
 
-    function shiftDay(delta) {
-      viewDate = new Date(viewDate.getTime());
-      viewDate.setDate(viewDate.getDate() + delta);
-      fetchAndRender(viewDate);
-    }
-
-    function goToday() {
-      viewDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      fetchAndRender(viewDate);
-    }
-
+    function shiftDay(delta) { viewDate = C.addDays(viewDate, delta); render(viewDate); }
+    function goToday() { viewDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); render(viewDate); }
     function pickDate() {
       const v = document.getElementById('date-picker').value;
       if (!v) return;
-      const parts = v.split('-').map(Number);
-      viewDate = new Date(parts[0], parts[1]-1, parts[2]);
-      fetchAndRender(viewDate);
+      const [y, m, d] = v.split('-').map(Number);
+      viewDate = new Date(y, m - 1, d);
+      render(viewDate);
     }
 
-    function applyTheme(theme) {
-      const root = document.documentElement;
-      if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme);
-      else root.removeAttribute('data-theme');
-
-      const btn = document.getElementById('theme-toggle');
-      if (!btn) return;
-      const effective = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const isDark = effective === 'dark';
-      btn.textContent = isDark ? '☀' : '🌙';
-      btn.title = isDark ? 'Φωτεινό θέμα' : 'Σκοτεινό θέμα';
-      btn.setAttribute('aria-label', isDark ? 'Εναλλαγή σε φωτεινό θέμα' : 'Εναλλαγή σε σκοτεινό θέμα');
-    }
-
-    function toggleTheme() {
-      const root = document.documentElement;
-      const current = root.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const next = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('themeMode', next);
-      applyTheme(next);
-    }
-
-    applyTheme(localStorage.getItem('themeMode'));
-    fetchAndRender(viewDate);
+    render(viewDate);
   </script>
-<button id="theme-toggle" class="theme-toggle-float" type="button" onclick="toggleTheme()" aria-label="Εναλλαγή θέματος" title="Σκοτεινό θέμα">🌙</button>
 </body>
+
 </html>
