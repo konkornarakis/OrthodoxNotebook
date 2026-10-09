@@ -321,6 +321,44 @@ button { font-family: inherit; }
   font: inherit; color: var(--cinnabar); text-decoration: underline; text-underline-offset: 2px;
 }
 
+/* ── Σημείωμα: μόνιμη υπενθύμιση, παράθυρο εισόδου, σελίδα ─────────────── */
+.site-notice {
+  max-width: 660px; margin: 1rem auto 0; padding: .55rem .9rem;
+  font-size: 14px; line-height: 1.6; font-style: italic; color: var(--ink-soft); text-align: center;
+  border-top: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft);
+}
+.site-notice a { font-style: normal; white-space: nowrap; }
+
+body.no-scroll { overflow: hidden; }
+.notice-overlay {
+  position: fixed; inset: 0; z-index: 2000; overflow-y: auto;
+  display: flex; align-items: flex-start; justify-content: center; padding: 4vh 16px;
+  background: rgba(24, 14, 6, .55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.notice-card {
+  width: 100%; max-width: 640px; margin: auto 0; outline: none;
+  background: var(--vellum); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--border-radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35), inset 0 0 0 4px var(--vellum), inset 0 0 0 5px var(--rule-soft);
+  padding: 1.6rem 1.8rem 1.2rem;
+}
+.notice-title { font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.2; color: var(--cinnabar); margin: 0 0 .7rem; }
+.letter p { margin: 0 0 .85rem; font-size: 16.5px; line-height: 1.75; }
+.letter .letter-sign { font-style: italic; text-align: right; margin: 1.1rem 0 0; color: var(--ink-soft); }
+.notice-actions { display: flex; justify-content: center; margin-top: 1.2rem; }
+.notice-actions .btn { height: 44px; padding: 0 22px; font-size: 15.5px; }
+.notice-later { text-align: center; font-size: 13.5px; color: var(--ink-faint); margin: .8rem 0 0; }
+
+.time-card {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 1500;
+  width: max-content; max-width: min(540px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 14px; padding: .8rem 1rem;
+  background: var(--vellum); color: var(--ink); border: 1px solid var(--gold); border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+}
+.time-card p { margin: 0; font-size: 15px; line-height: 1.5; }
+.time-card .btn { flex: none; }
+
 /* ── Υποσέλιδο ────────────────────────────────────────────────────────── */
 .site-footer { margin-top: auto; padding-top: 2.5rem; text-align: center; }
 .site-footer .orn-divider { margin-top: 0; }
@@ -345,4 +383,9 @@ button { font-family: inherit; }
   .panel { padding: 1.1rem 1rem; }
   .section-heading { font-size: 21px; }
   .hymn-text { font-size: 17.5px; }
+  .site-notice { font-size: 13.5px; padding: .5rem .2rem; }
+  .notice-card { padding: 1.2rem 1.1rem 1rem; }
+  .notice-title { font-size: 27px; }
+  .letter p { font-size: 16px; line-height: 1.7; }
+  .time-card { flex-direction: column; align-items: stretch; text-align: center; }
 }
