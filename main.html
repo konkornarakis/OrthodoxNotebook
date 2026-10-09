@@ -41,9 +41,12 @@
     .day-back { margin-top: .7rem; font-size: 14px; }
 
     /* ── Πλοήγηση μήνα ───────────────────────────────────────────────── */
-    .month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 1rem 0 1rem; flex-wrap: wrap; }
+    .cal-toolbar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 2rem 0 0; }
+    .month-nav { display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; align-items: center; gap: 6px; max-width: 480px; margin: .9rem auto 1rem; }
+    .month-center { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+    .month-center [hidden] { display: none; }
     .month-arrow {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 38px; height: 38px; border-radius: 50%;
       border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft);
       font-size: 18px; line-height: 1; cursor: pointer;
     }
@@ -94,7 +97,7 @@
 
 
     /* ── Επιλογή προβολής ────────────────────────────────────────────── */
-    .view-tabs { display: flex; justify-content: center; margin: 2rem 0 0; }
+    .view-tabs { display: flex; justify-content: center; }
     .view-tabs button {
       font-family: var(--font-display); font-size: 16px; letter-spacing: .04em;
       padding: 6px 18px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); cursor: pointer;
@@ -104,7 +107,7 @@
     .view-tabs button:last-child { border-radius: 0 999px 999px 0; }
     .view-tabs button:hover { color: var(--cinnabar); }
     .view-tabs button[aria-selected="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
-    .month-label { font-family: var(--font-display); font-size: 22px; color: var(--ink); padding: 0 4px; text-align: center; }
+    .month-label { font-family: var(--font-display); font-size: 22px; line-height: 1.2; color: var(--ink); padding: 0 4px; text-align: center; }
 
     /* ── Εβδομάδα ────────────────────────────────────────────────────── */
     .week { display: flex; flex-direction: column; gap: 6px; }
@@ -122,6 +125,7 @@
     .wk-day.selected { border-color: var(--cinnabar); box-shadow: 0 0 0 1px var(--cinnabar); }
     .wk-date { display: block; text-align: center; padding-left: 4px; }
     .wk-wd { display: block; font-family: var(--font-display); font-size: 15px; color: var(--ink-soft); }
+    .wk-wd .short { display: none; }
     .wk-num { display: block; font-family: var(--font-display); font-size: 34px; line-height: 1.05; color: var(--ink); }
     .wk-day.red .wk-num { color: var(--cinnabar); }
     .wk-body { display: block; min-width: 0; }
@@ -165,10 +169,13 @@
       .year { grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .mini { padding: .45rem .4rem .5rem; }
       .mc { font-size: 10px; }
-      .wk-day { grid-template-columns: 64px 1fr; gap: 10px; }
+      .wk-day { grid-template-columns: 52px 1fr; gap: 8px; padding-right: .7rem; }
+      .wk-wd .long { display: none; }
+      .wk-wd .short { display: inline; }
       .wk-num { font-size: 28px; }
       .wk-wd { font-size: 13px; }
-      .view-tabs button { padding: 6px 13px; font-size: 15px; }
+      .view-tabs button { padding: 6px 11px; font-size: 14.5px; letter-spacing: 0; }
+      .btn-today { height: 32px; padding: 0 12px; }
       .month-label { font-size: 18px; }
     }
 
@@ -240,14 +247,15 @@
       .cell { border-radius: 5px; min-height: 0; }
       .cell-num { font-size: 16px; }
       .cell-bar { margin-top: 5px; height: 2.5px; }
-      .cell-feast { top: 3px; right: 3px; width: 7px; height: 7px; }
+      .cell-feast { top: 2px; right: 2px; width: 6px; height: 6px; }
       .cal-dow { font-size: 12px; letter-spacing: 0; }
       .month-select { font-size: 20px; }
       .period-name { font-size: 17px; }
       .period { flex-wrap: wrap; }
-      .period-state { margin-left: 18px; width: 100%; }
+      .period-state { margin-left: 18px; flex-basis: calc(100% - 18px); }
       .key-date-value { font-size: 17px; }
     }
+    @media (max-width: 380px) { .month-label { font-size: 16px; } .month-select { font-size: 19px; } }
   </style>
 </head>
 
@@ -259,19 +267,23 @@
       <main>
         <section id="day" class="day panel" aria-live="polite"></section>
 
-        <div class="view-tabs" role="tablist" aria-label="Προβολή ημερολογίου">
-          <button type="button" role="tab" data-view="week" onclick="setView('week')">Εβδομάδα</button>
-          <button type="button" role="tab" data-view="month" onclick="setView('month')">Μήνας</button>
-          <button type="button" role="tab" data-view="year" onclick="setView('year')">Έτος</button>
+        <div class="cal-toolbar">
+          <div class="view-tabs" role="tablist" aria-label="Προβολή ημερολογίου">
+            <button type="button" role="tab" data-view="week" onclick="setView('week')">Εβδομάδα</button>
+            <button type="button" role="tab" data-view="month" onclick="setView('month')">Μήνας</button>
+            <button type="button" role="tab" data-view="year" onclick="setView('year')">Έτος</button>
+          </div>
+          <button class="btn btn-today" type="button" onclick="goToday()">Σήμερα</button>
         </div>
 
         <div class="month-nav">
           <button class="month-arrow" type="button" onclick="shift(-1)" id="prev-btn">‹</button>
-          <select id="month-select" class="month-select" onchange="jumpTo()" aria-label="Μήνας"></select>
-          <span id="week-label" class="month-label"></span>
-          <select id="year-select" class="month-select" onchange="jumpTo()" aria-label="Έτος"></select>
+          <div class="month-center">
+            <select id="month-select" class="month-select" onchange="jumpTo()" aria-label="Μήνας"></select>
+            <span id="week-label" class="month-label"></span>
+            <select id="year-select" class="month-select" onchange="jumpTo()" aria-label="Έτος"></select>
+          </div>
           <button class="month-arrow" type="button" onclick="shift(1)" id="next-btn">›</button>
-          <button class="btn" type="button" onclick="goToday()">Σήμερα</button>
         </div>
 
         <div id="cal"></div>
@@ -411,7 +423,7 @@
         if (same(d, TODAY)) cls.push('today');
         if (same(d, selected)) cls.push('selected');
         rows += `<button type="button" class="${cls.join(' ')}" onclick="pick(${d.getFullYear()},${d.getMonth()},${d.getDate()})" aria-label="${esc(dayLabel(d, f, feasts))}">
-          <span class="wk-date"><span class="wk-wd">${C.DAYS[d.getDay()]}</span><span class="wk-num">${d.getDate()}</span></span>
+          <span class="wk-date"><span class="wk-wd"><span class="long">${C.DAYS[d.getDay()]}</span><span class="short">${C.DAYS_SHORT[d.getDay()]}</span></span><span class="wk-num">${d.getDate()}</span></span>
           <span class="wk-body">
             <span class="wk-fast"><span class="seal lv-${f.level}"></span>${esc(f.label)}</span>
             ${f.period ? `<span class="wk-period">${esc(f.period)}</span>` : ''}
