@@ -145,6 +145,8 @@ a { color: var(--cinnabar); text-decoration-thickness: 1px; text-underline-offse
 button { font-family: inherit; }
 ::selection { background: rgba(210, 171, 85, .35); }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Το χαρακτηριστικό hidden υπερισχύει πάντα (π.χ. σε .btn με display: inline-flex) */
+[hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* Κοσμητική ταινία στην κορυφή της σελίδας (βυζαντινό πλοχμοειδές) */
