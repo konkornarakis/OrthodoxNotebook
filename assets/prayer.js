@@ -219,7 +219,7 @@
 
   // ── Κομποσκοίνι ─────────────────────────────────────────────────────────
   const CX = 200, CY = 190, R = 150, GAP = 13;
-  const CROSS_PATH = 'M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z';
+  const CROSS_SHAPES = (window.OrthoSite && window.OrthoSite.CROSS_SHAPES) || '';
   let knotR = 4, ringC = 1, knotEls = [];
   function knotPos(i, n) {
     const a = (90 + GAP + (360 - 2 * GAP) * (i + .5) / n) * Math.PI / 180;
@@ -253,7 +253,7 @@
       ${knots}
       <circle class="kring" id="kring" r="${rr.toFixed(2)}" cx="${CX}" cy="${CY - R}" stroke-dasharray="${ringC.toFixed(2)}" stroke-dashoffset="${ringC.toFixed(2)}"/>
       <path class="cord" d="M${CX} ${bottom} v14"/>
-      <path class="cross" transform="translate(${CX - 15} ${bottom + 12}) scale(1.5)" d="${CROSS_PATH}"/>
+      <g class="cross" transform="translate(${CX - 15} ${bottom + 12}) scale(1.25)">${CROSS_SHAPES}</g>
       ${tassel}
       <g class="lamp">
         <circle class="lamp-glow" cx="${CX}" cy="${L - 22}" r="82" fill="url(#glow)"/>

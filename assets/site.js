@@ -34,18 +34,18 @@
 
   applyTheme(storedTheme());
 
-  // Βυζαντινός σταυρός με το ΙΣ ΧΣ ΝΙ ΚΑ
-  const CROSS_PATH = 'M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z';
+  // Ελληνικός ισοσκελής σταυρός με τριφύλλια (όπως οι σταυροί ευλογίας), σε πλαίσιο 24×24
+  const CROSS_SHAPES = '<rect x="10.7" y="3.5" width="2.6" height="17"/><rect x="3.5" y="10.7" width="17" height="2.6"/><circle cx="12" cy="12" r="2.15"/><circle cx="12" cy="2.2" r="1.6"/><circle cx="10.2" cy="3.75" r="1.3"/><circle cx="13.8" cy="3.75" r="1.3"/><circle cx="21.8" cy="12" r="1.6"/><circle cx="20.25" cy="10.2" r="1.3"/><circle cx="20.25" cy="13.8" r="1.3"/><circle cx="12" cy="21.8" r="1.6"/><circle cx="10.2" cy="20.25" r="1.3"/><circle cx="13.8" cy="20.25" r="1.3"/><circle cx="2.2" cy="12" r="1.6"/><circle cx="3.75" cy="10.2" r="1.3"/><circle cx="3.75" cy="13.8" r="1.3"/>';
   const SITE_CROSS =
     '<svg class="site-cross" viewBox="0 0 64 64" aria-hidden="true">' +
-      '<path fill="currentColor" transform="translate(17 17) scale(1.5)" d="' + CROSS_PATH + '"/>' +
+      '<g fill="currentColor" transform="translate(17 17) scale(1.25)">' + CROSS_SHAPES + '</g>' +
       '<g fill="currentColor" font-family="GFS Didot, Georgia, serif" font-size="11.5" text-anchor="middle">' +
         '<text x="11" y="21">ΙΣ</text><text x="53" y="21">ΧΣ</text>' +
         '<text x="11" y="55">ΝΙ</text><text x="53" y="55">ΚΑ</text>' +
       '</g>' +
       '<path stroke="currentColor" stroke-width="1" d="M5.5 10.5h11M47.5 10.5h11"/>' +
     '</svg>';
-  const SMALL_CROSS = '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="' + CROSS_PATH + '"/></svg>';
+  const SMALL_CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">' + CROSS_SHAPES + '</g></svg>';
 
   // ── Σημείωμα προς όποιον μπαίνει ──────────────────────────────────────
   const EMAIL = 'konkornarakis@gmail.com';
@@ -118,7 +118,7 @@
         '<p class="footer-text">Οι κανόνες νηστείας προσπαθούν να ακολουθούν την κοινή πράξη της Εκκλησίας της Ελλάδος (νέο ημερολόγιο). ' +
         'Για τη δική σου νηστεία ρώτα τον πνευματικό σου.</p>' +
         (extra ? '<p class="footer-text">' + extra + '</p>' : '') +
-        '<p class="footer-text"><a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
+        '<p class="footer-text"><a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
     }
 
     if (!document.querySelector('.orn-band')) {
@@ -197,8 +197,38 @@
     try { localStorage.setItem('screenTime', JSON.stringify(t)); } catch (e) { /* χωρίς αποθήκευση */ }
   }
 
+  // ── Εφαρμογή: λειτουργία χωρίς σύνδεση και εγκατάσταση ───────────────
+  let installPrompt = null;
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  }
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();               // καμία αυτόματη προτροπή· μόνο όταν το ζητήσει ο ίδιος ο χρήστης
+    installPrompt = e;
+    document.dispatchEvent(new CustomEvent('ortho:installable'));
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    document.dispatchEvent(new CustomEvent('ortho:installed'));
+  });
+  async function install() {
+    if (!installPrompt) return false;
+    const p = installPrompt;
+    installPrompt = null;
+    p.prompt();
+    try { const r = await p.userChoice; return r && r.outcome === 'accepted'; } catch (e) { return false; }
+  }
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!secure) return;
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* χωρίς λειτουργία εκτός σύνδεσης */ });
+  }
+
   function start() {
     renderChrome();
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker);
     const isNotePage = !!document.querySelector('header[data-page="note"]');
     document.querySelectorAll('[data-letter]').forEach(el => { el.innerHTML = letterHtml(); });
     if (isNotePage) ackNotice();
@@ -209,5 +239,8 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window.OrthoSite = { applyTheme, toggleTheme, SMALL_CROSS };
+  window.OrthoSite = {
+    applyTheme, toggleTheme, SMALL_CROSS, CROSS_SHAPES,
+    install, isStandalone, canInstall: () => !!installPrompt,
+  };
 })();

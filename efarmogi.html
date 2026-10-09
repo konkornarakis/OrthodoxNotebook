@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
+  <title>Εφαρμογή — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="assets/calendar.js"></script>
+  <script src="assets/ics.js"></script>
+  <style>
+    .status { display: flex; gap: 10px; align-items: flex-start; padding: .8rem 1rem; border-radius: 8px; border: 1px solid var(--rule-soft); background: var(--vellum); margin: .6rem 0 0; }
+    .status .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; flex: none; background: var(--ink-faint); }
+    .status.ok .dot { background: var(--f-oil); }
+    .status.wait .dot { background: var(--gold); }
+    .status p { margin: 0; }
+    .howto { margin-top: .8rem; }
+    .howto details { border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); padding: .55rem .9rem; margin-bottom: 6px; }
+    .howto summary { cursor: pointer; font-family: var(--font-display); font-size: 17px; }
+    .howto summary::marker { color: var(--gold); }
+    .howto ol { margin: .5rem 0 .2rem 1.2rem; padding: 0; line-height: 1.7; }
+    .howto li::marker { color: var(--cinnabar); }
+    .works { columns: 2 260px; column-gap: 2rem; }
+
+    .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 26px; margin-top: 1rem; }
+    .form fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+    .form legend { font-family: var(--font-display); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 6px; padding: 0; }
+    .opt { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; line-height: 1.45; cursor: pointer; }
+    .opt input { accent-color: var(--cinnabar); width: 17px; height: 17px; margin: 2px 0 0; flex: none; }
+    .opt small { display: block; color: var(--ink-faint); font-size: 13px; }
+    .times { display: flex; gap: 8px; align-items: center; margin: 4px 0 0 25px; flex-wrap: wrap; }
+    .times input { height: 36px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 15px; }
+    .summary-line { margin: 1rem 0 0; font-size: 14.5px; color: var(--ink-soft); }
+    .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 1rem; }
+    .action { border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); padding: .9rem 1rem; }
+    .action h3 { font-family: var(--font-display); font-weight: 400; font-size: 19px; margin: 0 0 .3rem; }
+    .action p { margin: 0 0 .6rem; font-size: 14.5px; color: var(--ink-soft); line-height: 1.55; }
+    .action .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .copied { font-size: 13px; color: var(--f-oil); margin-left: 4px; }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="app" data-title="Εφαρμογή" data-subtitle="Εγκατάσταση στο κινητό, χωρίς σύνδεση, υπενθυμίσεις"></header>
+
+      <main>
+        <div class="prose">
+          <p class="initial">Το Σημειωματάριο μπορεί να μπει στο κινητό σαν εφαρμογή: με δικό του εικονίδιο, χωρίς τη γραμμή του browser, και να ανοίγει και χωρίς σύνδεση. Δεν στέλνει ειδοποιήσεις για να σας φέρει πίσω στην οθόνη και δεν συλλέγει τίποτα. Αν θέλετε υπενθυμίσεις, μπαίνουν στο ημερολόγιο του κινητού σας.</p>
+        </div>
+
+        <!-- ── Εγκατάσταση ───────────────────────────────────────── -->
+        <section class="section" id="install">
+          <h2 class="section-heading">Εγκατάσταση στη συσκευή</h2>
+          <div class="status" id="install-status"><span class="dot"></span><p id="install-text">…</p></div>
+          <p style="margin:.8rem 0 0"><button class="btn btn-accent" type="button" id="install-btn" hidden>Εγκατάσταση</button></p>
+          <div class="howto" id="howto">
+            <details data-os="ios">
+              <summary>iPhone και iPad</summary>
+              <ol>
+                <li>Ανοίξτε τη σελίδα στο Safari.</li>
+                <li>Πατήστε το κουμπί <strong>Κοινοποίηση</strong> (το τετράγωνο με το βέλος προς τα πάνω).</li>
+                <li>Επιλέξτε <strong>«Προσθήκη στην οθόνη Αφετηρίας»</strong> και μετά <strong>«Προσθήκη»</strong>.</li>
+              </ol>
+            </details>
+            <details data-os="android">
+              <summary>Android</summary>
+              <ol>
+                <li>Ανοίξτε τη σελίδα στο Chrome.</li>
+                <li>Πατήστε το κουμπί «Εγκατάσταση» πιο πάνω, ή το μενού <strong>⋮</strong> και <strong>«Εγκατάσταση εφαρμογής»</strong> (ή «Προσθήκη στην αρχική οθόνη»).</li>
+              </ol>
+            </details>
+            <details data-os="desktop">
+              <summary>Υπολογιστής</summary>
+              <ol>
+                <li>Στο Chrome ή στο Edge, πατήστε το εικονίδιο εγκατάστασης δεξιά στη γραμμή διευθύνσεων, ή το μενού και «Εγκατάσταση…».</li>
+                <li>Σε άλλους browsers η σελίδα λειτουργεί κανονικά, χωρίς εγκατάσταση.</li>
+              </ol>
+            </details>
+          </div>
+        </section>
+
+        <!-- ── Χωρίς σύνδεση ─────────────────────────────────────── -->
+        <section class="section" id="offline">
+          <h2 class="section-heading">Χωρίς σύνδεση</h2>
+          <div class="status" id="offline-status"><span class="dot"></span><p id="offline-text">…</p></div>
+          <div class="prose" style="margin-top:.9rem">
+            <p>Μετά την πρώτη επίσκεψη, οι σελίδες φυλάσσονται στη συσκευή:</p>
+            <ul class="works">
+              <li>Το νηστειοδρόμιο, για κάθε έτος</li>
+              <li>Η νοερά προσευχή, μαζί με το ίσο και τους ήχους</li>
+              <li>Το «Περί νηστείας» και το «Σημείωμα»</li>
+              <li>Τα κείμενα των ομιλιών (τα βίντεο θέλουν σύνδεση)</li>
+              <li>Στο εορτολόγιο: η νηστεία, οι εορτές και οι εορτάζοντες κάθε ημέρας· ο κατάλογος των αγίων μόνο για τις ημέρες που έχετε ήδη ανοίξει</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ── Υπενθυμίσεις ──────────────────────────────────────── -->
+        <section class="section" id="reminders">
+          <h2 class="section-heading">Υπενθυμίσεις στο ημερολόγιο του κινητού</h2>
+          <div class="prose">
+            <p>Οι υπενθυμίσεις δεν έρχονται από τη σελίδα· μπαίνουν στο ημερολόγιο του κινητού σας και χτυπούν χωρίς να χρειάζεται να την ανοίξετε ή να έχετε σύνδεση. Η υπενθύμιση για την ευχή σάς προτρέπει να πάρετε το κομποσκοίνι σας και να αφήσετε την οθόνη.</p>
+          </div>
+
+          <div class="form panel" id="rem-form">
+            <fieldset>
+              <legend>Νηστεία</legend>
+              <label class="opt"><input type="radio" name="fast" value="periods" checked><span>Οι περίοδοι νηστείας και οι ξεχωριστές ημέρες<small>Σαρακοστή, Αγίων Αποστόλων, Δεκαπενταύγουστος, Χριστούγεννα, 5/1, 29/8, 14/9, Μεγάλη Παρασκευή</small></span></label>
+              <label class="opt"><input type="radio" name="fast" value="all"><span>Κάθε ημέρα νηστείας<small>μαζί με κάθε Τετάρτη και Παρασκευή</small></span></label>
+              <label class="opt"><input type="radio" name="fast" value="none"><span>Καθόλου</span></label>
+              <label class="opt"><input type="checkbox" id="eve" checked><span>Υπενθύμιση το προηγούμενο βράδυ, στις 20:00</span></label>
+              <label class="opt"><input type="checkbox" id="monastic"><span>Κατά τη μοναχική τάξη</span></label>
+            </fieldset>
+            <fieldset>
+              <legend>Εορτές</legend>
+              <label class="opt"><input type="checkbox" id="feasts" checked><span>Οι μεγάλες εορτές<small>Δεσποτικές, Θεομητορικές και μεγάλων αγίων, χωρίς υπενθύμιση</small></span></label>
+            </fieldset>
+            <fieldset>
+              <legend>Η ευχή</legend>
+              <label class="opt"><input type="checkbox" id="prayer-on"><span>Καθημερινή υπενθύμιση για την ευχή</span></label>
+              <div class="times">
+                <input type="time" id="t1" value="07:00" aria-label="Πρώτη ώρα">
+                <input type="time" id="t2" value="" aria-label="Δεύτερη ώρα (προαιρετική)">
+                <small class="muted">η δεύτερη ώρα είναι προαιρετική</small>
+              </div>
+            </fieldset>
+          </div>
+          <p class="summary-line" id="summary-line"></p>
+
+          <div class="actions">
+            <div class="action">
+              <h3>Συνδρομή</h3>
+              <p>Το ημερολόγιο του κινητού την ενημερώνει μόνο του, κάθε χρόνο. Στο iPhone, όταν την προσθέσετε, φροντίστε η επιλογή <em>«Αφαίρεση ειδοποιήσεων»</em> να είναι κλειστή. Το Google Calendar δεν κρατά τις υπενθυμίσεις των συνδρομών· ορίστε ειδοποιήσεις για το ημερολόγιο από τις ρυθμίσεις του.</p>
+              <div class="row">
+                <a class="btn btn-accent" id="sub-webcal" href="#">iPhone, iPad, Mac</a>
+                <a class="btn" id="sub-google" href="#" target="_blank" rel="noopener">Google Calendar</a>
+                <button class="btn" type="button" id="sub-copy">Αντιγραφή διεύθυνσης</button><span class="copied" id="copied"></span>
+              </div>
+            </div>
+            <div class="action">
+              <h3>Λήψη αρχείου</h3>
+              <p>Ένα αρχείο για τους επόμενους 13 μήνες, με όλες τις υπενθυμίσεις. Ανοίξτε το με την εφαρμογή ημερολογίου του κινητού. Στο Google Calendar εισάγεται από τον υπολογιστή (calendar.google.com → Ρυθμίσεις → Εισαγωγή), όπου όμως παίρνει τις δικές του προεπιλεγμένες ειδοποιήσεις. Λειτουργεί και χωρίς σύνδεση.</p>
+              <div class="row"><button class="btn btn-accent" type="button" id="download">Λήψη .ics</button></div>
+            </div>
+          </div>
+          <p class="muted" style="font-size:14.5px;margin-top:1rem">Οι υπενθυμίσεις είναι μόνο βοήθημα· τον κανόνα σας τον ορίζει ο πνευματικός σας.</p>
+        </section>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const S = window.OrthoSite;
+
+      // ── Εγκατάσταση ──────────────────────────────────────────────────────
+      const ua = navigator.userAgent;
+      const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /android/i.test(ua);
+      const os = isIOS ? 'ios' : isAndroid ? 'android' : 'desktop';
+      const mine = document.querySelector(`#howto details[data-os="${os}"]`);
+      if (mine) { mine.open = true; mine.parentNode.prepend(mine); }
+
+      function renderInstall() {
+        const box = $('install-status'), text = $('install-text'), btn = $('install-btn');
+        box.className = 'status';
+        if (S.isStandalone()) {
+          box.classList.add('ok');
+          text.textContent = 'Είστε ήδη μέσα στην εφαρμογή σε αυτή τη συσκευή.';
+          btn.hidden = true;
+          $('howto').hidden = true;
+        } else if (S.canInstall()) {
+          box.classList.add('wait');
+          text.textContent = 'Η εφαρμογή μπορεί να εγκατασταθεί σε αυτή τη συσκευή.';
+          btn.hidden = false;
+        } else {
+          text.textContent = isIOS ? 'Στο iPhone και στο iPad η εγκατάσταση γίνεται από το μενού Κοινοποίηση του Safari, όπως παρακάτω.'
+            : 'Ακολουθήστε τα βήματα για τη συσκευή σας παρακάτω.';
+          btn.hidden = true;
+        }
+      }
+      $('install-btn').addEventListener('click', async () => { await S.install(); renderInstall(); });
+      document.addEventListener('ortho:installable', renderInstall);
+      document.addEventListener('ortho:installed', () => { $('install-text').textContent = 'Η εφαρμογή εγκαταστάθηκε. Δόξα τω Θεώ.'; $('install-btn').hidden = true; });
+
+      // ── Χωρίς σύνδεση ───────────────────────────────────────────────────
+      function renderOffline() {
+        const box = $('offline-status'), text = $('offline-text');
+        box.className = 'status';
+        if (!('serviceWorker' in navigator)) { text.textContent = 'Αυτός ο browser δεν υποστηρίζει λειτουργία χωρίς σύνδεση.'; return; }
+        if (navigator.serviceWorker.controller) {
+          box.classList.add('ok');
+          text.textContent = 'Οι σελίδες είναι αποθηκευμένες σε αυτή τη συσκευή και ανοίγουν και χωρίς σύνδεση.';
+        } else {
+          box.classList.add('wait');
+          text.textContent = 'Ετοιμάζεται· την επόμενη φορά που θα ανοίξετε τη σελίδα θα λειτουργεί και χωρίς σύνδεση.';
+        }
+      }
+      if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', renderOffline);
+
+      // ── Υπενθυμίσεις ────────────────────────────────────────────────────
+      try { $('monastic').checked = localStorage.getItem('monasticMode') === 'true'; } catch (e) { /* */ }
+      function options() {
+        const prayer = $('prayer-on').checked ? [$('t1').value, $('t2').value].filter(Boolean) : [];
+        return {
+          fast: document.querySelector('input[name="fast"]:checked').value,
+          eve: $('eve').checked, feasts: $('feasts').checked, monastic: $('monastic').checked,
+          prayer: [...new Set(prayer)],
+        };
+      }
+      function query(o) {
+        const q = new URLSearchParams({ fast: o.fast, eve: o.eve ? '1' : '0', feasts: o.feasts ? '1' : '0', monastic: o.monastic ? '1' : '0' });
+        if (o.prayer.length) q.set('prayer', o.prayer.join(','));
+        return q.toString();
+      }
+      function windowDates() {
+        const n = new Date();
+        return { from: new Date(n.getFullYear(), n.getMonth(), n.getDate()), to: new Date(n.getFullYear(), n.getMonth() + 13, n.getDate()) };
+      }
+      function render() {
+        const o = options();
+        $('eve').disabled = o.fast === 'none';
+        $('t1').disabled = $('t2').disabled = !$('prayer-on').checked;
+        const path = '/api/calendar?' + query(o);
+        $('sub-webcal').href = 'webcal://' + location.host + path;
+        $('sub-google').href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent('webcal://' + location.host + path);
+        $('sub-copy').dataset.url = location.origin + path;
+        const ics = OrthoIcs.build(Object.assign(windowDates(), o, { site: location.origin }));
+        const events = (ics.match(/BEGIN:VEVENT/g) || []).length, alarms = (ics.match(/BEGIN:VALARM/g) || []).length;
+        $('summary-line').textContent = events
+          ? `Για τους επόμενους 13 μήνες: ${events} ${events === 1 ? 'γεγονός' : 'γεγονότα'} στο ημερολόγιο, ${alarms} ${alarms === 1 ? 'υπενθύμιση' : 'υπενθυμίσεις'}${o.prayer.length ? ' (η ευχή επαναλαμβάνεται κάθε ημέρα)' : ''}.`
+          : 'Δεν έχετε επιλέξει τίποτα.';
+      }
+      $('rem-form').addEventListener('change', render);
+      $('rem-form').addEventListener('input', render);
+      $('sub-copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($('sub-copy').dataset.url); $('copied').textContent = 'αντιγράφηκε'; }
+        catch (e) { window.prompt('Αντιγράψτε τη διεύθυνση:', $('sub-copy').dataset.url); }
+        setTimeout(() => { $('copied').textContent = ''; }, 2500);
+      });
+      $('download').addEventListener('click', () => {
+        const ics = OrthoIcs.build(Object.assign(windowDates(), options(), { site: location.origin }));
+        const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = 'nisteiodromio.ics';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      });
+
+      renderInstall();
+      renderOffline();
+      render();
+    })();
+  </script>
+</body>
+
+</html>
