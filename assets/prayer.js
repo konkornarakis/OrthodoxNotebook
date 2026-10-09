@@ -473,7 +473,7 @@
   }
 
   // ── Κύριος βρόχος ───────────────────────────────────────────────────────
-  let lastCounter = '', lastLabel = null, lastRhythm = '';
+  let lastCounter = '', lastLabel = null, lastRhythm = '', wasPraying = false;
   function frame(ts) {
     const now = ts / 1000;
     const dt = lastFrame ? Math.min(.1, now - lastFrame) : 0;
@@ -506,6 +506,15 @@
     const rh = advice || rhythmText();
     if (rh !== lastRhythm) { const el = $('rhythm'); el.textContent = rh; el.classList.toggle('advice', !!advice); lastRhythm = rh; }
     isonFrame(now);
+    const praying = !finished && (
+      (opts.mode === 'guide' && guideOn) ||
+      (opts.mode === 'mine' && (phase === 'in' || phase === 'out' || (phase === 'rest' && now - tRest0 < 12))) ||
+      (opts.mode === 'lips' && count > 0 && now - lastActivity < 30));
+    if (praying !== wasPraying) {
+      if (praying) document.documentElement.dataset.praying = '1';
+      else delete document.documentElement.dataset.praying;
+      wasPraying = praying;
+    }
     requestAnimationFrame(frame);
   }
   function say(text, secs) { advice = text; adviceUntil = nowS() + secs; }
@@ -521,6 +530,7 @@
   }
   const num = x => x.toLocaleString('el', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
   function rhythmText() {
+    if (finished) return 'Αν μπορείτε, αφήστε τώρα την οθόνη και μείνετε λίγο στη σιωπή.';
     if (opts.mode === 'mine') return hist.in.length ? `Ο ρυθμός σας: εισπνοή ${num(expIn)}″ · εκπνοή ${num(expOut)}″` : '';
     if (opts.mode === 'guide') { const p = pace(); return `Ρυθμός: ${opts.pace === 'custom' ? 'ο δικός σας' : PACES[opts.pace].label.toLowerCase()} · εισπνοή ${num(p.in)}″ · εκπνοή ${num(p.out)}″`; }
     return '';
@@ -669,6 +679,7 @@
   stage.addEventListener('contextmenu', e => { if (immersive) e.preventDefault(); });
 
   document.addEventListener('keydown', e => {
+    if (document.documentElement.dataset.notice === 'open') return;
     if (e.key === 'Escape' && immersive) { setImmersive(false); return; }
     if (e.code !== 'Space') return;
     if (e.target.closest && e.target.closest('input, select, textarea, summary, a, button, details')) return;
@@ -795,7 +806,7 @@
   function bumpToday() { try { localStorage.setItem(todayKey(), String(readToday() + 1)); } catch (e) { /* χωρίς αποθήκευση */ } renderToday(); }
   function renderToday() {
     const n = readToday();
-    $('today').textContent = n ? `Σήμερα σε αυτή τη συσκευή: ${n} ${n === 1 ? 'ευχή' : 'ευχές'}. Δόξα τῷ Θεῷ.` : '';
+    $('today').textContent = n ? `Σήμερα σε αυτή τη συσκευή: ${n} ${n === 1 ? 'ευχή' : 'ευχές'}. Δόξα τω Θεώ.` : '';
   }
   function announce(text) { $('sr-status').textContent = text; }
 

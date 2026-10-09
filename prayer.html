@@ -19,6 +19,7 @@
     .first-time li { margin-bottom: .35rem; }
     .first-time li::marker { color: var(--cinnabar); font-family: var(--font-display); }
 
+    .practice-note { margin: 0 0 1rem; padding: .7rem 1rem; border-left: 2px solid var(--cinnabar); background: rgba(163, 40, 27, .06); border-radius: 0 6px 6px 0; font-size: 15px; line-height: 1.6; color: var(--ink-soft); }
     .practice { padding: 1.2rem 1.2rem 1.4rem; }
     .modes { display: flex; justify-content: center; margin-bottom: .9rem; }
     .modes button {
@@ -96,7 +97,6 @@
     .hold-btn.down { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(210,171,85,.28), 0 0 28px rgba(240,168,58,.45); }
 
     /* ── Ήσυχη οθόνη ─────────────────────────────────────────────────── */
-    body.no-scroll { overflow: hidden; }
     .imm-bar, .imm-hint { display: none; }
     .stage.immersive {
       position: fixed; inset: 0; z-index: 1000; justify-content: center; padding: 3.5rem 1rem 2rem;
@@ -200,11 +200,11 @@
 <body>
   <div class="ort-root">
     <div class="ort-shell">
-      <header data-page="prayer" data-title="Νοερά προσευχή" data-subtitle="«Κύριε Ἰησοῦ Χριστέ, ἐλέησόν με» — μάθηση και άσκηση"></header>
+      <header data-page="prayer" data-title="Νοερά προσευχή" data-subtitle="«Κύριε Ἰησοῦ Χριστέ, ἐλέησόν με»"></header>
 
       <main>
         <div class="prose">
-          <p class="initial">Η ευχή του Ιησού είναι η απλούστερη και βαθύτερη προσευχή της Ορθοδοξίας: η συνεχής επίκληση του ονόματος του Κυρίου με ταπείνωση και πόθο. Είναι ο δρόμος με τον οποίο οι Πατέρες εφάρμοσαν το αποστολικό «ἀδιαλείπτως προσεύχεσθε» (Α΄ Θεσ. 5:17). Εδώ μπορείτε να τη μάθετε και να την ασκήσετε, με τη βοήθεια της αναπνοής και του κομποσκοινιού, όπως διδάσκουν οι Πατέρες.</p>
+          <p class="initial">Η ευχή του Ιησού είναι η απλούστερη και βαθύτερη προσευχή της Ορθοδοξίας: η συνεχής επίκληση του ονόματος του Κυρίου με ταπείνωση και πόθο. Είναι ο δρόμος με τον οποίο οι Πατέρες εφάρμοσαν το αποστολικό «ἀδιαλείπτως προσεύχεσθε» (Α΄ Θεσ. 5:17). Παρακάτω θα βρείτε λίγα από όσα γράφουν οι Πατέρες γι’ αυτήν και μια απλή βοήθεια για την άσκηση, με την αναπνοή και το κομποσκοίνι.</p>
         </div>
         <blockquote class="hymn">
           <p class="hymn-text">Ἰησοῦ μνήμη κολληθήτω τῇ πνοῇ σου, καὶ τότε γνώσῃ ἡσυχίας ὠφέλειαν.</p>
@@ -215,6 +215,7 @@
         <!-- ── Άσκηση ─────────────────────────────────────────────── -->
         <section class="section" id="askisi">
           <h2 class="section-heading">Η άσκηση</h2>
+          <p class="practice-note">Η άσκηση σε οθόνη δεν είναι ούτε ο ιδανικός ούτε ο κανονικός τρόπος της ευχής. Ένα αληθινό κομποσκοίνι, χωρίς οθόνη, είναι πολύ καλύτερο. Αν σας βοηθά, ας είναι μόνο για λίγο, για να ξεκινήσετε· ύστερα αφήστε την.</p>
 
           <details class="first-time">
             <summary>Πρώτη φορά; Πώς να ξεκινήσετε</summary>
