@@ -47,6 +47,8 @@
       break-inside: avoid; display: flex; gap: 10px; align-items: baseline;
       padding: .45rem 0; border-bottom: 1px solid var(--rule-soft); font-size: 16px;
     }
+    .saints li a { color: var(--ink); text-decoration: none; }
+    .saints li a:hover { color: var(--cinnabar); text-decoration: underline; }
     .saints li svg { width: 10px; height: 10px; color: var(--cinnabar); flex: none; position: relative; top: 1px; }
     .loading { text-align: center; padding: 2.5rem 0; color: var(--ink-faint); font-style: italic; }
     .error { padding: 1rem 1.2rem; border: 1px solid var(--rule); border-left: 3px solid var(--cinnabar); border-radius: 6px; background: var(--vellum); color: var(--ink-soft); font-size: 15px; }
@@ -111,50 +113,111 @@
         </blockquote>`;
     }
 
+    // ── Άγιοι της ημέρας ─────────────────────────────────────────────────
+    // 1) το δικό μας endpoint (/api/saints, Vercel ή dev-server)· 2) δημόσιοι CORS proxies ως εφεδρεία.
+    const PROXIES = [
+      u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+      u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+      u => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+    ];
+
+    async function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
+      try {
+        const resp = await fetch(url, { signal: ctrl.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp;
+      } finally { clearTimeout(timer); }
+    }
+
+    function undouble(name) {
+      const w = name.split(' ');
+      if (w.length % 2 === 0 && w.slice(0, w.length / 2).join(' ') === w.slice(w.length / 2).join(' ')) return w.slice(0, w.length / 2).join(' ');
+      const half = name.length / 2;
+      if (Number.isInteger(half) && name.slice(0, half).trim() === name.slice(half).trim()) return name.slice(0, half).trim();
+      return name;
+    }
+
+    function decodePage(buf, contentType) {
+      let charset = (/charset=([\w-]+)/i.exec(contentType || '') || [])[1];
+      if (!charset) {
+        const head = new TextDecoder('latin1').decode(buf.slice(0, 4096));
+        charset = (/<meta[^>]+charset=["']?([\w-]+)/i.exec(head) || [])[1];
+      }
+      try { return new TextDecoder((charset || 'utf-8').toLowerCase()).decode(buf); }
+      catch (e) { return new TextDecoder('utf-8').decode(buf); }
+    }
+
+    function parseSaints(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const out = [], seen = new Set();
+      for (const a of doc.querySelectorAll('a[href*="saint.aspx"]')) {
+        const href = a.getAttribute('href') || '';
+        const id = (/\/(\d+)\/saint\.aspx/i.exec(href) || [])[1];
+        const name = undouble(a.textContent.replace(/\s+/g, ' ').trim());
+        if (!id || !name || seen.has(id)) continue;
+        seen.add(id);
+        out.push({ name, url: new URL(href, 'https://www.saint.gr/').href });
+      }
+      return out;
+    }
+
+    async function loadSaints(m, d) {
+      const key = 'saints-' + m + '-' + d;
+      try { const c = sessionStorage.getItem(key); if (c) return JSON.parse(c); } catch (e) { /* χωρίς αποθήκευση */ }
+
+      const errors = [];
+      let saints = null;
+      try {
+        const resp = await fetchWithTimeout(`/api/saints?m=${m}&d=${d}`, 12000);
+        const json = await resp.json();
+        if (!json.ok) throw new Error(json.error || 'σφάλμα');
+        saints = json.saints;
+      } catch (e) { errors.push('api: ' + e.message); }
+
+      if (!saints || !saints.length) {
+        const src = `https://www.saint.gr/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/index.aspx`;
+        for (const proxy of PROXIES) {
+          try {
+            const resp = await fetchWithTimeout(proxy(src), 12000);
+            const list = parseSaints(decodePage(await resp.arrayBuffer(), resp.headers.get('content-type')));
+            if (list.length) { saints = list; break; }
+            errors.push('proxy: κενή απάντηση');
+          } catch (e) { errors.push('proxy: ' + e.message); }
+        }
+      }
+      if (!saints || !saints.length) throw new Error(errors.join(' · '));
+      try { sessionStorage.setItem(key, JSON.stringify(saints)); } catch (e) { /* χωρίς αποθήκευση */ }
+      return saints;
+    }
+
     async function render(date) {
       document.getElementById('date-picker').value = toISO(date);
       renderHead(date);
 
       const el = document.getElementById('saints');
-      el.innerHTML = '<div class="loading">Φόρτωση…</div>';
+      el.innerHTML = '<div class="loading">Φόρτωση του συναξαριστή…</div>';
       const myId = ++requestId;
+      const m = date.getMonth() + 1, d = date.getDate();
+      const saintUrl = `https://www.saint.gr/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/index.aspx`;
 
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      // Ο saint.gr δεν επιτρέπει απευθείας κλήσεις από τον browser· περνάμε από διαμεσολαβητή CORS.
-      const saintUrl = `https://www.saint.gr/${mm}/${dd}/index.aspx`;
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(saintUrl)}`;
-
-      const saints = [];
+      let saints;
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 12000);
-        const resp = await fetch(proxyUrl, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const json = await resp.json();
-        const doc = new DOMParser().parseFromString(json.contents || '', 'text/html');
-        const seen = new Set();
-        for (const a of doc.querySelectorAll('a[href*="/saint.aspx"]')) {
-          let name = a.textContent.replace(/\s+/g, ' ').trim();
-          // Ο saint.gr αποδίδει κάθε όνομα δύο φορές στον ίδιο σύνδεσμο
-          const half = name.length / 2;
-          if (Number.isInteger(half) && name.slice(0, half).trim() === name.slice(half).trim()) name = name.slice(0, half).trim();
-          if (name && !seen.has(name)) { seen.add(name); saints.push(name); }
-        }
+        saints = await loadSaints(m, d);
       } catch (err) {
         if (myId !== requestId) return;
         el.innerHTML = `<div class="error"><strong>Δεν ήταν δυνατή η φόρτωση του συναξαριστή.</strong><br>
-          Ελέγξτε τη σύνδεσή σας ή δοκιμάστε ξανά αργότερα. Μπορείτε επίσης να τον δείτε απευθείας στο
-          <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a>.</div>`;
+          Δοκιμάστε ξανά σε λίγο ή δείτε τον απευθείας στο <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a>.
+          <br><button class="link-btn" type="button" onclick="render(viewDate)">Νέα προσπάθεια</button>
+          <div style="font-size:12px;opacity:.7;margin-top:.4rem">${esc(err.message)}</div></div>`;
         return;
       }
       if (myId !== requestId) return;
 
-      el.innerHTML = saints.length
-        ? `<ul class="saints">${saints.map(s => `<li>${CROSS}<span>${esc(s)}</span></li>`).join('')}</ul>
-           <div class="source-note">Πηγή: <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a></div>`
-        : '<div class="loading">Δεν βρέθηκαν άγιοι για αυτή την ημέρα.</div>';
+      el.innerHTML = `<ul class="saints">${saints.map(s =>
+          `<li>${CROSS}<a href="${esc(s.url)}" target="_blank" rel="noopener" title="Ο βίος στο saint.gr">${esc(s.name)}</a></li>`).join('')}</ul>
+         <div class="source-note">Πηγή: <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a></div>`;
     }
 
     function shiftDay(delta) { viewDate = C.addDays(viewDate, delta); render(viewDate); }

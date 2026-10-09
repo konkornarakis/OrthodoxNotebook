@@ -41,7 +41,7 @@
     .day-back { margin-top: .7rem; font-size: 14px; }
 
     /* ── Πλοήγηση μήνα ───────────────────────────────────────────────── */
-    .month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2rem 0 1rem; flex-wrap: wrap; }
+    .month-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 1rem 0 1rem; flex-wrap: wrap; }
     .month-arrow {
       width: 36px; height: 36px; border-radius: 50%;
       border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft);
@@ -91,6 +91,86 @@
     .cell.f-strict .cell-bar { color: var(--f-strict-ink); }
 
     .cal-hint { text-align: center; font-size: 13.5px; color: var(--ink-faint); margin: .7rem 0 0; font-style: italic; }
+
+
+    /* ── Επιλογή προβολής ────────────────────────────────────────────── */
+    .view-tabs { display: flex; justify-content: center; margin: 2rem 0 0; }
+    .view-tabs button {
+      font-family: var(--font-display); font-size: 16px; letter-spacing: .04em;
+      padding: 6px 18px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); cursor: pointer;
+    }
+    .view-tabs button + button { border-left: none; }
+    .view-tabs button:first-child { border-radius: 999px 0 0 999px; }
+    .view-tabs button:last-child { border-radius: 0 999px 999px 0; }
+    .view-tabs button:hover { color: var(--cinnabar); }
+    .view-tabs button[aria-selected="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .month-label { font-family: var(--font-display); font-size: 22px; color: var(--ink); padding: 0 4px; text-align: center; }
+
+    /* ── Εβδομάδα ────────────────────────────────────────────────────── */
+    .week { display: flex; flex-direction: column; gap: 6px; }
+    .wk-day {
+      display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start;
+      width: 100%; text-align: left; font: inherit; cursor: pointer;
+      padding: .75rem 1rem .75rem 0; border: 1px solid var(--rule-soft); border-radius: 8px;
+      background: var(--vellum); position: relative; overflow: hidden;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .wk-day::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: currentColor; }
+    .wk-day.lv-none::before { opacity: 0; }
+    .wk-day:hover { border-color: var(--gold); box-shadow: var(--shadow); }
+    .wk-day.today { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+    .wk-day.selected { border-color: var(--cinnabar); box-shadow: 0 0 0 1px var(--cinnabar); }
+    .wk-date { display: block; text-align: center; padding-left: 4px; }
+    .wk-wd { display: block; font-family: var(--font-display); font-size: 15px; color: var(--ink-soft); }
+    .wk-num { display: block; font-family: var(--font-display); font-size: 34px; line-height: 1.05; color: var(--ink); }
+    .wk-day.red .wk-num { color: var(--cinnabar); }
+    .wk-body { display: block; min-width: 0; }
+    .wk-fast { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
+    .wk-fast .seal { width: 10px; height: 10px; }
+    .wk-period { display: block; font-style: italic; font-size: 14.5px; color: var(--ink-soft); }
+    .wk-feast { display: block; font-size: 14.5px; color: var(--ink); margin-top: 2px; }
+    .wk-feast.red { color: var(--cinnabar); }
+    .wk-names { display: block; font-size: 13.5px; color: var(--ink-faint); margin-top: 2px; }
+
+    /* ── Έτος ────────────────────────────────────────────────────────── */
+    .year { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .mini { border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); padding: .6rem .6rem .7rem; }
+    .mini-title {
+      display: block; width: 100%; border: none; background: none; cursor: pointer; padding: 0 0 .35rem;
+      font-family: var(--font-display); font-size: 17px; color: var(--ink); text-align: center;
+    }
+    .mini-title:hover { color: var(--cinnabar); }
+    .mini.current .mini-title { color: var(--cinnabar); }
+    .mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .mini-dow { text-align: center; font-size: 10.5px; color: var(--ink-faint); padding-bottom: 2px; }
+    .mini-dow.sun { color: var(--cinnabar); }
+    .mc {
+      aspect-ratio: 1 / 1; border: none; border-radius: 3px; padding: 0; cursor: pointer;
+      font-family: var(--font-body); font-size: 11px; line-height: 1; color: var(--ink);
+      background: var(--f-none-bg); box-shadow: inset 0 0 0 1px var(--rule-soft);
+    }
+    .mc.empty { visibility: hidden; }
+    .mc.red { color: var(--cinnabar); font-weight: 600; }
+    .mc.f-dairy  { background: var(--f-dairy-bg); box-shadow: inset 0 -2px 0 var(--f-dairy); }
+    .mc.f-fish   { background: var(--f-fish-bg);  box-shadow: inset 0 -2px 0 var(--f-fish); }
+    .mc.f-oil    { background: var(--f-oil-bg);   box-shadow: inset 0 -2px 0 var(--f-oil); }
+    .mc.f-dry    { background: var(--f-dry-bg);   box-shadow: inset 0 -2px 0 var(--f-dry); }
+    .mc.f-strict { background: var(--f-strict-bg); color: var(--f-strict-ink); }
+    .mc:hover { outline: 1px solid var(--gold); }
+    .mc.today { outline: 2px solid var(--gold); outline-offset: -1px; }
+    .mc.selected { outline: 2px solid var(--cinnabar); outline-offset: -1px; }
+
+    @media (max-width: 900px) { .year { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 620px) {
+      .year { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .mini { padding: .45rem .4rem .5rem; }
+      .mc { font-size: 10px; }
+      .wk-day { grid-template-columns: 64px 1fr; gap: 10px; }
+      .wk-num { font-size: 28px; }
+      .wk-wd { font-size: 13px; }
+      .view-tabs button { padding: 6px 13px; font-size: 15px; }
+      .month-label { font-size: 18px; }
+    }
 
     /* ── Υπόμνημα ────────────────────────────────────────────────────── */
     .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
@@ -179,15 +259,22 @@
       <main>
         <section id="day" class="day panel" aria-live="polite"></section>
 
+        <div class="view-tabs" role="tablist" aria-label="Προβολή ημερολογίου">
+          <button type="button" role="tab" data-view="week" onclick="setView('week')">Εβδομάδα</button>
+          <button type="button" role="tab" data-view="month" onclick="setView('month')">Μήνας</button>
+          <button type="button" role="tab" data-view="year" onclick="setView('year')">Έτος</button>
+        </div>
+
         <div class="month-nav">
-          <button class="month-arrow" type="button" onclick="shiftMonth(-1)" aria-label="Προηγούμενος μήνας">‹</button>
+          <button class="month-arrow" type="button" onclick="shift(-1)" id="prev-btn">‹</button>
           <select id="month-select" class="month-select" onchange="jumpTo()" aria-label="Μήνας"></select>
+          <span id="week-label" class="month-label"></span>
           <select id="year-select" class="month-select" onchange="jumpTo()" aria-label="Έτος"></select>
-          <button class="month-arrow" type="button" onclick="shiftMonth(1)" aria-label="Επόμενος μήνας">›</button>
+          <button class="month-arrow" type="button" onclick="shift(1)" id="next-btn">›</button>
           <button class="btn" type="button" onclick="goToday()">Σήμερα</button>
         </div>
 
-        <div id="cal" class="cal" role="grid" aria-label="Ημερολόγιο μήνα"></div>
+        <div id="cal"></div>
         <p class="cal-hint">Πατήστε μια ημέρα για να δείτε τη νηστεία, τις εορτές και τους εορτάζοντες.</p>
 
         <section class="section">
@@ -230,20 +317,26 @@
     const C = window.OrthoCal;
     const LEVELS = C.LEVELS;
     const CROSS = window.OrthoSite ? window.OrthoSite.SMALL_CROSS : '';
-    const PERIOD_NAMES = { none: 'Χωρίς νηστεία' };
 
     function readMonastic() { try { return localStorage.getItem('monasticMode') === 'true'; } catch (e) { return false; } }
     let monastic = readMonastic();
     const now = new Date();
     const TODAY = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let selected = TODAY;
+    let cursor = TODAY;          // η ημέρα γύρω από την οποία σχεδιάζεται η τρέχουσα προβολή
     let viewYear = TODAY.getFullYear();
-    let viewMonth = TODAY.getMonth();
+    const VIEWS = ['week', 'month', 'year'];
+    let view = (() => { try { const v = localStorage.getItem('calView'); return VIEWS.includes(v) ? v : 'month'; } catch (e) { return 'month'; } })();
 
     function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function same(a, b) { return C.dayDiff(a, b) === 0; }
     function fastOf(d) { return C.fasting(d, { monastic }); }
-    function isRed(d) { return d.getDay() === 0 || C.feastsOf(d).some(f => f.rank === 'great' || f.rank === 'major'); }
+    function isBig(feasts) { return feasts.some(f => f.rank === 'great' || f.rank === 'major'); }
+    function isRed(d) { return d.getDay() === 0 || isBig(C.feastsOf(d)); }
+    function weekStart(d) { return C.addDays(d, -((d.getDay() + 6) % 7)); }
+    function dayLabel(d, f, feasts) {
+      return `${C.formatLong(d)}: ${f.label}${f.period ? ', ' + f.period : ''}${feasts.length ? '. ' + feasts.map(x => x.name).join('. ') : ''}`;
+    }
 
     // ── Η ημέρα ──────────────────────────────────────────────────────────
     function renderDay() {
@@ -277,59 +370,154 @@
         </blockquote>`;
     }
 
-    // ── Ημερολόγιο μήνα ──────────────────────────────────────────────────
-    function renderCalendar() {
-      const first = new Date(viewYear, viewMonth, 1);
-      const last = new Date(viewYear, viewMonth + 1, 0);
+    // ── Προβολή: μήνας ───────────────────────────────────────────────────
+    function monthHtml() {
+      const y = cursor.getFullYear(), m = cursor.getMonth();
+      const first = new Date(y, m, 1);
+      const last = new Date(y, m + 1, 0);
       const lead = (first.getDay() + 6) % 7;
       const dows = [1, 2, 3, 4, 5, 6, 0].map(i =>
         `<div class="cal-dow${i === 0 ? ' sun' : ''}" role="columnheader" title="${C.DAYS[i]}">${C.DAYS_SHORT[i]}</div>`).join('');
       let cells = '';
       for (let i = 0; i < lead; i++) cells += '<div class="cell empty" aria-hidden="true"></div>';
       for (let n = 1; n <= last.getDate(); n++) {
-        const d = new Date(viewYear, viewMonth, n);
+        const d = new Date(y, m, n);
         const f = fastOf(d);
         const feasts = C.feastsOf(d);
-        const big = feasts.some(x => x.rank === 'great' || x.rank === 'major');
+        const big = isBig(feasts);
         const cls = ['cell', 'f-' + f.level, 'lv-' + f.level];
         if (d.getDay() === 0 || big) cls.push('red');
         if (same(d, TODAY)) cls.push('today');
         if (same(d, selected)) cls.push('selected');
-        const label = `${C.formatLong(d)}: ${f.label}${f.period ? ', ' + f.period : ''}${feasts.length ? '. ' + feasts.map(x => x.name).join('. ') : ''}`;
-        cells += `<button type="button" class="${cls.join(' ')}" onclick="selectDay(${n})" aria-label="${esc(label)}" title="${esc(label)}"${same(d, selected) ? ' aria-pressed="true"' : ''}>
+        const label = dayLabel(d, f, feasts);
+        cells += `<button type="button" class="${cls.join(' ')}" onclick="pick(${y},${m},${n})" aria-label="${esc(label)}" title="${esc(label)}"${same(d, selected) ? ' aria-pressed="true"' : ''}>
           ${big ? `<span class="cell-feast">${CROSS}</span>` : ''}
           <span class="cell-num">${n}</span><span class="cell-bar"></span></button>`;
       }
-      document.getElementById('cal').innerHTML = dows + cells;
-
-      document.getElementById('month-select').innerHTML =
-        C.MONTHS.map((m, i) => `<option value="${i}"${i === viewMonth ? ' selected' : ''}>${m}</option>`).join('');
-      const years = [];
-      for (let y = 1990; y <= 2099; y++) years.push(y);
-      document.getElementById('year-select').innerHTML =
-        years.map(y => `<option value="${y}"${y === viewYear ? ' selected' : ''}>${y}</option>`).join('');
+      return `<div class="cal" role="grid" aria-label="Ημερολόγιο μήνα">${dows}${cells}</div>`;
     }
 
-    function selectDay(n) {
-      selected = new Date(viewYear, viewMonth, n);
+    // ── Προβολή: εβδομάδα ────────────────────────────────────────────────
+    function weekHtml() {
+      const start = weekStart(cursor);
+      let rows = '';
+      for (let i = 0; i < 7; i++) {
+        const d = C.addDays(start, i);
+        const f = fastOf(d);
+        const feasts = C.feastsOf(d);
+        const names = C.namedaysOf(d);
+        const cls = ['wk-day', 'f-' + f.level, 'lv-' + f.level];
+        if (isRed(d)) cls.push('red');
+        if (same(d, TODAY)) cls.push('today');
+        if (same(d, selected)) cls.push('selected');
+        rows += `<button type="button" class="${cls.join(' ')}" onclick="pick(${d.getFullYear()},${d.getMonth()},${d.getDate()})" aria-label="${esc(dayLabel(d, f, feasts))}">
+          <span class="wk-date"><span class="wk-wd">${C.DAYS[d.getDay()]}</span><span class="wk-num">${d.getDate()}</span></span>
+          <span class="wk-body">
+            <span class="wk-fast"><span class="seal lv-${f.level}"></span>${esc(f.label)}</span>
+            ${f.period ? `<span class="wk-period">${esc(f.period)}</span>` : ''}
+            ${feasts.map(x => `<span class="wk-feast${x.rank !== 'minor' ? ' red' : ''}">${esc(x.name)}</span>`).join('')}
+            ${names.length ? `<span class="wk-names">Εορτάζουν: ${esc(names.join(', '))}</span>` : ''}
+          </span></button>`;
+      }
+      return `<div class="week">${rows}</div>`;
+    }
+
+    // ── Προβολή: έτος ────────────────────────────────────────────────────
+    function yearHtml() {
+      const y = cursor.getFullYear();
+      const dows = [1, 2, 3, 4, 5, 6, 0].map(i => `<span class="mini-dow${i === 0 ? ' sun' : ''}">${C.DAYS[i][0]}</span>`).join('');
+      let html = '';
+      for (let m = 0; m < 12; m++) {
+        const lead = (new Date(y, m, 1).getDay() + 6) % 7;
+        const days = new Date(y, m + 1, 0).getDate();
+        let cells = '';
+        for (let i = 0; i < lead; i++) cells += '<span class="mc empty"></span>';
+        for (let n = 1; n <= days; n++) {
+          const d = new Date(y, m, n);
+          const f = fastOf(d);
+          const feasts = C.feastsOf(d);
+          const cls = ['mc', 'f-' + f.level];
+          if (d.getDay() === 0 || isBig(feasts)) cls.push('red');
+          if (same(d, TODAY)) cls.push('today');
+          if (same(d, selected)) cls.push('selected');
+          const label = dayLabel(d, f, feasts);
+          cells += `<button type="button" class="${cls.join(' ')}" onclick="pick(${y},${m},${n})" title="${esc(label)}" aria-label="${esc(label)}">${n}</button>`;
+        }
+        const current = y === TODAY.getFullYear() && m === TODAY.getMonth();
+        html += `<section class="mini${current ? ' current' : ''}">
+          <button type="button" class="mini-title" onclick="openMonth(${m})" title="Προβολή μήνα">${C.MONTHS[m]}</button>
+          <div class="mini-grid">${dows}${cells}</div></section>`;
+      }
+      return `<div class="year">${html}</div>`;
+    }
+
+    // ── Σχεδίαση και πλοήγηση ────────────────────────────────────────────
+    function renderCalendar() {
+      viewYear = cursor.getFullYear();
+      document.querySelectorAll('.view-tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === view)));
+
+      const monthSel = document.getElementById('month-select');
+      const yearSel = document.getElementById('year-select');
+      const weekLbl = document.getElementById('week-label');
+      monthSel.hidden = view !== 'month';
+      yearSel.hidden = view === 'week';
+      weekLbl.hidden = view !== 'week';
+      monthSel.innerHTML = C.MONTHS.map((m, i) => `<option value="${i}"${i === cursor.getMonth() ? ' selected' : ''}>${m}</option>`).join('');
+      const years = [];
+      for (let y = 1990; y <= 2099; y++) years.push(y);
+      yearSel.innerHTML = years.map(y => `<option value="${y}"${y === viewYear ? ' selected' : ''}>${y}</option>`).join('');
+      if (view === 'week') {
+        const s = weekStart(cursor), e = C.addDays(s, 6);
+        weekLbl.textContent = s.getMonth() === e.getMonth()
+          ? `${s.getDate()} – ${e.getDate()} ${C.MONTHS_GEN[e.getMonth()]} ${e.getFullYear()}`
+          : `${s.getDate()} ${C.MONTHS_GEN[s.getMonth()]}${s.getFullYear() !== e.getFullYear() ? ' ' + s.getFullYear() : ''} – ${e.getDate()} ${C.MONTHS_GEN[e.getMonth()]} ${e.getFullYear()}`;
+      }
+      const unit = { week: ['Προηγούμενη εβδομάδα', 'Επόμενη εβδομάδα'], month: ['Προηγούμενος μήνας', 'Επόμενος μήνας'], year: ['Προηγούμενο έτος', 'Επόμενο έτος'] }[view];
+      document.getElementById('prev-btn').setAttribute('aria-label', unit[0]);
+      document.getElementById('next-btn').setAttribute('aria-label', unit[1]);
+
+      document.getElementById('cal').innerHTML = view === 'week' ? weekHtml() : view === 'year' ? yearHtml() : monthHtml();
+    }
+
+    function renderAllForView() {
+      const prevYear = viewYear;
+      renderCalendar();
+      if (prevYear !== viewYear || !document.getElementById('periods').innerHTML) { renderPeriods(); renderKeyDates(); }
+    }
+
+    function setView(v) {
+      view = v;
+      cursor = selected;
+      try { localStorage.setItem('calView', v); } catch (e) { /* ιδιωτική περιήγηση */ }
+      renderAllForView();
+    }
+    function shift(delta) {
+      if (view === 'week') cursor = C.addDays(cursor, 7 * delta);
+      else if (view === 'year') cursor = new Date(cursor.getFullYear() + delta, cursor.getMonth(), 1);
+      else cursor = new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1);
+      renderAllForView();
+    }
+    function jumpTo() {
+      const m = view === 'month' ? Number(document.getElementById('month-select').value) : cursor.getMonth();
+      cursor = new Date(Number(document.getElementById('year-select').value), m, 1);
+      renderAllForView();
+    }
+    function openMonth(m) {
+      view = 'month';
+      try { localStorage.setItem('calView', view); } catch (e) { /* ιδιωτική περιήγηση */ }
+      cursor = new Date(cursor.getFullYear(), m, 1);
+      renderAllForView();
+    }
+    function pick(y, m, n) {
+      selected = new Date(y, m, n);
+      if (view === 'week') cursor = selected;
       renderDay();
       renderCalendar();
       const panel = document.getElementById('day');
       if (panel.getBoundingClientRect().top < 0) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    function shiftMonth(delta) {
-      viewMonth += delta;
-      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-      renderAllForView();
-    }
-    function jumpTo() {
-      viewMonth = Number(document.getElementById('month-select').value);
-      viewYear = Number(document.getElementById('year-select').value);
-      renderAllForView();
-    }
     function goToday() {
-      selected = TODAY; viewYear = TODAY.getFullYear(); viewMonth = TODAY.getMonth();
+      selected = TODAY; cursor = TODAY;
       renderDay(); renderAllForView();
     }
     function setMonastic(v) {
@@ -405,7 +593,6 @@
       document.getElementById('ics-hint').textContent = 'Όλες οι ημέρες του ' + y + ' για το ημερολόγιο του κινητού σας.';
     }
 
-    function renderAllForView() { renderCalendar(); renderPeriods(); renderKeyDates(); }
 
     // ── Εξαγωγή iCalendar ────────────────────────────────────────────────
     function icsText(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
