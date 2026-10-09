@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Νοερά προσευχή — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <style>
+    /* ── Χώρος άσκησης ───────────────────────────────────────────────── */
+    .practice { padding: 1.2rem 1.2rem 1.4rem; }
+    .modes { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .modes button {
+      font-family: var(--font-display); font-size: 16px; letter-spacing: .03em;
+      padding: 6px 16px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); cursor: pointer;
+    }
+    .modes button + button { border-left: none; }
+    .modes button:first-child { border-radius: 999px 0 0 999px; }
+    .modes button:last-child { border-radius: 0 999px 999px 0; }
+    .modes button:hover { color: var(--cinnabar); }
+    .modes button[aria-pressed="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .mode-hint { text-align: center; font-size: 14.5px; color: var(--ink-soft); font-style: italic; margin: -.4rem auto .6rem; max-width: 560px; }
+
+    .stage {
+      --b: 0;
+      position: relative; display: flex; flex-direction: column; align-items: center;
+      border-radius: 12px; padding: .5rem 0 0; user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stage.rope-mode { cursor: pointer; }
+    .stage:fullscreen { justify-content: center; background: #120d0a; color: #efe3cc; padding: 2rem; }
+    .stage:fullscreen .prayer-text, .stage:fullscreen .counter { color: #efe3cc; }
+    .stage:fullscreen .stage-tools { display: none; }
+
+    .rope { width: min(100%, 380px); height: auto; display: block; overflow: visible; }
+    .rope .cord { fill: none; stroke: var(--rule); stroke-width: 1.2; }
+    .rope .knot { fill: var(--ink); transition: fill .35s, r .25s; }
+    .rope .bead { fill: var(--porphyra); }
+    .rope .knot.done { fill: var(--gold); }
+    .rope .knot.cur { fill: var(--cinnabar); filter: drop-shadow(0 0 4px var(--cinnabar)); }
+    .rope .cross { fill: var(--ink); }
+    .rope .tassel { stroke: var(--ink); stroke-width: 1.1; stroke-linecap: round; }
+    .stage:fullscreen .rope .knot:not(.done):not(.cur), .stage:fullscreen .rope .cross { fill: #8c7660; }
+    .stage:fullscreen .rope .tassel { stroke: #8c7660; }
+
+    .lamp-glow { opacity: calc(.25 + .6 * var(--b)); transform-box: fill-box; transform-origin: center; transform: scale(calc(.75 + .5 * var(--b))); }
+    .lamp-flame { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(calc(.85 + .3 * var(--b))); }
+    .lamp-cup { fill: var(--cinnabar); opacity: .9; }
+    .lamp-chain { stroke: var(--gold); stroke-width: 1; fill: none; }
+    .lamp-rim { stroke: var(--gold); stroke-width: 2; stroke-linecap: round; }
+
+    .phase { font-family: var(--font-display); font-size: 14px; letter-spacing: .25em; text-transform: uppercase; color: var(--gold-deep); min-height: 1.3em; margin-top: -.2rem; }
+    .prayer-text { text-align: center; font-family: var(--font-display); font-size: clamp(20px, 4.6vw, 31px); line-height: 1.45; color: var(--ink); margin: .35rem 0 .2rem; min-height: 2.9em; max-width: 640px; }
+    .prayer-line { display: block; }
+    .prayer-text .w { opacity: .35; transition: opacity .45s, color .45s; }
+    .prayer-text .w.lit { opacity: 1; }
+    .prayer-line.now .w.lit { color: var(--cinnabar); }
+    .prayer-text.all .w { opacity: 1; color: inherit; }
+    .prayer-text.flash { animation: flash .5s ease-out; }
+    @keyframes flash { from { color: var(--cinnabar); } to { color: inherit; } }
+    .prayer-text.silent .prayer-line { visibility: hidden; }
+    .silent-note { display: none; font-style: italic; color: var(--ink-faint); font-size: 15px; }
+    .prayer-text.silent .silent-note { display: block; }
+    .counter { font-size: 15px; color: var(--ink-soft); min-height: 1.4em; }
+    .counter b { font-family: var(--font-display); font-size: 22px; font-weight: 400; color: var(--ink); }
+
+    .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 1rem; }
+    .controls .btn { height: 42px; padding: 0 20px; font-size: 15.5px; }
+    .btn-knot { min-width: 150px; justify-content: center; }
+    .stage-tools { display: flex; justify-content: center; gap: 14px; margin-top: .6rem; font-size: 14px; }
+
+    .settings { margin-top: 1.2rem; border-top: 1px solid var(--rule-soft); padding-top: .8rem; }
+    .settings summary { cursor: pointer; font-family: var(--font-display); font-size: 18px; color: var(--ink); list-style: none; text-align: center; }
+    .settings summary::-webkit-details-marker { display: none; }
+    .settings summary::after { content: " ▾"; color: var(--gold); font-size: 14px; }
+    .settings[open] summary::after { content: " ▴"; }
+    .set-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 22px; margin-top: 1rem; }
+    .field label, .field .label { display: block; font-size: 13px; letter-spacing: .06em; color: var(--gold-deep); margin-bottom: 4px; font-family: var(--font-display); text-transform: uppercase; }
+    .field select, .field input[type="text"] {
+      width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 6px;
+      background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 15px;
+    }
+    .field .hint { font-size: 13px; color: var(--ink-faint); margin-top: 4px; line-height: 1.45; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 5px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum);
+      color: var(--ink-soft); font-size: 14px; cursor: pointer; font-family: var(--font-body);
+    }
+    .chip[aria-pressed="true"] { border-color: var(--cinnabar); color: var(--cinnabar); background: rgba(210,171,85,.14); }
+    .field label.check { font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--ink); margin-bottom: 0; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); margin-top: 4px; }
+    .check input { accent-color: var(--cinnabar); width: 17px; height: 17px; }
+
+    .calib { margin-top: 1rem; padding: 1rem; border: 1px dashed var(--gold); border-radius: 8px; text-align: center; }
+    .calib[hidden] { display: none; }
+    .calib p { margin: 0 0 .7rem; color: var(--ink-soft); font-size: 15px; }
+    .calib-btn {
+      width: 132px; height: 132px; border-radius: 50%; border: 2px solid var(--gold); cursor: pointer;
+      background: radial-gradient(circle, rgba(210,171,85,.35), transparent 70%); color: var(--ink);
+      font-family: var(--font-display); font-size: 18px; touch-action: none; transition: transform .2s;
+    }
+    .calib-btn.down { transform: scale(1.12); background: radial-gradient(circle, rgba(210,171,85,.7), transparent 72%); }
+    .calib-status { margin-top: .6rem; font-size: 14px; color: var(--ink-soft); min-height: 1.4em; }
+
+    .today { text-align: center; font-size: 13.5px; color: var(--ink-faint); margin-top: .9rem; }
+
+    .done-msg { text-align: center; margin-top: 1rem; }
+    .done-msg[hidden] { display: none; }
+    .done-msg .hymn { text-align: left; }
+
+    /* ── Ερμηνεία λέξη προς λέξη ─────────────────────────────────────── */
+    .words { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: .4rem 0 1rem; }
+    .word {
+      font-family: var(--font-display); font-size: 22px; padding: 4px 14px; border-radius: 6px;
+      border: 1px solid var(--rule); background: var(--vellum); color: var(--ink); cursor: pointer;
+    }
+    .word:hover { border-color: var(--gold); }
+    .word[aria-pressed="true"] { border-color: var(--cinnabar); color: var(--cinnabar); box-shadow: 0 0 0 1px var(--cinnabar); }
+    .word-card { min-height: 140px; }
+    .word-card h3 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0 0 .4rem; color: var(--cinnabar); }
+    .word-card .ref { font-family: var(--font-display); font-size: 17px; color: var(--ink); margin: .6rem 0 0; }
+    .word-card .ref cite { display: block; font-family: var(--font-body); font-size: 13px; color: var(--ink-faint); }
+
+    /* ── Κλίμακα ─────────────────────────────────────────────────────── */
+    .ladder { list-style: none; margin: 0; padding: 0; }
+    .ladder li { position: relative; padding: 0 0 1.1rem 3.2rem; }
+    .ladder li::before {
+      content: attr(data-n);
+      position: absolute; left: 0; top: 0; width: 2.2rem; height: 2.2rem; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 17px; color: var(--cinnabar);
+      border: 1px solid var(--gold); background: var(--vellum);
+    }
+    .ladder li::after { content: ""; position: absolute; left: 1.1rem; top: 2.3rem; bottom: .2rem; width: 1px; background: var(--rule); }
+    .ladder li:last-child::after { display: none; }
+    .ladder h3 { font-family: var(--font-display); font-weight: 400; font-size: 20px; margin: .15rem 0 .2rem; }
+    .ladder p { margin: 0; color: var(--ink-soft); line-height: 1.65; }
+
+    /* ── Πατέρες ─────────────────────────────────────────────────────── */
+    .fathers { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; }
+    .father { padding: 1rem 1.1rem; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); }
+    .father-name { font-family: var(--font-display); font-size: 18px; color: var(--cinnabar); margin-bottom: .1rem; }
+    .father-src { font-size: 12.5px; color: var(--ink-faint); font-style: italic; margin-bottom: .5rem; }
+    .father p { margin: 0; line-height: 1.65; }
+    .father .orig { font-family: var(--font-display); font-size: 18px; }
+
+    @media (max-width: 620px) {
+      .practice { padding: 1rem .7rem 1.2rem; }
+      .modes button { padding: 6px 9px; font-size: 13.5px; letter-spacing: 0; }
+      .word { font-size: 19px; padding: 3px 10px; }
+      .controls .btn { padding: 0 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lamp-glow, .lamp-flame { transform: none; }
+      .prayer-text .w { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="prayer" data-title="Νοερά προσευχή" data-subtitle="«Κύριε Ἰησοῦ Χριστέ, ἐλέησόν με» — μάθηση και άσκηση"></header>
+
+      <main>
+        <div class="prose">
+          <p class="initial">Η ευχή του Ιησού είναι η απλούστερη και βαθύτερη προσευχή της Ορθοδοξίας: η συνεχής επίκληση του ονόματος του Κυρίου με ταπείνωση και πόθο. Είναι ο δρόμος με τον οποίο οι Πατέρες εφάρμοσαν το αποστολικό «ἀδιαλείπτως προσεύχεσθε» (Α΄ Θεσ. 5:17). Εδώ μπορείτε να τη μάθετε και να την ασκήσετε, με τη βοήθεια της αναπνοής και του κομποσκοινιού, όπως διδάσκουν οι Πατέρες.</p>
+        </div>
+        <blockquote class="hymn">
+          <p class="hymn-text">Ἰησοῦ μνήμη κολληθήτω τῇ πνοῇ σου, καὶ τότε γνώσῃ ἡσυχίας ὠφέλειαν.</p>
+          <cite class="hymn-src">Άγιος Ιωάννης της Κλίμακος, Κλίμαξ, Λόγος ΚΖ΄ (Περί ησυχίας)</cite>
+          <p class="muted" style="margin:.4rem 0 0;font-size:15px;font-style:italic">Η μνήμη του Ιησού ας ενωθεί με την αναπνοή σου, και τότε θα γνωρίσεις την ωφέλεια της ησυχίας.</p>
+        </blockquote>
+
+        <!-- ── Άσκηση ─────────────────────────────────────────────── -->
+        <section class="section" id="askisi">
+          <h2 class="section-heading">Η άσκηση</h2>
+          <div class="panel practice">
+            <div class="modes" role="group" aria-label="Τρόπος άσκησης">
+              <button type="button" data-mode="breath" onclick="setMode('breath')">Με την αναπνοή</button>
+              <button type="button" data-mode="rope" onclick="setMode('rope')">Με το κομποσκοίνι</button>
+              <button type="button" data-mode="silent" onclick="setMode('silent')">Σιωπηλά</button>
+            </div>
+            <p class="mode-hint" id="mode-hint"></p>
+
+            <div class="stage" id="stage">
+              <svg class="rope" id="rope" viewBox="0 0 400 452" aria-hidden="true"></svg>
+              <div class="phase" id="phase"></div>
+              <div class="prayer-text" id="prayer-text" aria-live="off"></div>
+              <div class="counter" id="counter" aria-live="polite"></div>
+              <div class="stage-tools">
+                <button class="link-btn" type="button" onclick="toggleFullscreen()" id="fs-btn">Πλήρης οθόνη</button>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button class="btn btn-accent" type="button" id="start-btn" onclick="toggleRun()">Έναρξη</button>
+              <button class="btn btn-knot" type="button" id="knot-btn" onclick="knotTap()" hidden>Κόμπος</button>
+              <button class="btn" type="button" onclick="resetSession()">Από την αρχή</button>
+            </div>
+
+            <div class="done-msg" id="done-msg" hidden>
+              <blockquote class="hymn">
+                <p class="hymn-text">Δόξα σοι, ὁ Θεός. Δι᾿ εὐχῶν τῶν ἁγίων Πατέρων ἡμῶν, Κύριε Ἰησοῦ Χριστέ, ὁ Θεὸς ἡμῶν, ἐλέησον καὶ σῶσον ἡμᾶς. Ἀμήν.</p>
+                <cite class="hymn-src">Ο κανόνας ολοκληρώθηκε</cite>
+              </blockquote>
+            </div>
+
+            <details class="settings" id="settings">
+              <summary>Ρυθμίσεις</summary>
+              <div class="set-grid">
+                <div class="field">
+                  <label for="form-sel">Η ευχή</label>
+                  <select id="form-sel" onchange="setOpt('form', this.value)"></select>
+                  <div id="other-wrap" hidden style="margin-top:8px">
+                    <div class="chips" style="margin-bottom:6px">
+                      <button type="button" class="chip" data-g="m" onclick="setOpt('gender','m')">τὸν δοῦλόν σου</button>
+                      <button type="button" class="chip" data-g="f" onclick="setOpt('gender','f')">τὴν δούλην σου</button>
+                    </div>
+                    <input type="text" id="other-name" placeholder="όνομα, π.χ. Γεώργιον" oninput="setOpt('name', this.value)" maxlength="40">
+                    <div class="hint">Γράψτε το όνομα όπως λέγεται στην ευχή (αιτιατική): Γεώργιον, Μαρίαν, Νικόλαον.</div>
+                  </div>
+                </div>
+                <div class="field">
+                  <span class="label">Ρυθμός αναπνοής</span>
+                  <div class="chips" id="pace-chips">
+                    <button type="button" class="chip" data-pace="slow" onclick="setOpt('pace','slow')">Αργός</button>
+                    <button type="button" class="chip" data-pace="mid" onclick="setOpt('pace','mid')">Μέτριος</button>
+                    <button type="button" class="chip" data-pace="fast" onclick="setOpt('pace','fast')">Γρηγορότερος</button>
+                    <button type="button" class="chip" data-pace="custom" onclick="openCalib()">Ο δικός μου</button>
+                  </div>
+                  <div class="hint" id="pace-hint"></div>
+                </div>
+                <div class="field">
+                  <label for="rule-sel">Κανόνας</label>
+                  <select id="rule-sel" onchange="setOpt('rule', this.value)">
+                    <option value="33">Κομποσκοίνι 33</option>
+                    <option value="50">Κομποσκοίνι 50</option>
+                    <option value="100">Κομποσκοίνι 100</option>
+                    <option value="300">300 ευχές (τρία εκατοστάρια)</option>
+                    <option value="t5">5 λεπτά</option>
+                    <option value="t10">10 λεπτά</option>
+                    <option value="t20">20 λεπτά</option>
+                    <option value="free">Ελεύθερα, χωρίς τέλος</option>
+                  </select>
+                  <div class="hint">Τον κανόνα σας τον ορίζει ο πνευματικός σας.</div>
+                </div>
+                <div class="field">
+                  <label for="sound-sel">Ήχος</label>
+                  <select id="sound-sel" onchange="setOpt('sound', this.value)">
+                    <option value="end">Καμπανάκι στο τέλος</option>
+                    <option value="knot">Απαλός ήχος σε κάθε κόμπο</option>
+                    <option value="off">Χωρίς ήχο</option>
+                  </select>
+                  <label class="check"><input type="checkbox" id="vib-cb" onchange="setOpt('vibrate', this.checked)"> Δόνηση σε κάθε κόμπο (κινητό)</label>
+                  <label class="check"><input type="checkbox" id="mono-cb" onchange="setOpt('mono', this.checked)"> Μονοτονική γραφή</label>
+                </div>
+              </div>
+
+              <div class="calib" id="calib" hidden>
+                <p>Κρατήστε πατημένο τον κύκλο όσο <strong>εισπνέετε</strong> και αφήστε τον όσο <strong>εκπνέετε</strong>, με φυσικό, ήρεμο ρυθμό. Τρεις αναπνοές αρκούν.</p>
+                <button type="button" class="calib-btn" id="calib-btn">Εισπνοή</button>
+                <div class="calib-status" id="calib-status"></div>
+                <button class="link-btn" type="button" onclick="closeCalib()">Ακύρωση</button>
+              </div>
+            </details>
+
+            <div class="today" id="today"></div>
+          </div>
+        </section>
+
+        <!-- ── Λέξη προς λέξη ─────────────────────────────────────── -->
+        <section class="section" id="lexeis">
+          <h2 class="section-heading">Η ευχή λέξη προς λέξη</h2>
+          <div class="prose"><p>Η ευχή είναι μια σύντομη ομολογία πίστεως και μια κραυγή μετανοίας. Πατήστε κάθε λέξη για να δείτε τι σημαίνει και από πού προέρχεται.</p></div>
+          <div class="words" id="words" role="group" aria-label="Λέξεις της ευχής"></div>
+          <div class="panel word-card" id="word-card" aria-live="polite"></div>
+        </section>
+
+        <!-- ── Κλίμακα ────────────────────────────────────────────── -->
+        <section class="section" id="klimaka">
+          <h2 class="section-heading">Από τα χείλη στην καρδιά</h2>
+          <div class="prose"><p>Οι Πατέρες περιγράφουν την ευχή ως πορεία. Τα πρώτα σκαλοπάτια είναι δικός μας κόπος· τα τελευταία είναι δώρο της χάριτος του Θεού, όχι αποτέλεσμα τεχνικής.</p></div>
+          <ol class="ladder">
+            <li data-n="Α΄"><h3>Με τα χείλη</h3><p>Η ευχή λέγεται ψιθυριστά ή χαμηλόφωνα, αργά, με προσοχή σε κάθε λέξη. Εδώ ξεκινούν όλοι, και εδώ επιστρέφουμε όταν ο νους σκορπίζεται. Στην άσκηση: «Με το κομποσκοίνι».</p></li>
+            <li data-n="Β΄"><h3>Με τον νου</h3><p>Τα χείλη σωπαίνουν και η ευχή λέγεται μέσα μας. Ο νους κλείνεται στα λόγια της ευχής, χωρίς εικόνες και φαντασίες. Η αναπνοή βοηθά να μένει μαζεμένος. Στην άσκηση: «Με την αναπνοή» και ύστερα «Σιωπηλά».</p></li>
+            <li data-n="Γ΄"><h3>Με τον νου στην καρδιά</h3><p>Με τον καιρό, και με την καθοδήγηση πνευματικού, ο νους «κατεβαίνει» στην καρδιά και η ευχή γίνεται προσευχή όλου του ανθρώπου, με κατάνυξη και θέρμη.</p></li>
+            <li data-n="Δ΄"><h3>Η ευχή που λέγεται μόνη της</h3><p>Οι άγιοι μιλούν για την «αυτενέργητη» ευχή, που συνεχίζει μέσα στον άνθρωπο ακόμη και στη δουλειά ή στον ύπνο. Δεν τη ζητούμε ως κατόρθωμα· τη δίνει ο Θεός σε όποιον θέλει, συνήθως σε όσους έχουν ταπείνωση και υπακοή.</p></li>
+          </ol>
+        </section>
+
+        <!-- ── Πατέρες ────────────────────────────────────────────── -->
+        <section class="section" id="pateres">
+          <h2 class="section-heading">Τι διδάσκουν οι Πατέρες</h2>
+          <div class="fathers">
+            <div class="father">
+              <div class="father-name">Άγιος Ησύχιος ο Πρεσβύτερος</div>
+              <div class="father-src">Προς Θεόδουλον, Φιλοκαλία, τόμ. Α΄</div>
+              <p>Συμβουλεύει να ενώνεται η ευχή του Ιησού με την αναπνοή, ώστε η νήψη να ριζώσει στην καρδιά και ο νους να μένει φρουρός της.</p>
+            </div>
+            <div class="father">
+              <div class="father-name">Όσιος Νικηφόρος ο Μονάζων</div>
+              <div class="father-src">Περί νήψεως και φυλακής καρδίας, Φιλοκαλία, τόμ. Δ΄</div>
+              <p>Διδάσκει ότι, επειδή ο νους είναι σκόρπιος, μπορεί να μαζευτεί μέσα στην καρδιά «μαζί με την εισπνοή», και εκεί να λέει το «Κύριε Ἰησοῦ Χριστέ, Υἱὲ τοῦ Θεοῦ, ἐλέησόν με».</p>
+            </div>
+            <div class="father">
+              <div class="father-name">Άγιος Γρηγόριος ο Σιναΐτης</div>
+              <div class="father-src">Πώς πρέπει να κάθεται ο ησυχαστής, Φιλοκαλία, τόμ. Δ΄</div>
+              <p>Ο ησυχαστής κάθεται συνήθως σε χαμηλό σκαμνί, σκύβει, μαζεύει τον νου στην καρδιά και επικαλείται τον Κύριο Ιησού. Κρατά ελαφρά την αναπνοή, ώστε να μη σκορπίζεται ο νους. Άλλοι λένε ολόκληρη την ευχή· άλλοι τη μισή, «Ἰησοῦ, Υἱὲ τοῦ Θεοῦ, ἐλέησόν με», που είναι ευκολότερη για την αδυναμία του νου. Δεν πρέπει όμως να αλλάζει κανείς συχνά τα λόγια.</p>
+            </div>
+            <div class="father">
+              <div class="father-name">Άγιος Γρηγόριος ο Παλαμάς</div>
+              <div class="father-src">Υπέρ των ιερώς ησυχαζόντων</div>
+              <p>Υπερασπίζεται τους ησυχαστές: για τους αρχαρίους, η προσοχή στην αναπνοή δεν είναι ανώφελη, γιατί βοηθά τον νου, που συνεχώς ξεφεύγει, να επιστρέφει και να μένει μέσα στον άνθρωπο. Είναι βοήθημα, όχι ο σκοπός.</p>
+            </div>
+            <div class="father">
+              <div class="father-name">Άγιος Πορφύριος ο Καυσοκαλυβίτης</div>
+              <div class="father-src">Βίος και Λόγοι</div>
+              <p>Η ευχή λέγεται «απαλά, χωρίς πίεση, χωρίς σφίξιμο», από αγάπη για τον Χριστό και όχι ως τεχνική. «Σημασία στην προσευχή έχει όχι η χρονική διάρκεια αλλά η ένταση. Να προσεύχεσθε έστω και πέντε λεπτά, αλλά δοσμένα στο Θεό με αγάπη και λαχτάρα.»</p>
+            </div>
+            <div class="father">
+              <div class="father-name">Γέρων Εφραίμ ο Φιλοθεΐτης</div>
+              <div class="father-src">Διδασκαλία για τη νοερά προσευχή</div>
+              <p>Ο αρχάριος ξεκινά λέγοντας την ευχή με το στόμα. Να λέγεται όχι βιαστικά, αλλά απαλά, ήρεμα, ήσυχα, χωρίς βία, και από τη στιγμή που ανοίγουμε τα μάτια μας το πρωί.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Διάκριση ───────────────────────────────────────────── -->
+        <section class="section" id="diakrisi">
+          <h2 class="section-heading">Με διάκριση</h2>
+          <div class="prose">
+            <ul>
+              <li><strong>Η αναπνοή είναι βοήθημα, όχι η ουσία.</strong> Η ευχή είναι επίκληση ενός Προσώπου, του Χριστού, με μετάνοια. Δεν είναι «μάντρα» ούτε τεχνική χαλάρωσης.</li>
+              <li><strong>Μην πιέζετε την αναπνοή.</strong> Αν νιώσετε ζάλη ή σφίξιμο, σταματήστε τον συντονισμό και πείτε την ευχή απλά, με τα χείλη.</li>
+              <li><strong>Χωρίς εικόνες και φαντασίες.</strong> Οι Πατέρες ζητούν ο νους να μένει στα λόγια της ευχής, όχι να φαντάζεται τον Χριστό ή φως.</li>
+              <li><strong>Με ευλογία πνευματικού.</strong> Ο κανόνας, ο ρυθμός και το πόσο θα προχωρήσει κανείς ορίζονται με τον πνευματικό του, για να μην έρθει υπερηφάνεια ή πλάνη.</li>
+              <li><strong>Ο αριθμός δεν είναι μέτρο αρετής.</strong> Το κομποσκοίνι βοηθά να κρατάμε τον κανόνα, όχι να μετράμε επιδόσεις. Γι’ αυτό η σελίδα δεν κρατά «σερί» ούτε κατατάξεις· ό,τι μετρά μένει μόνο στη συσκευή σας.</li>
+            </ul>
+          </div>
+          <blockquote class="hymn">
+            <p class="hymn-text">ὁ Θεός, ἱλάσθητί μοι τῷ ἁμαρτωλῷ.</p>
+            <cite class="hymn-src">Η προσευχή του Τελώνη, Λουκ. 18:13</cite>
+          </blockquote>
+        </section>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    // ── Μορφές της ευχής: [εισπνοή, εκπνοή] σε πολυτονικό και μονοτονικό ─────
+    const FORMS = {
+      full:  { label: 'Κύριε Ἰησοῦ Χριστέ, Υἱὲ τοῦ Θεοῦ, ἐλέησόν με τὸν ἁμαρτωλόν',
+               poly: ['Κύριε Ἰησοῦ Χριστέ, Υἱὲ τοῦ Θεοῦ,', 'ἐλέησόν με τὸν ἁμαρτωλόν.'],
+               mono: ['Κύριε Ιησού Χριστέ, Υιέ του Θεού,', 'ελέησόν με τον αμαρτωλόν.'] },
+      short: { label: 'Κύριε Ἰησοῦ Χριστέ, ἐλέησόν με',
+               poly: ['Κύριε Ἰησοῦ Χριστέ,', 'ἐλέησόν με.'],
+               mono: ['Κύριε Ιησού Χριστέ,', 'ελέησόν με.'] },
+      sinai: { label: 'Ἰησοῦ, Υἱὲ τοῦ Θεοῦ, ἐλέησόν με (Αγ. Γρηγόριος Σιναΐτης)',
+               poly: ['Ἰησοῦ, Υἱὲ τοῦ Θεοῦ,', 'ἐλέησόν με.'],
+               mono: ['Ιησού, Υιέ του Θεού,', 'ελέησόν με.'] },
+      theotokos: { label: 'Ὑπεραγία Θεοτόκε, σῶσον ἡμᾶς',
+               poly: ['Ὑπεραγία Θεοτόκε,', 'σῶσον ἡμᾶς.'],
+               mono: ['Υπεραγία Θεοτόκε,', 'σώσον ημάς.'] },
+      other: { label: 'Για άλλον: Κύριε Ἰησοῦ Χριστέ, ἐλέησον τὸν δοῦλόν σου…' },
+    };
+    function formLines() {
+      const f = opts.form;
+      if (f === 'other') {
+        const name = (opts.name || '').trim() || '…';
+        const m = opts.gender !== 'f';
+        return opts.mono
+          ? ['Κύριε Ιησού Χριστέ,', (m ? 'ελέησον τον δούλόν σου ' : 'ελέησον την δούλην σου ') + name + '.']
+          : ['Κύριε Ἰησοῦ Χριστέ,', (m ? 'ἐλέησον τὸν δοῦλόν σου ' : 'ἐλέησον τὴν δούλην σου ') + name + '.'];
+      }
+      return opts.mono ? FORMS[f].mono : FORMS[f].poly;
+    }
+
+    // ── Ρυθμοί αναπνοής (δευτερόλεπτα): εισπνοή, παύση, εκπνοή, παύση ─────────
+    const PACES = {
+      slow: { in: 5, hi: 1, out: 6, ho: 1 },
+      mid:  { in: 4, hi: .5, out: 5, ho: .5 },
+      fast: { in: 3, hi: 0, out: 4, ho: .3 },
+    };
+    function pace() { return opts.pace === 'custom' && opts.custom ? opts.custom : PACES[opts.pace] || PACES.mid; }
+
+    const MODE_HINTS = {
+      breath: 'Ακολουθήστε το καντήλι: όσο φουντώνει, εισπνεύστε λέγοντας το πρώτο μέρος· όσο χαμηλώνει, εκπνεύστε λέγοντας το δεύτερο.',
+      rope: 'Πείτε την ευχή με τα χείλη, αργά, και πατήστε «Κόμπος» (ή το κενό στο πληκτρολόγιο, ή τον κύκλο) σε κάθε ευχή.',
+      silent: 'Χωρίς γράμματα στην οθόνη: η ευχή λέγεται μέσα σας, με την αναπνοή. Μόνο το καντήλι και το κομποσκοίνι σάς συνοδεύουν.',
+    };
+
+    // ── Ρυθμίσεις (αποθηκεύονται στη συσκευή) ───────────────────────────────
+    const DEFAULTS = { mode: 'breath', form: 'full', pace: 'mid', custom: null, rule: '100', sound: 'end', vibrate: true, mono: false, gender: 'm', name: '' };
+    let opts = Object.assign({}, DEFAULTS);
+    try { Object.assign(opts, JSON.parse(localStorage.getItem('prayerOpts') || '{}')); } catch (e) { /* χωρίς αποθήκευση */ }
+    function saveOpts() { try { localStorage.setItem('prayerOpts', JSON.stringify(opts)); } catch (e) { /* χωρίς αποθήκευση */ } }
+
+    function setOpt(k, v) {
+      opts[k] = v;
+      saveOpts();
+      if (k === 'rule') { resetSession(); return; }
+      renderSettings();
+      renderText();
+      if (k === 'pace' && running && opts.mode !== 'rope') cycleT = 0;
+    }
+
+    // ── Κατάσταση συνεδρίας ─────────────────────────────────────────────────
+    let running = false, count = 0, cycleT = 0, elapsed = 0, lastTs = 0, rafId = 0, wakeLock = null, flashTimer = 0;
+
+    function ropeSize() { return opts.rule === '33' ? 33 : opts.rule === '50' ? 50 : 100; }
+    function target() { return /^\d+$/.test(opts.rule) ? Number(opts.rule) : null; }
+    function timeLimit() { return opts.rule[0] === 't' ? Number(opts.rule.slice(1)) * 60 : null; }
+
+    // ── Κομποσκοίνι (SVG) ───────────────────────────────────────────────────
+    const CX = 200, CY = 190, R = 150, GAP = 13;
+    const CROSS_PATH = 'M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z';
+    function knotPos(i, n) {
+      const a = (90 + GAP + (360 - 2 * GAP) * (i + .5) / n) * Math.PI / 180;
+      return [CX + R * Math.cos(a), CY + R * Math.sin(a)];
+    }
+    function buildRope() {
+      const n = ropeSize();
+      const spacing = 2 * Math.PI * R * (360 - 2 * GAP) / 360 / n;
+      const r = Math.max(2.6, Math.min(8, spacing * .36));
+      const beadEvery = n === 100 ? 25 : n === 50 ? 10 : 0;
+      let knots = '';
+      for (let i = 0; i < n; i++) {
+        const [x, y] = knotPos(i, n);
+        knots += `<circle class="knot" data-i="${i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}"/>`;
+        if (beadEvery && (i + 1) % beadEvery === 0 && i < n - 1) {
+          const [bx, by] = knotPos(i + .5, n);
+          knots += `<circle class="bead" cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${(r * .9).toFixed(2)}"/>`;
+        }
+      }
+      const bottom = CY + R;
+      const L = CY + 12;   // χείλος του καντηλιού
+      let tassel = '';
+      for (let k = -5; k <= 5; k++) tassel += `<path class="tassel" d="M${CX + k * .6} ${bottom + 46} q ${k * 1.6} 22 ${k * 2.6} 48"/>`;
+      document.getElementById('rope').innerHTML = `
+        <defs>
+          <radialGradient id="glow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".95"/><stop offset=".45" stop-color="#f0a83a" stop-opacity=".35"/><stop offset="1" stop-color="#f0a83a" stop-opacity="0"/></radialGradient>
+          <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e2672c"/><stop offset=".55" stop-color="#f6b13d"/><stop offset="1" stop-color="#fff2c4"/></linearGradient>
+        </defs>
+        <circle class="cord" cx="${CX}" cy="${CY}" r="${R}"/>
+        ${knots}
+        <path class="cord" d="M${CX} ${bottom} v14"/>
+        <path class="cross" transform="translate(${CX - 15} ${bottom + 12}) scale(1.5)" d="${CROSS_PATH}"/>
+        ${tassel}
+        <g id="lamp">
+          <circle class="lamp-glow" cx="${CX}" cy="${L - 22}" r="82" fill="url(#glow)"/>
+          <path class="lamp-chain" d="M${CX - 34} ${L} L${CX} ${L - 110} L${CX + 34} ${L} M${CX} ${L - 110} V${L - 124}"/>
+          <path class="lamp-cup" d="M${CX - 34} ${L} h68 c 0 30 -14 52 -34 56 c -20 -4 -34 -26 -34 -56z"/>
+          <path class="lamp-flame" d="M${CX} ${L - 44} c 10 14 13 24 13 32 a 13 13 0 0 1 -26 0 c 0 -8 3 -18 13 -32z" fill="url(#flame)"/>
+          <path class="lamp-rim" d="M${CX - 34} ${L} h68"/>
+        </g>`;
+      paintKnots();
+    }
+    function paintKnots() {
+      const n = ropeSize();
+      const pos = count % n;
+      const full = count > 0 && pos === 0;
+      document.querySelectorAll('#rope .knot').forEach((el, i) => {
+        el.classList.toggle('done', full || i < pos);
+        el.classList.toggle('cur', !full && i === pos && (running || count > 0));
+      });
+    }
+
+    // ── Κείμενο ευχής ───────────────────────────────────────────────────────
+    function renderText() {
+      const [a, b] = formLines();
+      const words = s => s.split(' ').map((w, i) => `<span class="w" data-i="${i}">${w}</span>`).join(' ');
+      const el = document.getElementById('prayer-text');
+      el.innerHTML = `<span class="prayer-line" id="line0">${words(a)}</span><span class="prayer-line" id="line1">${words(b)}</span>
+        <span class="silent-note">νοερά, με την αναπνοή</span>`;
+      el.classList.toggle('silent', opts.mode === 'silent');
+      el.classList.toggle('all', opts.mode === 'rope' || !running);
+    }
+    function lightWords(line, frac) {
+      const ws = document.querySelectorAll(`#line${line} .w`);
+      ws.forEach((w, i) => w.classList.toggle('lit', frac >= i / ws.length - 1e-6));
+    }
+
+    // ── Κύκλος αναπνοής ─────────────────────────────────────────────────────
+    const ease = x => .5 - .5 * Math.cos(Math.PI * Math.min(1, Math.max(0, x)));
+    function breathFrame(dt) {
+      const p = pace();
+      const total = p.in + p.hi + p.out + p.ho;
+      cycleT += dt;
+      if (cycleT >= total) { cycleT -= total; advance(); if (!running) return; }
+      let b, phase, line = -1, frac = 0;
+      const t = cycleT;
+      if (t < p.in) { b = ease(t / p.in); phase = 'Εισπνοή'; line = 0; frac = t / p.in; }
+      else if (t < p.in + p.hi) { b = 1; phase = 'Εισπνοή'; line = 0; frac = 1; }
+      else if (t < p.in + p.hi + p.out) { const u = (t - p.in - p.hi) / p.out; b = 1 - ease(u); phase = 'Εκπνοή'; line = 1; frac = u; }
+      else { b = 0; phase = 'Εκπνοή'; line = 1; frac = 1; }
+      setBreath(b);
+      document.getElementById('phase').textContent = phase;
+      document.getElementById('line0').classList.toggle('now', line === 0);
+      document.getElementById('line1').classList.toggle('now', line === 1);
+      if (line === 0) { lightWords(0, frac); lightWords(1, -1); }
+      else { lightWords(0, 2); lightWords(1, frac); }
+    }
+    function setBreath(b) { document.getElementById('stage').style.setProperty('--b', b.toFixed(3)); }
+
+    function loop(ts) {
+      if (!running) return;
+      const dt = lastTs ? Math.min(.25, (ts - lastTs) / 1000) : 0;
+      lastTs = ts;
+      elapsed += dt;
+      if (opts.mode !== 'rope') breathFrame(dt);
+      else setBreath(.55 + .1 * Math.sin(ts / 900));
+      const lim = timeLimit();
+      if (lim && elapsed >= lim) { finish(); return; }
+      renderCounter();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    // ── Πρόοδος ─────────────────────────────────────────────────────────────
+    function advance() {
+      count++;
+      bumpToday();
+      const n = ropeSize();
+      const bead = count % n === 0 || (n === 100 && count % 25 === 0) || (n === 50 && count % 10 === 0);
+      if (opts.vibrate && navigator.vibrate) navigator.vibrate(bead ? [40, 60, 40] : 18);
+      if (opts.sound === 'knot') tick(bead);
+      paintKnots();
+      renderCounter();
+      const t = target();
+      if (t && count >= t) finish();
+    }
+    function knotTap() {
+      if (!running) start();
+      if (opts.mode !== 'rope') return;
+      advance();
+      const el = document.getElementById('prayer-text');
+      el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+      clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('flash'), 600);
+    }
+
+    function fmtTime(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+    function renderCounter() {
+      const t = target(), lim = timeLimit(), n = ropeSize();
+      const round = Math.floor(count / n) + (count % n || !count ? 1 : 0);
+      let txt = `<b>${count}</b>${t ? ' / ' + t : ''} ${count === 1 ? 'ευχή' : 'ευχές'}`;
+      if (!t || t > n) txt += ` · κομποσκοίνι ${Math.max(1, round)}`;
+      txt += ` · ${fmtTime(lim ? Math.max(0, lim - elapsed) : elapsed)}${lim ? ' απομένουν' : ''}`;
+      document.getElementById('counter').innerHTML = txt;
+    }
+
+    // ── Έναρξη, παύση, τέλος ────────────────────────────────────────────────
+    function start() {
+      if (running) return;
+      document.getElementById('done-msg').hidden = true;
+      const t = target();
+      if (t && count >= t) resetSession();
+      running = true; lastTs = 0;
+      audio();
+      requestWake();
+      renderText();
+      updateButtons();
+      // στο κομποσκοίνι το κενό «πατά» τον κόμπο
+      if (opts.mode === 'rope') document.getElementById('knot-btn').focus({ preventScroll: true });
+      rafId = requestAnimationFrame(loop);
+    }
+    function pause() {
+      running = false;
+      cancelAnimationFrame(rafId);
+      releaseWake();
+      document.getElementById('phase').textContent = count ? 'Παύση' : '';
+      renderText(); paintKnots(); updateButtons();
+    }
+    function toggleRun() { running ? pause() : start(); }
+    function finish() {
+      pause();
+      document.getElementById('phase').textContent = '';
+      setBreath(.4);
+      if (opts.sound !== 'off') bell();
+      if (opts.vibrate && navigator.vibrate) navigator.vibrate([80, 120, 80, 120, 160]);
+      document.getElementById('done-msg').hidden = false;
+      renderCounter();
+    }
+    function resetSession() {
+      if (running) pause();
+      count = 0; cycleT = 0; elapsed = 0;
+      document.getElementById('done-msg').hidden = true;
+      document.getElementById('phase').textContent = '';
+      setBreath(.3);
+      buildRope(); renderText(); renderCounter(); updateButtons();
+    }
+    function updateButtons() {
+      const sb = document.getElementById('start-btn');
+      sb.textContent = running ? 'Παύση' : count ? 'Συνέχεια' : 'Έναρξη';
+      document.getElementById('knot-btn').hidden = opts.mode !== 'rope';
+    }
+
+    function setMode(m) {
+      opts.mode = m; saveOpts();
+      cycleT = 0;
+      document.getElementById('stage').classList.toggle('rope-mode', m === 'rope');
+      renderSettings(); renderText(); updateButtons();
+      if (m === 'rope') {
+        document.getElementById('phase').textContent = ''; setBreath(.55);
+        if (running) document.getElementById('knot-btn').focus({ preventScroll: true });
+      }
+    }
+
+    // ── Ήχος (Web Audio, χωρίς αρχεία) ─────────────────────────────────────
+    let ctx = null;
+    function audio() {
+      if (opts.sound === 'off') return null;
+      try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; }
+      return ctx;
+    }
+    function tone(freq, gain, dur, delay) {
+      const c = audio(); if (!c) return;
+      const t0 = c.currentTime + (delay || 0);
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain, t0 + .01);
+      g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+      o.connect(g).connect(c.destination);
+      o.start(t0); o.stop(t0 + dur + .05);
+    }
+    function tick(bead) { tone(bead ? 660 : 880, bead ? .05 : .025, bead ? .5 : .18); }
+    function bell() {
+      // καμπανάκι: θεμελιώδης και ανώτερες αρμονικές με αργή απόσβεση
+      [[392, .22, 4.5], [784, .1, 3], [1083, .07, 2.4], [2117, .03, 1.4]].forEach(([f, g, d]) => tone(f, g, d));
+      [[392, .16, 4], [784, .07, 2.6]].forEach(([f, g, d]) => tone(f, g, d, 2.2));
+    }
+
+    // ── Η οθόνη μένει αναμμένη όσο προσευχόμαστε ───────────────────────────
+    async function requestWake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { wakeLock = null; } }
+    function releaseWake() { try { wakeLock && wakeLock.release(); } catch (e) { /* ήδη ελεύθερο */ } wakeLock = null; }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running) requestWake(); });
+
+    function toggleFullscreen() {
+      const st = document.getElementById('stage');
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (st.requestFullscreen) st.requestFullscreen().catch(() => {});
+    }
+    document.addEventListener('fullscreenchange', () => {
+      document.getElementById('fs-btn').textContent = document.fullscreenElement ? 'Έξοδος από πλήρη οθόνη' : 'Πλήρης οθόνη';
+    });
+
+    // Κενό: κόμπος (κομποσκοίνι) ή έναρξη/παύση (αναπνοή)
+    document.addEventListener('keydown', e => {
+      if (e.code !== 'Space' || e.repeat) return;
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (['input', 'select', 'textarea', 'button', 'summary'].includes(tag) || calibOpen) return;
+      e.preventDefault();
+      opts.mode === 'rope' ? knotTap() : toggleRun();
+    });
+    document.getElementById('stage').addEventListener('click', e => {
+      if (opts.mode === 'rope' && !e.target.closest('button')) knotTap();
+    });
+
+    // ── Μέτρημα ημέρας (μόνο στη συσκευή) ───────────────────────────────────
+    function todayKey() { const d = new Date(); return 'prayers-' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+    function readToday() { try { return Number(localStorage.getItem(todayKey())) || 0; } catch (e) { return 0; } }
+    function bumpToday() { try { localStorage.setItem(todayKey(), String(readToday() + 1)); } catch (e) { /* χωρίς αποθήκευση */ } renderToday(); }
+    function renderToday() {
+      const n = readToday();
+      document.getElementById('today').textContent = n ? `Σήμερα σε αυτή τη συσκευή: ${n} ${n === 1 ? 'ευχή' : 'ευχές'}. Δόξα τῷ Θεῷ.` : '';
+    }
+
+    // ── Βαθμονόμηση στον δικό σας ρυθμό ─────────────────────────────────────
+    let calibOpen = false, calib = [], pressAt = 0, releaseAt = 0;
+    function openCalib() {
+      calibOpen = true; calib = []; pressAt = releaseAt = 0;
+      if (running) pause();
+      const box = document.getElementById('calib');
+      box.hidden = false;
+      document.getElementById('calib-status').textContent = 'Αναπνοή 1 από 3';
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function closeCalib() { calibOpen = false; document.getElementById('calib').hidden = true; }
+    function calibDown(e) {
+      if (!calibOpen) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (releaseAt && calib.length) calib[calib.length - 1].out = (now - releaseAt) / 1000;
+      if (calib.length === 3 && calib[2].out) { finishCalib(); return; }
+      pressAt = now;
+      document.getElementById('calib-btn').classList.add('down');
+      document.getElementById('calib-btn').textContent = 'Εισπνοή…';
+    }
+    function calibUp(e) {
+      if (!calibOpen || !pressAt) return;
+      e.preventDefault();
+      const now = performance.now();
+      calib.push({ in: (now - pressAt) / 1000, out: 0 });
+      pressAt = 0; releaseAt = now;
+      const btn = document.getElementById('calib-btn');
+      btn.classList.remove('down');
+      btn.textContent = 'Εκπνοή…';
+      document.getElementById('calib-status').textContent = calib.length < 3
+        ? `Αναπνοή ${calib.length + 1} από 3 — πατήστε ξανά στην επόμενη εισπνοή`
+        : 'Πατήστε μία ακόμη φορά στην επόμενη εισπνοή για να ολοκληρωθεί';
+    }
+    function finishCalib() {
+      const clamp = x => Math.max(1.8, Math.min(12, x));
+      const avg = k => calib.reduce((s, c) => s + c[k], 0) / calib.length;
+      const inS = clamp(avg('in')), outS = clamp(avg('out'));
+      opts.custom = { in: +inS.toFixed(1), hi: .3, out: +(outS - .3).toFixed(1), ho: .3 };
+      opts.pace = 'custom';
+      saveOpts(); closeCalib(); renderSettings();
+      document.getElementById('calib-btn').textContent = 'Εισπνοή';
+    }
+    (function bindCalib() {
+      const b = document.getElementById('calib-btn');
+      b.addEventListener('pointerdown', calibDown);
+      b.addEventListener('pointerup', calibUp);
+      b.addEventListener('pointercancel', calibUp);
+      b.addEventListener('keydown', e => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) calibDown(e); });
+      b.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') calibUp(e); });
+    })();
+
+    // ── Ρυθμίσεις στη διεπαφή ───────────────────────────────────────────────
+    function renderSettings() {
+      document.querySelectorAll('.modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === opts.mode)));
+      document.getElementById('mode-hint').textContent = MODE_HINTS[opts.mode];
+      const fs = document.getElementById('form-sel');
+      if (!fs.options.length) fs.innerHTML = Object.entries(FORMS).map(([k, f]) => `<option value="${k}">${f.label}</option>`).join('');
+      fs.value = opts.form;
+      document.getElementById('other-wrap').hidden = opts.form !== 'other';
+      document.querySelectorAll('[data-g]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.g === opts.gender)));
+      const nameIn = document.getElementById('other-name');
+      if (document.activeElement !== nameIn) nameIn.value = opts.name || '';
+      document.querySelectorAll('[data-pace]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pace === opts.pace)));
+      const p = pace();
+      const per = p.in + p.hi + p.out + p.ho;
+      document.getElementById('pace-hint').textContent =
+        `Εισπνοή ${p.in.toLocaleString('el')}″ · εκπνοή ${p.out.toLocaleString('el')}″ · περίπου ${Math.round(100 * per / 60)} λεπτά για 100 ευχές.` +
+        (opts.mode === 'rope' ? ' (Στο κομποσκοίνι ο ρυθμός είναι δικός σας.)' : '');
+      document.getElementById('rule-sel').value = opts.rule;
+      document.getElementById('sound-sel').value = opts.sound;
+      document.getElementById('vib-cb').checked = !!opts.vibrate;
+      document.getElementById('mono-cb').checked = !!opts.mono;
+      document.getElementById('stage').classList.toggle('rope-mode', opts.mode === 'rope');
+    }
+
+    // ── Λέξη προς λέξη ──────────────────────────────────────────────────────
+    const WORDS = [
+      { w: 'Κύριε', t: 'Κύριε', d: 'Ομολογούμε ότι ο Ιησούς είναι ο Κύριος, ο αληθινός Θεός. Αυτή η ομολογία δεν είναι δικό μας κατόρθωμα· είναι δώρο του Αγίου Πνεύματος.',
+        ref: 'οὐδεὶς δύναται εἰπεῖν Κύριον Ἰησοῦν εἰ μὴ ἐν Πνεύματι Ἁγίῳ.', src: 'Α΄ Κορ. 12:3' },
+      { w: 'Ἰησοῦ', t: 'Ἰησοῦ', d: 'Το όνομα του Σωτήρα, που σημαίνει «ο Θεός σώζει». Η ευχή είναι πρώτα απ’ όλα επίκληση αυτού του ονόματος· γι’ αυτό λέγεται «ευχή του Ιησού».',
+        ref: 'καλέσεις τὸ ὄνομα αὐτοῦ Ἰησοῦν· αὐτὸς γὰρ σώσει τὸν λαὸν αὐτοῦ ἀπὸ τῶν ἁμαρτιῶν αὐτῶν.', src: 'Ματθ. 1:21' },
+      { w: 'Χριστέ', t: 'Χριστέ', d: '«Χριστός» σημαίνει «ο Χρισμένος», ο Μεσσίας που περίμεναν οι προφήτες. Ομολογούμε ότι σε Αυτόν εκπληρώθηκαν όλες οι υποσχέσεις του Θεού.',
+        ref: 'εὑρήκαμεν τὸν Μεσσίαν, ὅ ἐστι μεθερμηνευόμενον Χριστός.', src: 'Ιω. 1:41' },
+      { w: 'Υἱὲ τοῦ Θεοῦ', t: 'Υἱὲ τοῦ Θεοῦ', d: 'Η ομολογία του Αποστόλου Πέτρου. Ο Ιησούς δεν είναι απλώς διδάσκαλος· είναι ο Υιός του Πατρός, ένας από την Αγία Τριάδα.',
+        ref: 'Σὺ εἶ ὁ Χριστὸς ὁ Υἱὸς τοῦ Θεοῦ τοῦ ζῶντος.', src: 'Ματθ. 16:16' },
+      { w: 'ἐλέησόν με', t: 'ἐλέησόν με', d: 'Η κραυγή των τυφλών και των αρρώστων του Ευαγγελίου. Το έλεος του Θεού είναι η αγάπη Του που θεραπεύει, συγχωρεί και ανορθώνει. Λέμε «με», προσωπικά: στέκομαι εγώ ο ίδιος μπροστά Του.',
+        ref: 'Ἰησοῦ, υἱὲ Δαυΐδ, ἐλέησόν με.', src: 'Λουκ. 18:38' },
+      { w: 'τὸν ἁμαρτωλόν', t: 'τὸν ἁμαρτωλόν', d: 'Τα λόγια του Τελώνη, που «κατέβη δεδικαιωμένος». Δεν είναι απελπισία αλλά ταπείνωση: όποιος γνωρίζει την αμαρτία του, ανοίγεται στο έλεος.',
+        ref: 'ὁ Θεός, ἱλάσθητί μοι τῷ ἁμαρτωλῷ.', src: 'Λουκ. 18:13' },
+    ];
+    function renderWords(sel) {
+      document.getElementById('words').innerHTML = WORDS.map((x, i) =>
+        `<button type="button" class="word" aria-pressed="${i === sel}" onclick="renderWords(${i})">${x.w}</button>`).join('');
+      const x = WORDS[sel];
+      document.getElementById('word-card').innerHTML =
+        `<h3>${x.t}</h3><p style="margin:0;line-height:1.7">${x.d}</p><p class="ref">${x.ref}<cite>${x.src}</cite></p>`;
+    }
+
+    // ── Εκκίνηση ────────────────────────────────────────────────────────────
+    renderSettings();
+    buildRope();
+    renderText();
+    setBreath(.3);
+    renderCounter();
+    updateButtons();
+    renderToday();
+    renderWords(0);
+  </script>
+</body>
+
+</html>

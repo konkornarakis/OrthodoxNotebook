@@ -224,7 +224,7 @@ button { font-family: inherit; }
   cursor: pointer; transition: background .15s, color .15s;
 }
 .theme-toggle:hover { background: var(--vellum); color: var(--cinnabar); }
-.theme-toggle svg { width: 18px; height: 18px; }
+.theme-toggle svg { width: 20px; height: 20px; }
 
 /* ── Κοινά στοιχεία ───────────────────────────────────────────────────── */
 .panel {
@@ -329,7 +329,16 @@ button { font-family: inherit; }
 @media (max-width: 620px) {
   .ort-shell { padding-top: 1.1rem; }
   .theme-toggle { width: 34px; height: 34px; }
-  .site-nav a { font-size: 14px; padding: 4px 8px 5px; }
+  .site-nav {
+    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none;
+    margin: 0 -16px; padding: 0 16px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  }
+  .site-nav::-webkit-scrollbar { display: none; }
+  .site-nav a { font-size: 14.5px; padding: 6px 10px 7px; white-space: nowrap; flex: none; }
+  .site-nav a:first-child { margin-left: auto; }
+  .site-nav a:last-child { margin-right: auto; }
   .site-nav .sep { display: none; }
   .panel { padding: 1.1rem 1rem; }
   .section-heading { font-size: 21px; }

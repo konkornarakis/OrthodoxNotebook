@@ -50,6 +50,7 @@
   const PAGES = [
     { id: 'calendar',   href: 'main.html',       label: 'Νηστειοδρόμιο' },
     { id: 'synaxarion', href: 'synaxarion.html', label: 'Εορτολόγιο' },
+    { id: 'prayer',     href: 'prayer.html',     label: 'Νοερά προσευχή' },
     { id: 'fasting',    href: 'fasting.html',    label: 'Περί νηστείας' },
     { id: 'sermons',    href: 'sermons.html',    label: 'Ομιλίες' },
   ];
@@ -73,6 +74,8 @@
         '<div class="orn-divider">' + SMALL_CROSS + '</div>' +
         '<nav class="site-nav" aria-label="Κύρια πλοήγηση">' + nav + '</nav>';
       document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+      const current = header.querySelector('.site-nav [aria-current="page"]');
+      if (current) { const nav = current.parentElement; nav.scrollLeft = current.offsetLeft - (nav.clientWidth - current.offsetWidth) / 2; }
       applyTheme(storedTheme());
     }
 
