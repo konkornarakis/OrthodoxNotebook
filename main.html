@@ -4,6 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
   <title>Νηστειοδρόμιο — Ορθόδοξο Σημειωματάριο</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +17,7 @@
   <link rel="stylesheet" href="assets/site.css">
   <script src="assets/site.js"></script>
   <script src="assets/calendar.js"></script>
+  <script src="assets/ics.js"></script>
   <style>
     /* ── Η ημέρα ─────────────────────────────────────────────────────── */
     .day { display: grid; grid-template-columns: auto 1fr; gap: 0 1.6rem; position: relative; overflow: hidden; }
@@ -296,7 +303,7 @@
           <div class="monastic panel">
             <div>
               <div class="monastic-label">Μοναχική τάξη</div>
-              <div class="monastic-sub">Νηστεύεται και η Δευτέρα, όπως η Τετάρτη και η Παρασκευή· στη νηστεία των Χριστουγέννων το ψάρι σταματά στις 12 Δεκεμβρίου, κατά την αγιορείτικη τάξη.</div>
+              <div class="monastic-sub">Νηστεύεται και η Δευτέρα, όπως η Τετάρτη και η Παρασκευή, επειδή είναι αφιερωμένη στους Αγγέλους και οι μοναχοί ζουν την «ισάγγελη» ζωή. Στη νηστεία των Χριστουγέννων το ψάρι σταματά στις 12 Δεκεμβρίου, κατά την αγιορείτικη τάξη. Για τους λαϊκούς δεν είναι υποχρεωτική· <a href="fasting.html#deftera">περισσότερα</a>.</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="monastic-cb" onchange="setMonastic(this.checked)">
@@ -317,6 +324,7 @@
           <div class="ics-row">
             <button class="btn" type="button" onclick="exportIcal(viewYear)">Λήψη νηστειοδρομίου (.ics)</button>
             <span id="ics-hint"></span>
+            <a href="efarmogi.html#reminders">Υπενθυμίσεις στο κινητό →</a>
           </div>
         </section>
       </main>
@@ -606,25 +614,11 @@
     }
 
 
-    // ── Εξαγωγή iCalendar ────────────────────────────────────────────────
-    function icsText(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
-    function ymd(d) { return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
+    // ── Εξαγωγή iCalendar (όλες οι ημέρες του έτους, χωρίς υπενθυμίσεις) ──
     function exportIcal(year) {
-      const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OrthodoxNotebook//Nisteiodromio//EL',
-        'X-WR-CALNAME:' + icsText('Νηστειοδρόμιο ' + year), 'X-WR-TIMEZONE:Europe/Athens', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
-      for (let d = new Date(year, 0, 1); d.getFullYear() === year; d = C.addDays(d, 1)) {
-        const f = fastOf(d);
-        const feasts = C.feastsOf(d);
-        if (f.level === 'none' && !feasts.length) continue;
-        const summary = f.level === 'none' ? feasts[0].name : f.label;
-        const desc = [f.period, f.desc, f.note, ...feasts.map(x => x.name)].filter(Boolean).join('\n');
-        lines.push('BEGIN:VEVENT', 'DTSTART;VALUE=DATE:' + ymd(d), 'DTEND;VALUE=DATE:' + ymd(C.addDays(d, 1)),
-          'SUMMARY:' + icsText(summary), 'DESCRIPTION:' + icsText(desc), 'TRANSP:TRANSPARENT',
-          'UID:nisteia-' + ymd(d) + '@orthodoxnotebook', 'END:VEVENT');
-      }
-      lines.push('END:VCALENDAR');
-      const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
+      const ics = OrthoIcs.build({ from: new Date(year, 0, 1), to: new Date(year, 11, 31), fast: 'all', eve: false, feasts: true,
+        monastic, site: location.origin, name: 'Νηστειοδρόμιο ' + year });
+      const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
       const a = document.createElement('a');
       a.href = url; a.download = 'nisteiodromio-' + year + '.ics';
       document.body.appendChild(a); a.click(); a.remove();

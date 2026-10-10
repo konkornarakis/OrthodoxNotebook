@@ -112,7 +112,7 @@
   let guideOn = false, cycleT = 0, prepLeft = 0;
   // η αναπνοή μου
   let holding = false, tIn0 = 0, tOut0 = 0, tRest0 = -99, b0 = 0, b1 = 0, f1Start = 1, pending = false;
-  let expIn = 3.5, expOut = 4.5, samples = 0;
+  let expIn = 3.5, expOut = 4.5, samples = 0, lastIn = 0, lastOut = 0;
   const hist = { in: [], out: [] };
   let advice = '', adviceUntil = 0;
   // με τα χείλη
@@ -120,7 +120,7 @@
   // γενικά
   let immersive = false, lastFrame = 0, wakeLock = null;
 
-  if (opts.custom) { expIn = opts.custom.in; expOut = opts.custom.out + opts.custom.hi; }
+  if (opts.custom) { expIn = opts.custom.in; expOut = opts.custom.out + opts.custom.hi + opts.custom.ho; }
 
   // ── Στοιχεία σελίδας ────────────────────────────────────────────────────
   const practice = $('practice'), stage = $('stage'), ptext = $('prayer-text');
@@ -219,7 +219,7 @@
 
   // ── Κομποσκοίνι ─────────────────────────────────────────────────────────
   const CX = 200, CY = 190, R = 150, GAP = 13;
-  const CROSS_PATH = 'M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z';
+  const CROSS_SHAPES = (window.OrthoSite && window.OrthoSite.CROSS_SHAPES) || '';
   let knotR = 4, ringC = 1, knotEls = [];
   function knotPos(i, n) {
     const a = (90 + GAP + (360 - 2 * GAP) * (i + .5) / n) * Math.PI / 180;
@@ -253,7 +253,7 @@
       ${knots}
       <circle class="kring" id="kring" r="${rr.toFixed(2)}" cx="${CX}" cy="${CY - R}" stroke-dasharray="${ringC.toFixed(2)}" stroke-dashoffset="${ringC.toFixed(2)}"/>
       <path class="cord" d="M${CX} ${bottom} v14"/>
-      <path class="cross" transform="translate(${CX - 15} ${bottom + 12}) scale(1.5)" d="${CROSS_PATH}"/>
+      <g class="cross" transform="translate(${CX - 15} ${bottom + 12}) scale(1.25)">${CROSS_SHAPES}</g>
       ${tassel}
       <g class="lamp">
         <circle class="lamp-glow" cx="${CX}" cy="${L - 22}" r="82" fill="url(#glow)"/>
@@ -377,12 +377,13 @@
     const now = nowS();
     begin();
     holding = true;
-    if (phase === 'out' || phase === 'rest') {
+    if (phase === 'out' && pending) {
+      // η εκπνοή (μαζί με τη φυσική παύση) τελειώνει τη στιγμή που αρχίζει η νέα εισπνοή
       const outDur = now - tOut0;
-      if (pending && outDur >= .8) { pending = false; learn('out', outDur); advance(); if (finished) { holding = false; return; } }
-      else if (!pending && outDur < 15) learn('out', outDur);
       pending = false;
+      if (outDur >= .8) { learn('out', outDur); advance(); if (finished) { holding = false; return; } }
     }
+    pending = false;
     f1Start = lineFade1(now);
     if (textKind !== 'prayer') { setText('prayer', true); f1Start = 0; }
     phase = 'in'; tIn0 = now; b0 = b;
@@ -408,16 +409,20 @@
       if (d < 1.4) say('Λίγο πιο αργά· η ευχή δεν βιάζεται.', 5);
       else if (d > 8.5) say('Μην κρατάτε την αναπνοή· αφήστε τη να κυλά φυσικά.', 6);
     }
-    const v = clamp(d, kind === 'in' ? 1.2 : 1.5, kind === 'in' ? 10 : 14);
+    const v = clamp(d, kind === 'in' ? 1 : 1.2, kind === 'in' ? 12 : 16);
     const h = hist[kind];
     h.push(v); if (h.length > 12) h.shift();
-    if (kind === 'in') expIn = samples ? expIn * .65 + v * .35 : v;
-    else expOut = hist.out.length > 1 ? expOut * .65 + v * .35 : v;
+    // ο μέσος όρος των τριών τελευταίων: ακολουθεί γρήγορα, χωρίς να πηδά από μία ανάσα
+    const recent = h.slice(-3);
+    const avg = recent.reduce((a, x) => a + x, 0) / recent.length;
+    if (kind === 'in') { expIn = avg; lastIn = v; } else { expOut = avg; lastOut = v; }
     if (kind === 'out') {
       samples++;
       if (samples >= 3) {
-        opts.custom = { in: +expIn.toFixed(1), hi: .3, out: +Math.max(1.2, expOut - .3).toFixed(1), ho: .3 };
-        save();
+        if (!opts.customManual) {
+          opts.custom = { in: +expIn.toFixed(1), hi: .3, out: +Math.max(1.2, expOut - .3).toFixed(1), ho: .3 };
+          save();
+        }
       }
       if (samples >= 5 && !advice) {
         const cv = arr => { const m = arr.reduce((s, x) => s + x, 0) / arr.length; return Math.sqrt(arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length) / m; };
@@ -438,7 +443,9 @@
       b = b1 * (1 - ease(u));
       l0 = SOLID(.6 * u); l1 = SWEEP(u);
       q = .5 + .5 * u; label = 'Εκπνοή';
-      if (u >= 1) {
+      // το φως φτάνει στο τέλος στον αναμενόμενο χρόνο, αλλά η εκπνοή τελειώνει μόνο όταν
+      // πατήσετε ξανά· αν δεν πατήσετε για πολύ, η ευχή μετρά και η σελίδα περιμένει
+      if (now - tOut0 > expOut + Math.max(4, expOut)) {
         if (pending) { pending = false; advance(); }
         if (!finished) { phase = 'rest'; tRest0 = now; renderControls(); }
       }
@@ -531,7 +538,10 @@
   const num = x => x.toLocaleString('el', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
   function rhythmText() {
     if (finished) return 'Αν μπορείτε, αφήστε τώρα την οθόνη και μείνετε λίγο στη σιωπή.';
-    if (opts.mode === 'mine') return hist.in.length ? `Ο ρυθμός σας: εισπνοή ${num(expIn)}″ · εκπνοή ${num(expOut)}″` : '';
+    if (opts.mode === 'mine') return hist.in.length
+      ? `Τελευταία ανάσα: εισπνοή ${num(lastIn)}″` + (hist.out.length ? ` · εκπνοή ${num(lastOut)}″` : '') +
+        (hist.out.length > 1 ? ` (μέσος όρος ${num(expIn)}″ · ${num(expOut)}″)` : '')
+      : '';
     if (opts.mode === 'guide') { const p = pace(); return `Ρυθμός: ${opts.pace === 'custom' ? 'ο δικός σας' : PACES[opts.pace].label.toLowerCase()} · εισπνοή ${num(p.in)}″ · εκπνοή ${num(p.out)}″`; }
     return '';
   }
@@ -732,12 +742,11 @@
     document.querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.g === opts.gender)));
     if (document.activeElement !== $('other-name')) $('other-name').value = opts.name || '';
     document.querySelectorAll('[data-pace]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.pace === opts.pace)));
-    const customBtn = document.querySelector('[data-pace="custom"]');
-    customBtn.disabled = !opts.custom;
-    customBtn.title = opts.custom ? 'Ο ρυθμός που έμαθε η σελίδα από την αναπνοή σας' : 'Κάντε πρώτα μερικές αναπνοές «Με την αναπνοή μου»';
     const p = pace(), per = p.in + p.hi + p.out + p.ho;
-    $('pace-hint').textContent = `Εισπνοή ${num(p.in)}″ · εκπνοή ${num(p.out)}″ · περίπου ${Math.round(100 * per / 60)} λεπτά για 100 ευχές.` +
-      (opts.custom ? '' : ' Ο «δικός μου» ρυθμός μαθαίνεται από τον τρόπο «Με την αναπνοή μου».');
+    ['in', 'hi', 'out', 'ho'].forEach(k => { const el = $('pace-' + k); if (document.activeElement !== el) el.value = String(+p[k].toFixed(1)).replace('.', ','); });
+    $('pace-hint').textContent = `Περίπου ${Math.round(100 * per / 60)} λεπτά για 100 ευχές. ` +
+      (opts.pace !== 'custom' ? 'Αλλάξτε έναν αριθμό για δικό σας ρυθμό.'
+        : opts.customManual ? 'Τον ρυθμό τον ορίσατε εσείς.' : 'Τον ρυθμό τον έμαθε η σελίδα από την αναπνοή σας· μπορείτε να τον διορθώσετε.');
     $('prep-cb').checked = !!opts.prep;
     $('mono-cb').checked = !!opts.mono;
     $('rule-sel').value = opts.rule;
@@ -763,7 +772,26 @@
   $('form-sel').addEventListener('change', e => setOpt('form', e.target.value));
   $('other-name').addEventListener('input', e => setOpt('name', e.target.value));
   document.querySelectorAll('[data-g]').forEach(x => x.addEventListener('click', () => setOpt('gender', x.dataset.g)));
-  document.querySelectorAll('[data-pace]').forEach(x => x.addEventListener('click', () => { setOpt('pace', x.dataset.pace); if (guideOn) cycleT = 0; }));
+  document.querySelectorAll('[data-pace]').forEach(x => x.addEventListener('click', () => {
+    if (x.dataset.pace === 'custom' && !opts.custom) { const q = pace(); opts.custom = { in: q.in, hi: q.hi, out: q.out, ho: q.ho }; }
+    setOpt('pace', x.dataset.pace); if (guideOn) cycleT = 0;
+  }));
+  // ρυθμός με αριθμούς (δευτερόλεπτα)
+  const PACE_LIM = { in: [1, 15], hi: [0, 10], out: [1, 20], ho: [0, 10] };
+  ['in', 'hi', 'out', 'ho'].forEach(k => {
+    const el = $('pace-' + k);
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value.replace(',', '.'));
+      if (!isFinite(v)) return;
+      const q = pace(), c = { in: q.in, hi: q.hi, out: q.out, ho: q.ho };
+      c[k] = clamp(Math.round(v * 10) / 10, PACE_LIM[k][0], PACE_LIM[k][1]);
+      opts.custom = c; opts.customManual = true; opts.pace = 'custom';
+      expIn = c.in; expOut = c.out + c.hi;
+      save(); if (guideOn) cycleT = 0;
+      renderSettings(); renderControls();
+    });
+    el.addEventListener('blur', () => renderSettings());
+  });
   $('prep-cb').addEventListener('change', e => setOpt('prep', e.target.checked));
   $('mono-cb').addEventListener('change', e => setOpt('mono', e.target.checked));
   $('rule-sel').addEventListener('change', e => setOpt('rule', e.target.value));

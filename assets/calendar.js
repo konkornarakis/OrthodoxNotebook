@@ -263,9 +263,13 @@
   function fasting(date, opts) {
     const monastic = !!(opts && opts.monastic);
     const r = rule(date, monastic);
+    // η Δευτέρα που νηστεύεται μόνο λόγω της μοναχικής τάξης: λίγα λόγια για το γιατί
+    if (monastic && date.getDay() === 1 && !r.note && rule(date, false).level !== r.level) r.note = MONDAY_NOTE;
     const lv = LEVELS[r.level];
     return { level: r.level, label: lv.label, desc: lv.desc, period: r.period || '', note: r.note || '' };
   }
+
+  const MONDAY_NOTE = 'Η Δευτέρα είναι αφιερωμένη στους Αγγέλους· οι μοναχοί, που ζουν την «ισάγγελη» ζωή, τη νηστεύουν κι αυτήν. Για τους λαϊκούς δεν είναι υποχρεωτική.';
 
   function rule(date, monastic) {
     const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate(), dow = date.getDay();

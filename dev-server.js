@@ -9,6 +9,7 @@ const fs         = require('fs');
 const path       = require('path');
 const { execSync } = require('child_process');
 const saintsHandler = require('./api/saints.js');
+const calendarHandler = require('./api/calendar.js');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -22,6 +23,8 @@ const MIME = {
   '.ico':  'image/x-icon',
   '.png':  'image/png',
   '.svg':  'image/svg+xml',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.ics':  'text/calendar; charset=utf-8',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,6 +80,12 @@ const server = http.createServer(async (req, res) => {
   // ── GET /api/saints?m=&d=  →  saints of the day (same handler as on Vercel) ── //
   if (url === '/api/saints' && req.method === 'GET') {
     await saintsHandler(req, res);
+    return;
+  }
+
+  // ── GET /api/calendar  →  ημερολόγιο .ics για συνδρομή ή λήψη (όπως στο Vercel) ── //
+  if (url === '/api/calendar' && req.method === 'GET') {
+    calendarHandler(req, res);
     return;
   }
 

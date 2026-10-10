@@ -34,41 +34,35 @@
 
   applyTheme(storedTheme());
 
-  // Βυζαντινός σταυρός με το ΙΣ ΧΣ ΝΙ ΚΑ
-  const CROSS_PATH = 'M7.5 1h5l-1.3 7.8 7.8-1.3v5l-7.8-1.3 1.3 7.8h-5l1.3-7.8-7.8 1.3v-5l7.8 1.3z';
+  // Ελληνικός ισοσκελής σταυρός με τριφύλλια (όπως οι σταυροί ευλογίας), σε πλαίσιο 24×24
+  const CROSS_SHAPES = '<rect x="10.7" y="3.5" width="2.6" height="17"/><rect x="3.5" y="10.7" width="17" height="2.6"/><circle cx="12" cy="12" r="2.15"/><circle cx="12" cy="2.2" r="1.6"/><circle cx="10.2" cy="3.75" r="1.3"/><circle cx="13.8" cy="3.75" r="1.3"/><circle cx="21.8" cy="12" r="1.6"/><circle cx="20.25" cy="10.2" r="1.3"/><circle cx="20.25" cy="13.8" r="1.3"/><circle cx="12" cy="21.8" r="1.6"/><circle cx="10.2" cy="20.25" r="1.3"/><circle cx="13.8" cy="20.25" r="1.3"/><circle cx="2.2" cy="12" r="1.6"/><circle cx="3.75" cy="10.2" r="1.3"/><circle cx="3.75" cy="13.8" r="1.3"/>';
   const SITE_CROSS =
     '<svg class="site-cross" viewBox="0 0 64 64" aria-hidden="true">' +
-      '<path fill="currentColor" transform="translate(17 17) scale(1.5)" d="' + CROSS_PATH + '"/>' +
+      '<g fill="currentColor" transform="translate(17 17) scale(1.25)">' + CROSS_SHAPES + '</g>' +
       '<g fill="currentColor" font-family="GFS Didot, Georgia, serif" font-size="11.5" text-anchor="middle">' +
         '<text x="11" y="21">ΙΣ</text><text x="53" y="21">ΧΣ</text>' +
         '<text x="11" y="55">ΝΙ</text><text x="53" y="55">ΚΑ</text>' +
       '</g>' +
       '<path stroke="currentColor" stroke-width="1" d="M5.5 10.5h11M47.5 10.5h11"/>' +
     '</svg>';
-  const SMALL_CROSS = '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="' + CROSS_PATH + '"/></svg>';
+  const SMALL_CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">' + CROSS_SHAPES + '</g></svg>';
 
   // ── Σημείωμα προς όποιον μπαίνει ──────────────────────────────────────
   const EMAIL = 'konkornarakis@gmail.com';
   const LETTER = [
-    'Πριν προχωρήσεις, θέλω να σου πω με ειλικρίνεια ποιος γράφει όσα θα βρεις εδώ.',
-    'Τίποτε από αυτά δεν το έγραψε ούτε το είπε κάποια Μητρόπολη, κάποιος Αρχιεπίσκοπος ή Επίσκοπος ή κάποιος ιερέας. ' +
-      'Τα έγραψα εγώ, ένας απλός άνθρωπος, αμαρτωλός και εντελώς αρχάριος, που στην πραγματικότητα δεν ξέρει τίποτα. ' +
-      'Προσπαθώ μόνο να μεταφέρω λίγα από όσα έχω διαβάσει από τους Πατέρες και από ανθρώπους της Εκκλησίας. ' +
-      'Πολλά από τα κείμενα τα συγκέντρωσα και τα διατύπωσα με τη βοήθεια ενός προγράμματος τεχνητής νοημοσύνης, που κι αυτό κάνει λάθη.',
-    'Δεν γράφω για να διδάξω κανέναν. Δεν θεωρώ ότι όλα όσα γράφονται εδώ είναι σωστά· μπορεί να έχουν λάθη, ακόμη και σε σοβαρά θέματα. ' +
-      'Γι’ αυτό διάβασέ τα με επιφύλαξη, και για ό,τι αφορά τη δική σου ζωή (τη νηστεία, την προσευχή, τον κανόνα σου) ρώτα τον πνευματικό σου.',
-    'Ούτε είμαι βέβαιος ότι αυτή η σελίδα θα σε ωφελήσει. Το κομποσκοίνι στην οθόνη και οι «διαδραστικές» ασκήσεις δεν τα θεωρώ ούτε ιδανικό ούτε σωστό τρόπο. ' +
-      'Ένα αληθινό κομποσκοίνι και η προσευχή μακριά από οθόνες είναι πολύ καλύτερα. Αν όμως κάτι από εδώ σε βοηθήσει, δόξα τω Θεώ.',
-    'Και κάτι ακόμη, που για μένα μετράει πολύ. Ξέρω από τον εαυτό μου πόσο εύκολα μας τραβάει μια όμορφη οθόνη. ' +
-      'Μπαίνω μηχανικά σε σελίδες ειδήσεων που δεν θα έπρεπε καν να διαβάζω, μόνο επειδή είναι καλοφτιαγμένες, ενώ θα μπορούσα να προσεύχομαι. ' +
-      'Πολλές σελίδες και εφαρμογές, όπως το Facebook, είναι μελετημένες επίτηδες για να μας τραβούν και να μας κρατούν. ' +
-      'Δεν θέλω να γίνει και αυτή η σελίδα κάτι τέτοιο. Αν δεις ότι μπαίνεις εδώ χωρίς λόγο, μόνο επειδή είναι «ωραία», κλείσ’ την. ' +
-      'Έλα μόνο για ό,τι χρειάζεσαι, και ύστερα άφησε την οθόνη.',
-    'Αν βρεις κάποιο λάθος, θα σου είμαι ευγνώμων αν μου το γράψεις στο <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>.',
+    'Πριν διαβάσεις οτιδήποτε εδώ, καλό είναι να ξέρεις από πού προέρχεται.',
+    'Δεν είμαι κληρικός ούτε θεολόγος, και τίποτε από όσα υπάρχουν εδώ δεν έχει περάσει από έλεγχο ή ευλογία της Εκκλησίας. ' +
+      'Είμαι λαϊκός και αρχάριος, και μάζεψα λίγα από όσα διάβασα στους Πατέρες. ' +
+      'Στη συγκέντρωση και στη διατύπωσή τους βοήθησε και ένα πρόγραμμα τεχνητής νοημοσύνης, που κι αυτό σφάλλει.',
+    'Μην τα πάρεις λοιπόν ως διδασκαλία· μπορεί να υπάρχουν λάθη. Για τη νηστεία, την προσευχή και τον κανόνα σου ο λόγος ανήκει στον πνευματικό σου.',
+    'Η προσευχή μπροστά σε μια οθόνη δεν είναι ο δρόμος της Εκκλησίας· το κομποσκοίνι στο χέρι και η ησυχία είναι. ' +
+      'Αν κάτι από εδώ σε βοηθήσει να ξεκινήσεις, δόξα τω Θεώ.',
+    'Μια παράκληση μόνο: μην το κάνεις συνήθεια. Μπες για ό,τι χρειάζεσαι και κλείσε την οθόνη.',
+    'Αν δεις κάποιο λάθος, γράψε μου στο <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>.',
   ];
-  const LETTER_SIGN = 'Εύχου και για μένα τον αμαρτωλό.';
-  const NOTICE_SHORT = 'Αδελφέ, όσα βρίσκεις εδώ τα έγραψε ένας απλός, αμαρτωλός άνθρωπος, όχι η Εκκλησία. ' +
-    'Μπορεί να έχουν λάθη· διάβασέ τα με επιφύλαξη και ρώτα τον πνευματικό σου. <a href="simeioma.html">Το σημείωμα</a>';
+  const LETTER_SIGN = 'Εύχου για μένα.';
+  const NOTICE_SHORT = 'Αδελφέ, τα κείμενα εδώ είναι ενός λαϊκού, όχι της Εκκλησίας, και μπορεί να έχουν λάθη· ρώτα τον πνευματικό σου. ' +
+    '<a href="simeioma.html">Το σημείωμα</a>';
   const NOTICE_EVERY_DAYS = 7;
   function letterHtml() {
     return LETTER.map(p => '<p>' + p + '</p>').join('') + '<p class="letter-sign">' + LETTER_SIGN + '</p>';
@@ -77,6 +71,8 @@
   const PAGES = [
     { id: 'calendar',   href: 'main.html',       label: 'Νηστειοδρόμιο' },
     { id: 'synaxarion', href: 'synaxarion.html', label: 'Εορτολόγιο' },
+    { id: 'readings',   href: 'anagnosmata.html', label: 'Αναγνώσματα' },
+    { id: 'prayerbook', href: 'proseuxitario.html', label: 'Προσευχητάριο' },
     { id: 'prayer',     href: 'prayer.html',     label: 'Νοερά προσευχή' },
     { id: 'fasting',    href: 'fasting.html',    label: 'Περί νηστείας' },
     { id: 'sermons',    href: 'sermons.html',    label: 'Ομιλίες' },
@@ -113,12 +109,12 @@
       const extra = footer.innerHTML.trim();
       footer.innerHTML =
         '<div class="orn-divider">' + SMALL_CROSS + '</div>' +
-        '<p class="footer-text">Κείμενα ενός απλού, αμαρτωλού ανθρώπου, όχι Μητρόπολης ή ιερέα· μπορεί να έχουν λάθη. ' +
+        '<p class="footer-text">Κείμενα ενός λαϊκού, χωρίς έλεγχο από την Εκκλησία· μπορεί να έχουν λάθη. ' +
         '<a href="simeioma.html">Διάβασε το σημείωμα</a>.</p>' +
         '<p class="footer-text">Οι κανόνες νηστείας προσπαθούν να ακολουθούν την κοινή πράξη της Εκκλησίας της Ελλάδος (νέο ημερολόγιο). ' +
         'Για τη δική σου νηστεία ρώτα τον πνευματικό σου.</p>' +
         (extra ? '<p class="footer-text">' + extra + '</p>' : '') +
-        '<p class="footer-text"><a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
+        '<p class="footer-text"><a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
     }
 
     if (!document.querySelector('.orn-band')) {
@@ -197,8 +193,38 @@
     try { localStorage.setItem('screenTime', JSON.stringify(t)); } catch (e) { /* χωρίς αποθήκευση */ }
   }
 
+  // ── Εφαρμογή: λειτουργία χωρίς σύνδεση και εγκατάσταση ───────────────
+  let installPrompt = null;
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  }
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();               // καμία αυτόματη προτροπή· μόνο όταν το ζητήσει ο ίδιος ο χρήστης
+    installPrompt = e;
+    document.dispatchEvent(new CustomEvent('ortho:installable'));
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    document.dispatchEvent(new CustomEvent('ortho:installed'));
+  });
+  async function install() {
+    if (!installPrompt) return false;
+    const p = installPrompt;
+    installPrompt = null;
+    p.prompt();
+    try { const r = await p.userChoice; return r && r.outcome === 'accepted'; } catch (e) { return false; }
+  }
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!secure) return;
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* χωρίς λειτουργία εκτός σύνδεσης */ });
+  }
+
   function start() {
     renderChrome();
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker);
     const isNotePage = !!document.querySelector('header[data-page="note"]');
     document.querySelectorAll('[data-letter]').forEach(el => { el.innerHTML = letterHtml(); });
     if (isNotePage) ackNotice();
@@ -209,5 +235,8 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window.OrthoSite = { applyTheme, toggleTheme, SMALL_CROSS };
+  window.OrthoSite = {
+    applyTheme, toggleTheme, SMALL_CROSS, CROSS_SHAPES,
+    install, isStandalone, canInstall: () => !!installPrompt,
+  };
 })();

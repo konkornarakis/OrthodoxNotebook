@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
+  <title>Εφαρμογή — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="assets/calendar.js"></script>
+  <script src="assets/ics.js"></script>
+  <style>
+    .status { display: flex; gap: 10px; align-items: flex-start; padding: .8rem 1rem; border-radius: 8px; border: 1px solid var(--rule-soft); background: var(--vellum); margin: .6rem 0 0; }
+    .status .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; flex: none; background: var(--ink-faint); }
+    .status.ok .dot { background: var(--f-oil); }
+    .status.wait .dot { background: var(--gold); }
+    .status p { margin: 0; }
+    .howto { margin-top: .8rem; }
+    .howto details { border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); padding: .55rem .9rem; margin-bottom: 6px; }
+    .howto summary { cursor: pointer; font-family: var(--font-display); font-size: 17px; }
+    .howto summary::marker { color: var(--gold); }
+    .howto ol { margin: .5rem 0 .2rem 1.2rem; padding: 0; line-height: 1.7; }
+    .howto li::marker { color: var(--cinnabar); }
+    .works { columns: 2 260px; column-gap: 2rem; }
+
+    .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 26px; margin-top: 1rem; }
+    .form fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+    .form legend { font-family: var(--font-display); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 6px; padding: 0; }
+    .opt { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; line-height: 1.45; cursor: pointer; }
+    .opt input { accent-color: var(--cinnabar); width: 17px; height: 17px; margin: 2px 0 0; flex: none; }
+    .opt small { display: block; color: var(--ink-faint); font-size: 13px; }
+    .rem { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .rem.sub { margin-left: 25px; }
+    .rem .opt { flex: 1; }
+    .time { width: 76px; flex: none; height: 38px; margin-top: 2px; padding: 0 8px; text-align: center; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+    .rem:has(input[type="checkbox"]:not(:checked)) .time { opacity: .55; }
+    .time.bad { border-color: var(--cinnabar); }
+    .next { margin: .4rem 0 0 1.1rem; padding: 0; font-size: 14.5px; line-height: 1.7; }
+    .next b { font-weight: 600; }
+    .summary-line { margin: 1rem 0 0; font-size: 14.5px; color: var(--ink-soft); }
+    .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 1rem; }
+    .action { border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); padding: .9rem 1rem; }
+    .action h3 { font-family: var(--font-display); font-weight: 400; font-size: 19px; margin: 0 0 .3rem; }
+    .action p { margin: 0 0 .6rem; font-size: 14.5px; color: var(--ink-soft); line-height: 1.55; }
+    .action .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .copied { font-size: 13px; color: var(--f-oil); margin-left: 4px; }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="app" data-title="Εφαρμογή" data-subtitle="Εγκατάσταση στο κινητό, χωρίς σύνδεση, υπενθυμίσεις"></header>
+
+      <main>
+        <div class="prose">
+          <p class="initial">Το Σημειωματάριο μπορεί να μπει στο κινητό σαν εφαρμογή: με δικό του εικονίδιο, χωρίς τη γραμμή του browser, και να ανοίγει και χωρίς σύνδεση. Δεν στέλνει ειδοποιήσεις για να σας φέρει πίσω στην οθόνη και δεν συλλέγει τίποτα. Αν θέλετε υπενθυμίσεις, μπαίνουν στο ημερολόγιο του κινητού σας.</p>
+        </div>
+
+        <!-- ── Εγκατάσταση ───────────────────────────────────────── -->
+        <section class="section" id="install">
+          <h2 class="section-heading">Εγκατάσταση στη συσκευή</h2>
+          <div class="status" id="install-status"><span class="dot"></span><p id="install-text">…</p></div>
+          <p style="margin:.8rem 0 0"><button class="btn btn-accent" type="button" id="install-btn" hidden>Εγκατάσταση</button></p>
+          <div class="howto" id="howto">
+            <details data-os="ios">
+              <summary>iPhone και iPad</summary>
+              <ol>
+                <li>Ανοίξτε τη σελίδα στο Safari.</li>
+                <li>Πατήστε το κουμπί <strong>Κοινοποίηση</strong> (το τετράγωνο με το βέλος προς τα πάνω).</li>
+                <li>Επιλέξτε <strong>«Προσθήκη στην οθόνη Αφετηρίας»</strong> και μετά <strong>«Προσθήκη»</strong>.</li>
+              </ol>
+            </details>
+            <details data-os="android">
+              <summary>Android</summary>
+              <ol>
+                <li>Ανοίξτε τη σελίδα στο Chrome.</li>
+                <li>Πατήστε το κουμπί «Εγκατάσταση» πιο πάνω, ή το μενού <strong>⋮</strong> και <strong>«Εγκατάσταση εφαρμογής»</strong> (ή «Προσθήκη στην αρχική οθόνη»).</li>
+              </ol>
+            </details>
+            <details data-os="desktop">
+              <summary>Υπολογιστής</summary>
+              <ol>
+                <li>Στο Chrome ή στο Edge, πατήστε το εικονίδιο εγκατάστασης δεξιά στη γραμμή διευθύνσεων, ή το μενού και «Εγκατάσταση…».</li>
+                <li>Σε άλλους browsers η σελίδα λειτουργεί κανονικά, χωρίς εγκατάσταση.</li>
+              </ol>
+            </details>
+          </div>
+        </section>
+
+        <!-- ── Χωρίς σύνδεση ─────────────────────────────────────── -->
+        <section class="section" id="offline">
+          <h2 class="section-heading">Χωρίς σύνδεση</h2>
+          <div class="status" id="offline-status"><span class="dot"></span><p id="offline-text">…</p></div>
+          <div class="prose" style="margin-top:.9rem">
+            <p>Μετά την πρώτη επίσκεψη, οι σελίδες φυλάσσονται στη συσκευή:</p>
+            <ul class="works">
+              <li>Το νηστειοδρόμιο, για κάθε έτος</li>
+              <li>Η νοερά προσευχή, μαζί με το ίσο και τους ήχους</li>
+              <li>Το «Περί νηστείας» και το «Σημείωμα»</li>
+              <li>Τα κείμενα των ομιλιών (τα βίντεο θέλουν σύνδεση)</li>
+              <li>Στο εορτολόγιο: η νηστεία, οι εορτές και οι εορτάζοντες κάθε ημέρας· ο κατάλογος των αγίων μόνο για τις ημέρες που έχετε ήδη ανοίξει</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ── Υπενθυμίσεις ──────────────────────────────────────── -->
+        <section class="section" id="reminders">
+          <h2 class="section-heading">Υπενθυμίσεις</h2>
+          <div class="prose">
+            <p>Οι υπενθυμίσεις μπαίνουν στο <strong>Ημερολόγιο</strong> του κινητού σας. Την ώρα τους έρχεται κανονική ειδοποίηση στο κινητό, με ήχο, ακόμη και με κλειδωμένη οθόνη και χωρίς σύνδεση. Την ειδοποίηση τη στέλνει η εφαρμογή Ημερολόγιο, όχι αυτή η σελίδα· γι’ αυτό δεν χρειάζεται να μείνει ανοιχτή, και τίποτε δεν αποθηκεύεται σε κάποιον server.</p>
+          </div>
+
+          <div class="form panel" id="rem-form">
+            <fieldset>
+              <legend>Νηστεία</legend>
+              <label class="opt"><input type="radio" name="fast" value="periods" checked><span>Οι περίοδοι νηστείας και οι ξεχωριστές ημέρες<small>Σαρακοστή, Αγίων Αποστόλων, Δεκαπενταύγουστος, Χριστούγεννα, 5/1, 29/8, 14/9, Μεγάλη Παρασκευή</small></span></label>
+              <label class="opt"><input type="radio" name="fast" value="all"><span>Κάθε ημέρα νηστείας<small>μαζί με κάθε Τετάρτη και Παρασκευή</small></span></label>
+              <label class="opt"><input type="radio" name="fast" value="none"><span>Καθόλου</span></label>
+              <div class="rem"><label class="opt"><input type="checkbox" id="eve-on" checked><span>Ειδοποίηση το προηγούμενο βράδυ</span></label><input class="time" id="eve" value="20:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <label class="opt"><input type="checkbox" id="monastic"><span>Κατά τη μοναχική τάξη<small>νηστεία και τη Δευτέρα, ημέρα των Αγγέλων· <a href="fasting.html#deftera">περισσότερα</a></small></span></label>
+            </fieldset>
+            <fieldset>
+              <legend>Εορτές και ημέρα</legend>
+              <label class="opt"><input type="checkbox" id="feasts" checked><span>Οι μεγάλες εορτές<small>Δεσποτικές, Θεομητορικές και μεγάλων αγίων</small></span></label>
+              <div class="rem sub"><label class="opt"><input type="checkbox" id="feve-on"><span>Ειδοποίηση το προηγούμενο βράδυ</span></label><input class="time" id="feve" value="20:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <div class="rem"><label class="opt"><input type="checkbox" id="names-on"><span>Ποιοι γιορτάζουν<small>για να ευχηθείτε σε όσους γιορτάζουν</small></span></label><input class="time" id="names" value="09:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <div class="rem"><label class="opt"><input type="checkbox" id="readings-on"><span>Τα αναγνώσματα της ημέρας<small>Απόστολος και Ευαγγέλιο, με σύνδεσμο στο κείμενο</small></span></label><input class="time" id="readings" value="08:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <div class="rem"><label class="opt"><input type="checkbox" id="liturgy-on"><span>Θεία Λειτουργία της Κυριακής<small>ειδοποίηση το Σάββατο</small></span></label><input class="time" id="liturgy" value="21:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+            </fieldset>
+            <fieldset>
+              <legend>Προσευχή</legend>
+              <div class="rem"><label class="opt"><input type="checkbox" id="morning-on"><span>Πρωινές προσευχές</span></label><input class="time" id="morning" value="07:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <div class="rem"><label class="opt"><input type="checkbox" id="prayer-on"><span>Η ευχή<small>«πάρτε το κομποσκοίνι σας και αφήστε την οθόνη»</small></span></label><input class="time" id="t1" value="13:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <div class="rem sub"><label class="opt"><input type="checkbox" id="prayer2-on"><span>και δεύτερη φορά</span></label><input class="time" id="t2" value="18:00" inputmode="numeric" maxlength="5" aria-label="Δεύτερη ώρα"></div>
+              <div class="rem"><label class="opt"><input type="checkbox" id="evening-on"><span>Βραδινές προσευχές</span></label><input class="time" id="evening" value="22:00" inputmode="numeric" maxlength="5" aria-label="Ώρα"></div>
+              <p class="muted" style="font-size:13px;margin:.4rem 0 0">Πατήστε πάνω στην ώρα για να την αλλάξετε· η υπενθύμιση ενεργοποιείται μόνη της.</p>
+            </fieldset>
+          </div>
+          <p class="summary-line" id="summary-line"></p>
+
+          <div class="action" style="margin-top:1rem">
+            <h3>Οι επόμενες ειδοποιήσεις</h3>
+            <p>Έτσι θα χτυπήσουν στο κινητό σας με τις επιλογές σας. Συγκρίνετέ τες με το Ημερολόγιο, για να δείτε ότι μπήκαν σωστά.</p>
+            <ol class="next" id="next-list"></ol>
+          </div>
+
+          <div class="actions">
+            <div class="action">
+              <h3>Συνδρομή</h3>
+              <p>Το Ημερολόγιο του κινητού την ενημερώνει μόνο του. Στο iPhone, όταν την προσθέσετε, η επιλογή <em>«Αφαίρεση ειδοποιήσεων»</em> πρέπει να είναι κλειστή. Το Google Calendar δεν κρατά τις ειδοποιήσεις των συνδρομών· ορίστε τις από τις ρυθμίσεις του ημερολογίου.</p>
+              <div class="row">
+                <a class="btn btn-accent" id="sub-webcal" href="#">iPhone, iPad, Mac</a>
+                <a class="btn" id="sub-google" href="#" target="_blank" rel="noopener">Google Calendar</a>
+                <button class="btn" type="button" id="sub-copy">Αντιγραφή διεύθυνσης</button><span class="copied" id="copied"></span>
+              </div>
+            </div>
+            <div class="action">
+              <h3>Λήψη αρχείου</h3>
+              <p>Ένα αρχείο για τους επόμενους 13 μήνες, με όλες τις ειδοποιήσεις. Ανοίξτε το και πατήστε «Προσθήκη» στο Ημερολόγιο. Στο Google Calendar εισάγεται από τον υπολογιστή (calendar.google.com → Ρυθμίσεις → Εισαγωγή), όπου όμως παίρνει τις δικές του προεπιλεγμένες ειδοποιήσεις.</p>
+              <div class="row"><button class="btn btn-accent" type="button" id="download">Λήψη .ics</button></div>
+            </div>
+            <div class="action">
+              <h3>Δοκιμή</h3>
+              <p>Βάζει στο Ημερολόγιο μία δοκιμαστική υπενθύμιση. Δεν μπορεί να χτυπήσει την ίδια στιγμή, γιατί πρώτα πρέπει να την προσθέσετε στο Ημερολόγιο· γι’ αυτό χτυπά <strong>ένα λεπτό</strong> μετά το πάτημα. Αν έρθει η ειδοποίηση, όλα δουλεύουν.</p>
+              <div class="row"><button class="btn" type="button" id="test">Δοκιμαστική υπενθύμιση</button></div>
+              <p id="test-note" class="muted" style="margin-top:.5rem"></p>
+            </div>
+          </div>
+          <p class="muted" style="font-size:14.5px;margin-top:1rem">Οι υπενθυμίσεις είναι μόνο βοήθημα· τον κανόνα σας τον ορίζει ο πνευματικός σας.</p>
+        </section>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const S = window.OrthoSite, C = window.OrthoCal;
+
+      // ── Εγκατάσταση ──────────────────────────────────────────────────────
+      const ua = navigator.userAgent;
+      const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /android/i.test(ua);
+      const os = isIOS ? 'ios' : isAndroid ? 'android' : 'desktop';
+      const mine = document.querySelector(`#howto details[data-os="${os}"]`);
+      if (mine) { mine.open = true; mine.parentNode.prepend(mine); }
+
+      function renderInstall() {
+        const box = $('install-status'), text = $('install-text'), btn = $('install-btn');
+        box.className = 'status';
+        if (S.isStandalone()) {
+          box.classList.add('ok');
+          text.textContent = 'Είστε ήδη μέσα στην εφαρμογή σε αυτή τη συσκευή.';
+          btn.hidden = true;
+          $('howto').hidden = true;
+        } else if (S.canInstall()) {
+          box.classList.add('wait');
+          text.textContent = 'Η εφαρμογή μπορεί να εγκατασταθεί σε αυτή τη συσκευή.';
+          btn.hidden = false;
+        } else {
+          text.textContent = isIOS ? 'Στο iPhone και στο iPad η εγκατάσταση γίνεται από το μενού Κοινοποίηση του Safari, όπως παρακάτω.'
+            : 'Ακολουθήστε τα βήματα για τη συσκευή σας παρακάτω.';
+          btn.hidden = true;
+        }
+      }
+      $('install-btn').addEventListener('click', async () => { await S.install(); renderInstall(); });
+      document.addEventListener('ortho:installable', renderInstall);
+      document.addEventListener('ortho:installed', () => { $('install-text').textContent = 'Η εφαρμογή εγκαταστάθηκε. Δόξα τω Θεώ.'; $('install-btn').hidden = true; });
+
+      // ── Χωρίς σύνδεση ───────────────────────────────────────────────────
+      function renderOffline() {
+        const box = $('offline-status'), text = $('offline-text');
+        box.className = 'status';
+        if (!('serviceWorker' in navigator)) { text.textContent = 'Αυτός ο browser δεν υποστηρίζει λειτουργία χωρίς σύνδεση.'; return; }
+        if (navigator.serviceWorker.controller) {
+          box.classList.add('ok');
+          text.textContent = 'Οι σελίδες είναι αποθηκευμένες σε αυτή τη συσκευή και ανοίγουν και χωρίς σύνδεση.';
+        } else {
+          box.classList.add('wait');
+          text.textContent = 'Ετοιμάζεται· την επόμενη φορά που θα ανοίξετε τη σελίδα θα λειτουργεί και χωρίς σύνδεση.';
+        }
+      }
+      if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('controllerchange', renderOffline);
+
+      // ── Υπενθυμίσεις ────────────────────────────────────────────────────
+      const I = window.OrthoIcs;
+      try { $('monastic').checked = localStorage.getItem('monasticMode') === 'true'; } catch (e) { /* */ }
+      try {
+        const saved = JSON.parse(localStorage.getItem('reminderForm') || 'null');
+        if (saved) for (const [id, v] of Object.entries(saved)) {
+          const el = id === 'fast' ? document.querySelector(`input[name="fast"][value="${v}"]`) : $(id);
+          if (!el) continue;
+          if (el.type === 'checkbox' || el.type === 'radio') el.checked = id === 'fast' ? true : !!v; else el.value = v;
+        }
+      } catch (e) { /* */ }
+      function saveForm() {
+        const o = { fast: document.querySelector('input[name="fast"]:checked').value };
+        document.querySelectorAll('#rem-form input[type="checkbox"], #rem-form input.time').forEach(el => { o[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+        try { localStorage.setItem('reminderForm', JSON.stringify(o)); } catch (e) { /* */ }
+      }
+
+      // Ώρα με το πληκτρολόγιο: «730» → «07:30», «21» → «21:00»
+      function normTime(v) {
+        const d = String(v).replace(/[^0-9]/g, '').slice(0, 4);
+        if (!d) return '';
+        let h, m;
+        if (d.length <= 2) { h = +d; m = 0; } else if (d.length === 3) { h = +d.slice(0, 1); m = +d.slice(1); } else { h = +d.slice(0, 2); m = +d.slice(2); }
+        if (h > 23 || m > 59) return null;
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+      }
+      document.querySelectorAll('#rem-form .rem').forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]'), t = row.querySelector('input.time');
+        // πάτημα στην ώρα: ενεργοποιεί και την υπενθύμιση
+        t.addEventListener('focus', () => { if (!cb.checked) { cb.checked = true; render(); } t.select(); });
+        t.addEventListener('input', () => { t.classList.toggle('bad', normTime(t.value) === null && t.value.length >= 3); });
+        t.addEventListener('blur', () => { const n = normTime(t.value); if (n) { t.value = n; t.classList.remove('bad'); } else t.classList.add('bad'); render(); });
+      });
+      const tv = id => { const n = normTime($(id).value); return n || ''; };
+      const onT = (cb, id) => $(cb).checked ? tv(id) : '';
+
+      function options() {
+        const prayer = $('prayer-on').checked ? [tv('t1'), $('prayer2-on').checked ? tv('t2') : ''].filter(Boolean) : [];
+        return {
+          fast: document.querySelector('input[name="fast"]:checked').value,
+          eve: onT('eve-on', 'eve'), monastic: $('monastic').checked,
+          feasts: $('feasts').checked, feastsEve: $('feasts').checked ? onT('feve-on', 'feve') : '',
+          names: $('names-on').checked, namesAt: onT('names-on', 'names'),
+          readings: $('readings-on').checked, readingsAt: onT('readings-on', 'readings'),
+          morning: onT('morning-on', 'morning'), evening: onT('evening-on', 'evening'),
+          prayer: [...new Set(prayer)], liturgy: onT('liturgy-on', 'liturgy'),
+        };
+      }
+      function query(o) {
+        const q = new URLSearchParams({ fast: o.fast, eve: o.eve || '0', monastic: o.monastic ? '1' : '0', feasts: o.feasts ? '1' : '0' });
+        if (o.feastsEve) q.set('feve', o.feastsEve);
+        if (o.names) q.set('names', o.namesAt || '1');
+        if (o.readings) q.set('readings', o.readingsAt || '1');
+        if (o.morning) q.set('morning', o.morning);
+        if (o.prayer.length) q.set('prayer', o.prayer.join(','));
+        if (o.evening) q.set('evening', o.evening);
+        if (o.liturgy) q.set('liturgy', o.liturgy);
+        return q.toString();
+      }
+      function windowDates() {
+        const n = new Date();
+        return { from: new Date(n.getFullYear(), n.getMonth(), n.getDate()), to: new Date(n.getFullYear(), n.getMonth() + 13, n.getDate()) };
+      }
+
+      // τα αναγνώσματα για τις υπενθυμίσεις (φορτώνονται μόνο όταν ζητηθούν)
+      let readingsOf = null, readingsLoading = null;
+      function loadReadings() {
+        if (readingsOf || readingsLoading) return readingsLoading;
+        const y = new Date().getFullYear();
+        readingsLoading = Promise.all([y, y + 1].map(yy => fetch(`readings/${yy}.json`).then(r => r.ok ? r.json() : null).catch(() => null))
+          .concat(fetch('readings/refs.json').then(r => r.json())))
+          .then(([a, b, refs]) => { readingsOf = I.readingsLookup({ [y]: a, [y + 1]: b }, refs); render(); })
+          .catch(() => { readingsLoading = null; });
+        return readingsLoading;
+      }
+      function fullOptions() {
+        const o = Object.assign(windowDates(), options(), { site: location.origin, readingsOf });
+        if (o.readings && !readingsOf) loadReadings();
+        return o;
+      }
+
+      const fmt = d => C.DAYS_SHORT[d.getDay()] + ' ' + d.getDate() + ' ' + C.MONTHS_GEN[d.getMonth()] + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      function render() {
+        const o = options();
+        $('eve-on').disabled = o.fast === 'none';
+        $('feve-on').disabled = !$('feasts').checked;
+        const path = '/api/calendar?' + query(o);
+        $('sub-webcal').href = 'webcal://' + location.host + path;
+        $('sub-google').href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent('webcal://' + location.host + path);
+        $('sub-copy').dataset.url = location.origin + path;
+        const fo = fullOptions();
+        const next = I.upcoming(Object.assign({}, fo, { now: new Date() }), 8);
+        $('next-list').innerHTML = next.length
+          ? next.map(x => `<li><b>${fmt(x.at)}</b> · ${x.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</li>`).join('')
+          : '<li class="muted">Καμία ειδοποίηση με αυτές τις επιλογές.</li>';
+        const ics = I.build(fo);
+        const events = (ics.match(/BEGIN:VEVENT/g) || []).length;
+        $('summary-line').textContent = events ? `Στο ημερολόγιο θα μπουν ${events} ${events === 1 ? 'γεγονός' : 'γεγονότα'} για τους επόμενους 13 μήνες (οι καθημερινές υπενθυμίσεις μετρούν μία φορά).` : 'Δεν έχετε επιλέξει τίποτα.';
+        saveForm();
+      }
+      $('rem-form').addEventListener('change', render);
+      $('sub-copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($('sub-copy').dataset.url); $('copied').textContent = 'αντιγράφηκε'; }
+        catch (e) { window.prompt('Αντιγράψτε τη διεύθυνση:', $('sub-copy').dataset.url); }
+        setTimeout(() => { $('copied').textContent = ''; }, 2500);
+      });
+      function downloadIcs(text, name) {
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+      $('download').addEventListener('click', async () => {
+        if (options().readings) await loadReadings();
+        downloadIcs(I.build(fullOptions()), 'orthodoxo-simeiomatario.ics');
+      });
+      $('test').addEventListener('click', () => {
+        const t = I.test(new Date(), 1);
+        downloadIcs(t.ics, 'dokimi.ics');
+        $('test-note').textContent = `Προσθέστε το στο Ημερολόγιο· η ειδοποίηση θα έρθει στις ${String(t.at.getHours()).padStart(2, '0')}:${String(t.at.getMinutes()).padStart(2, '0')}. Μετά μπορείτε να σβήσετε το γεγονός.`;
+      });
+
+      renderInstall();
+      renderOffline();
+      render();
+    })();
+  </script>
+</body>
+
+</html>

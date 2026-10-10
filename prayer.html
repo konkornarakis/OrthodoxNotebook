@@ -4,6 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
   <title>Νοερά προσευχή — Ορθόδοξο Σημειωματάριο</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,9 +98,12 @@
       min-width: 280px; height: 58px !important; justify-content: center; font-size: 17px !important;
       font-family: var(--font-display) !important; letter-spacing: .02em;
       touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
-      transition: transform .5s ease, box-shadow .5s ease, background .3s;
+      -webkit-tap-highlight-color: transparent; outline: none;
+      transition: filter 1.2s ease;
     }
-    .hold-btn.down { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(210,171,85,.28), 0 0 28px rgba(240,168,58,.45); }
+    .hold-btn:hover, .hold-btn:focus { color: #fff8ef; }
+    .hold-btn.down { filter: brightness(.9); }
+    .hold-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
     /* ── Ήσυχη οθόνη ─────────────────────────────────────────────────── */
     .imm-bar, .imm-hint { display: none; }
@@ -131,6 +140,10 @@
       padding: 5px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum);
       color: var(--ink-soft); font-size: 14px; cursor: pointer; font-family: var(--font-body);
     }
+    .pace-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+    .pace-nums label { display: flex; flex-direction: column; font-size: 12.5px; color: var(--ink-soft); gap: 3px; position: relative; }
+    .pace-nums input { width: 100%; height: 38px; padding: 0 18px 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+    .pace-nums span { position: absolute; right: 7px; bottom: 9px; color: var(--ink-faint); }
     .chip[aria-pressed="true"] { border-color: var(--cinnabar); color: var(--cinnabar); background: rgba(210,171,85,.14); }
     .chip:disabled { opacity: .45; cursor: not-allowed; }
     .check { display: flex; align-items: flex-start; gap: 8px; font-size: 15px; color: var(--ink); margin-top: 7px; line-height: 1.4; cursor: pointer; }
@@ -281,12 +294,18 @@
                   <label class="check"><input type="checkbox" id="prep-cb"> Αρχή με το «Δι᾿ εὐχῶν τῶν ἁγίων Πατέρων ἡμῶν…»</label>
                 </fieldset>
                 <fieldset class="field">
-                  <legend>Ρυθμός του οδηγού</legend>
+                  <legend>Ρυθμός</legend>
                   <div class="chips">
                     <button type="button" class="chip" data-pace="natural">Φυσικός</button>
                     <button type="button" class="chip" data-pace="calm">Ήρεμος</button>
                     <button type="button" class="chip" data-pace="slow">Αργός</button>
                     <button type="button" class="chip" data-pace="custom">Ο δικός μου</button>
+                  </div>
+                  <div class="pace-nums">
+                    <label>Εισπνοή<input type="text" inputmode="decimal" id="pace-in" autocomplete="off"><span>″</span></label>
+                    <label>Κράτημα<input type="text" inputmode="decimal" id="pace-hi" autocomplete="off"><span>″</span></label>
+                    <label>Εκπνοή<input type="text" inputmode="decimal" id="pace-out" autocomplete="off"><span>″</span></label>
+                    <label>Παύση<input type="text" inputmode="decimal" id="pace-ho" autocomplete="off"><span>″</span></label>
                   </div>
                   <div class="hint" id="pace-hint"></div>
                 </fieldset>

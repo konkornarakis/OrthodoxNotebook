@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
+  <title>Αναγνώσματα — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="assets/calendar.js"></script>
+  <script src="assets/greek.js"></script>
+  <style>
+    .date-nav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .date-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); font-size: 18px; line-height: 1; cursor: pointer; }
+    .date-arrow:hover { border-color: var(--gold); color: var(--cinnabar); }
+    .date-input { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 15px; }
+
+    .day-head { text-align: center; }
+    .day-wd { font-family: var(--font-display); font-size: 18px; color: var(--ink-soft); }
+    .day-date { font-family: var(--font-display); font-size: clamp(28px, 5vw, 38px); line-height: 1.15; color: var(--ink); }
+    .day-date.red { color: var(--cinnabar); }
+    .day-feasts { list-style: none; margin: .8rem 0 0; padding: 0; }
+    .day-feasts li { font-family: var(--font-display); font-size: 19px; line-height: 1.35; }
+    .day-feasts li.red { color: var(--cinnabar); }
+
+    .tools { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 14px; margin: 1.2rem 0 0; font-size: 14.5px; color: var(--ink-soft); }
+    .tools label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .tools input { accent-color: var(--cinnabar); }
+    .size-btn { width: 34px; height: 30px; border-radius: 6px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink); cursor: pointer; font-family: var(--font-display); }
+
+    .reading { margin-top: 1.4rem; }
+    .reading h2 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0; color: var(--cinnabar); text-align: center; }
+    .reading .ref { text-align: center; color: var(--ink-soft); font-size: 15px; margin: .2rem 0 1rem; }
+    .reading .text { font-family: var(--font-display); font-size: calc(19px * var(--rs, 1)); line-height: 1.75; color: var(--ink); text-align: justify; hyphens: manual; }
+    .reading .incipit { color: var(--cinnabar); }
+    .reading sup { font-family: var(--font-body); font-size: .55em; color: var(--gold-deep); margin: 0 .15em 0 .3em; vertical-align: .55em; }
+    .no-nums .reading sup { display: none; }
+    .note-box { padding: 1rem 1.2rem; border: 1px solid var(--rule); border-left: 3px solid var(--gold); border-radius: 6px; background: var(--vellum); color: var(--ink-soft); }
+    .sources { margin-top: 2rem; font-size: 13.5px; color: var(--ink-faint); line-height: 1.6; }
+    .sources a { color: var(--ink-soft); }
+    @media (max-width: 560px) { .reading .text { text-align: left; } }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="readings" data-title="Αναγνώσματα" data-subtitle="Ο Απόστολος και το Ευαγγέλιο της ημέρας"></header>
+
+      <main>
+        <div class="date-nav">
+          <button class="date-arrow" type="button" id="prev" aria-label="Προηγούμενη ημέρα">‹</button>
+          <input type="date" id="date-picker" class="date-input" aria-label="Ημερομηνία">
+          <button class="date-arrow" type="button" id="next" aria-label="Επόμενη ημέρα">›</button>
+          <button class="btn" type="button" id="today">Σήμερα</button>
+        </div>
+
+        <section id="day-head" class="panel day-head"></section>
+
+        <div class="tools">
+          <label><input type="checkbox" id="mono-cb"> Μονοτονικό</label>
+          <label><input type="checkbox" id="nums-cb" checked> Αριθμοί στίχων</label>
+          <span>Μέγεθος <button class="size-btn" type="button" id="smaller" aria-label="Μικρότερα γράμματα">Α−</button> <button class="size-btn" type="button" id="bigger" aria-label="Μεγαλύτερα γράμματα">Α+</button></span>
+        </div>
+
+        <div id="readings" aria-live="polite"></div>
+
+        <p class="sources">
+          Τα αναγνώσματα υπολογίζονται κατά την τάξη του Οικουμενικού Πατριαρχείου, όπως την τηρεί η Ελληνική Ορθόδοξη Αρχιεπισκοπή Αμερικής·
+          σε δοκιμή με όλο το 2026 συμφώνησαν με εκείνη σε 352 από τις 365 ημέρες. Οι διαφορές είναι κυρίως στη Μεγάλη Εβδομάδα, σε Σάββατα της Τεσσαρακοστής
+          και σε ημέρες με δύο μνήμες. Στην Εκκλησία της Ελλάδος ορισμένες ημέρες (π.χ. τοπικοί άγιοι) μπορεί να διαφέρουν· σε κάθε περίπτωση ισχύει ό,τι διαβάζεται στον ναό σας.
+          <br>Κείμενο: η Πατριαρχική έκδοση της Καινής Διαθήκης (1904), από την ηλεκτρονική μορφή του M. A. Robinson, με τονισμό από το Βυζαντινό κείμενο Robinson–Pierpont.
+          Η τάξη των αναγνωσμάτων βασίζεται στα δεδομένα του <a href="https://github.com/brianglass/orthocal-python" target="_blank" rel="noopener">orthocal</a>.
+          Στην αρχή κάθε περικοπής σημειώνεται με κόκκινο το «Ἀδελφοί» ή το «Τῷ καιρῷ ἐκείνῳ», όπως διαβάζεται στον ναό· η υπόλοιπη περικοπή δίνεται όπως είναι στο κείμενο.
+        </p>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const C = window.OrthoCal, G = window.OrthoGreek;
+      const $ = id => document.getElementById(id);
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const pad = n => String(n).padStart(2, '0');
+      const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const FIRST = 2025, LAST = 2035;
+
+      const prefs = (() => { try { return Object.assign({ mono: false, nums: true, size: 1 }, JSON.parse(localStorage.getItem('readingPrefs') || '{}')); } catch (e) { return { mono: false, nums: true, size: 1 }; } })();
+      const savePrefs = () => { try { localStorage.setItem('readingPrefs', JSON.stringify(prefs)); } catch (e) { /* */ } };
+
+      const now = new Date();
+      let day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const q = /[?&]d=(\d{4})-(\d{2})-(\d{2})/.exec(location.search);
+      if (q) day = new Date(+q[1], +q[2] - 1, +q[3]);
+
+      const cache = {};
+      async function json(url) {
+        if (!cache[url]) cache[url] = fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+        return cache[url];
+      }
+
+      function renderHead(d) {
+        const feasts = C.feastsOf(d);
+        const red = d.getDay() === 0 || feasts.some(x => x.rank !== 'minor');
+        $('day-head').innerHTML = `
+          <div class="day-wd">${C.DAYS[d.getDay()]}</div>
+          <div class="day-date${red ? ' red' : ''}">${d.getDate()} ${C.MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}</div>
+          ${feasts.length ? `<ul class="day-feasts">${feasts.map(x => `<li class="${x.rank !== 'minor' ? 'red' : ''}">${esc(x.name)}</li>`).join('')}</ul>` : ''}`;
+      }
+
+      function textOf(t) {
+        const tx = s => prefs.mono ? G.mono(s) : s;
+        const body = t.v.map(([n, s], i) => `<sup>${esc(n.split(',')[1])}</sup>${esc(tx(i === 0 && t.i ? lowerFirst(s) : s))}`).join(' ');
+        return (t.i ? `<span class="incipit">${esc(tx(t.i))}</span> ` : '') + body;
+      }
+      // μετά το «Ἀδελφοί,» η πρώτη λέξη δεν χρειάζεται κεφαλαίο, εκτός αν είναι κύριο όνομα
+      function lowerFirst(s) {
+        const w = s.split(' ')[0];
+        if (/^(Θε|Χριστ|Κύρι|Ἰησ|Πνεῦ|Παῦλ|Πέτρ|Ἰωάνν)/.test(w)) return s;
+        return s.charAt(0).toLocaleLowerCase('el') + s.slice(1);
+      }
+
+      let req = 0;
+      async function render() {
+        const d = day, my = ++req;
+        $('date-picker').value = iso(d);
+        history.replaceState(null, '', location.pathname + (iso(d) === iso(new Date(now.getFullYear(), now.getMonth(), now.getDate())) ? '' : '?d=' + iso(d)));
+        renderHead(d);
+        const box = $('readings');
+        if (d.getFullYear() < FIRST || d.getFullYear() > LAST) {
+          box.innerHTML = `<div class="note-box" style="margin-top:1.4rem">Τα αναγνώσματα υπάρχουν για τα έτη ${FIRST}–${LAST}.</div>`;
+          return;
+        }
+        box.innerHTML = '<p class="muted" style="text-align:center;margin-top:1.4rem">Φόρτωση…</p>';
+        try {
+          const year = await json(`readings/${d.getFullYear()}.json`);
+          const list = year[pad(d.getMonth() + 1) + '-' + pad(d.getDate())] || [];
+          if (my !== req) return;
+          if (!list.length) {
+            box.innerHTML = `<div class="note-box" style="margin-top:1.4rem">Σήμερα δεν ορίζεται Απόστολος και Ευαγγέλιο, γιατί δεν τελείται Θεία Λειτουργία
+              (όπως τις καθημερινές της Μεγάλης Τεσσαρακοστής, όπου τελείται η Προηγιασμένη Θεία Λειτουργία χωρίς αυτά τα αναγνώσματα).</div>`;
+            return;
+          }
+          const texts = await Promise.all(list.map(([pid]) => json(`readings/t/${pid % 16}.json`).then(c => c[pid])));
+          if (my !== req) return;
+          box.innerHTML = list.map(([, kind], i) => {
+            const t = texts[i];
+            if (!t) return '';
+            return `<section class="reading panel">
+              <h2>${kind === 'A' ? 'Ὁ Ἀπόστολος' : 'Τὸ Εὐαγγέλιον'}</h2>
+              <p class="ref">${esc(t.b)} · ${esc(t.r)}</p>
+              <p class="text" lang="grc">${textOf(t)}</p>
+            </section>`;
+          }).join('');
+        } catch (e) {
+          if (my !== req) return;
+          box.innerHTML = `<div class="note-box" style="margin-top:1.4rem">Δεν ήταν δυνατή η φόρτωση των αναγνωσμάτων${navigator.onLine === false ? ' χωρίς σύνδεση· ανοίξτε τα μία φορά με σύνδεση για να φυλαχτούν στη συσκευή' : ''}.</div>`;
+        }
+      }
+
+      function applyPrefs() {
+        $('mono-cb').checked = prefs.mono;
+        $('nums-cb').checked = prefs.nums;
+        document.body.classList.toggle('no-nums', !prefs.nums);
+        document.documentElement.style.setProperty('--rs', String(prefs.size));
+      }
+      $('mono-cb').addEventListener('change', e => { prefs.mono = e.target.checked; savePrefs(); render(); });
+      $('nums-cb').addEventListener('change', e => { prefs.nums = e.target.checked; savePrefs(); applyPrefs(); });
+      $('smaller').addEventListener('click', () => { prefs.size = Math.max(.8, +(prefs.size - .1).toFixed(2)); savePrefs(); applyPrefs(); });
+      $('bigger').addEventListener('click', () => { prefs.size = Math.min(1.6, +(prefs.size + .1).toFixed(2)); savePrefs(); applyPrefs(); });
+      $('prev').addEventListener('click', () => { day = C.addDays(day, -1); render(); });
+      $('next').addEventListener('click', () => { day = C.addDays(day, 1); render(); });
+      $('today').addEventListener('click', () => { day = new Date(now.getFullYear(), now.getMonth(), now.getDate()); render(); });
+      $('date-picker').addEventListener('change', e => { const v = e.target.value; if (!v) return; const [y, m, dd] = v.split('-').map(Number); day = new Date(y, m - 1, dd); render(); });
+
+      applyPrefs();
+      render();
+      window.__readings = { go: d => { day = d; return render(); } };
+    })();
+  </script>
+</body>
+
+</html>
