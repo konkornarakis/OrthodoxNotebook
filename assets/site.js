@@ -71,6 +71,8 @@
   const PAGES = [
     { id: 'calendar',   href: 'main.html',       label: 'Νηστειοδρόμιο' },
     { id: 'synaxarion', href: 'synaxarion.html', label: 'Εορτολόγιο' },
+    { id: 'readings',   href: 'anagnosmata.html', label: 'Αναγνώσματα' },
+    { id: 'prayerbook', href: 'proseuxitario.html', label: 'Προσευχητάριο' },
     { id: 'prayer',     href: 'prayer.html',     label: 'Νοερά προσευχή' },
     { id: 'fasting',    href: 'fasting.html',    label: 'Περί νηστείας' },
     { id: 'sermons',    href: 'sermons.html',    label: 'Ομιλίες' },

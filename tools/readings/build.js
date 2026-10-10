@@ -211,4 +211,8 @@ for (let c = 0; c < CHUNKS; c++) {
   fs.writeFileSync(path.join(OUT, 't', c + '.json'), JSON.stringify(part));
 }
 try { fs.unlinkSync(path.join(OUT, 'texts.json')); } catch (e) { /* */ }
+// σύντομες παραπομπές για τις υπενθυμίσεις του ημερολογίου
+const refs = {};
+for (const [pid, t] of Object.entries(texts)) refs[pid] = t.r;
+fs.writeFileSync(path.join(OUT, 'refs.json'), JSON.stringify(refs));
 console.log('περικοπές', Object.keys(texts).length, '· λέξεις', totalWords, '· χωρίς τόνο', unknownWords);

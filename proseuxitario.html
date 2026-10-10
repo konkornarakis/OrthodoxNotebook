@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
+  <title>Προσευχητάριο — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="assets/greek.js"></script>
+  <script src="assets/prayers.js"></script>
+  <style>
+    .tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 1rem; }
+    .tab { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); font-family: var(--font-display); font-size: 16px; cursor: pointer; }
+    .tab[aria-selected="true"] { border-color: var(--cinnabar); color: var(--cinnabar); background: rgba(210,171,85,.14); }
+    .tools { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 1.2rem; font-size: 14.5px; color: var(--ink-soft); align-items: center; }
+    .tools label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+    .tools input { accent-color: var(--cinnabar); }
+    .chip { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); font-size: 14px; cursor: pointer; }
+    .chip[aria-pressed="true"] { border-color: var(--cinnabar); color: var(--cinnabar); }
+
+    .prayers { max-width: 720px; margin: 0 auto; }
+    .pr { margin: 0 0 1.3rem; }
+    .pr h3 { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--cinnabar); margin: 1.4rem 0 .35rem; text-align: center; }
+    .pr p { font-family: var(--font-display); font-size: calc(19px * var(--ps, 1)); line-height: 1.75; color: var(--ink); margin: 0; }
+    .pr .rubric { display: block; font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--cinnabar); margin-top: .2rem; }
+
+    .step { max-width: 720px; margin: 0 auto; min-height: 50vh; display: flex; flex-direction: column; justify-content: center; }
+    .step .pr p { font-size: calc(23px * var(--ps, 1)); }
+    .step-nav { display: flex; justify-content: center; gap: 10px; margin-top: 1.4rem; align-items: center; }
+    .step-count { color: var(--ink-faint); font-size: 14px; min-width: 5em; text-align: center; }
+    .intro { max-width: 720px; margin: 0 auto 1rem; color: var(--ink-soft); font-size: 15px; text-align: center; }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="prayerbook" data-title="Προσευχητάριο" data-subtitle="Οι προσευχές της ημέρας"></header>
+
+      <main>
+        <p class="intro">Οι προσευχές είναι από τα συνηθισμένα προσευχητάρια της Εκκλησίας. Πόσες θα λες και πότε, το ορίζει ο πνευματικός σου· καλύτερα από ένα βιβλίο στο χέρι, μακριά από την οθόνη.</p>
+
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" data-sec="proi">Πρωί</button>
+          <button class="tab" role="tab" data-sec="vrady">Βράδυ</button>
+          <button class="tab" role="tab" data-sec="fagito">Φαγητό</button>
+          <button class="tab" role="tab" data-sec="meleti">Μελέτη</button>
+          <button class="tab" role="tab" data-sec="efraim">Τεσσαρακοστή</button>
+        </div>
+        <div class="tools">
+          <span><button class="chip" type="button" data-lvl="1">Σύντομα</button> <button class="chip" type="button" data-lvl="2">Πλήρως</button></span>
+          <label><input type="checkbox" id="mono-cb"> Μονοτονικό</label>
+          <label><input type="checkbox" id="step-cb"> Μία-μία</label>
+          <span><button class="chip" type="button" id="smaller" aria-label="Μικρότερα γράμματα">Α−</button> <button class="chip" type="button" id="bigger" aria-label="Μεγαλύτερα γράμματα">Α+</button></span>
+        </div>
+
+        <div id="out"></div>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const P = window.OrthoPrayers, G = window.OrthoGreek;
+      const $ = id => document.getElementById(id);
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const SECTIONS = {
+        proi: () => [].concat(P.start, P.trisagion, P.morning, P.psalm, P.creed, P.end),
+        vrady: () => [].concat(P.start, P.trisagion, P.evening, P.end),
+        fagito: () => P.meals,
+        meleti: () => P.study,
+        efraim: () => P.lent,
+      };
+      const st = (() => { try { return Object.assign({ lvl: 1, mono: false, step: false, size: 1 }, JSON.parse(localStorage.getItem('prayerBook') || '{}')); } catch (e) { return { lvl: 1, mono: false, step: false, size: 1 }; } })();
+      const save = () => { try { localStorage.setItem('prayerBook', JSON.stringify(st)); } catch (e) { /* */ } };
+      let sec = (location.hash || '').slice(1);
+      if (!SECTIONS[sec]) { const h = new Date().getHours(); sec = h >= 4 && h < 15 ? 'proi' : 'vrady'; }
+      let idx = 0;
+
+      const tx = s => st.mono ? G.mono(s) : s;
+      function item(p) {
+        return `<div class="pr">${p.t ? `<h3>${esc(tx(p.t))}</h3>` : ''}<p lang="grc">${esc(tx(p.x))}${p.r ? `<span class="rubric">(${esc(p.r)})</span>` : ''}</p></div>`;
+      }
+      function render() {
+        document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.sec === sec)));
+        document.querySelectorAll('[data-lvl]').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.lvl === st.lvl)));
+        $('mono-cb').checked = st.mono; $('step-cb').checked = st.step;
+        document.documentElement.style.setProperty('--ps', String(st.size));
+        const list = SECTIONS[sec]().filter(p => p.l <= st.lvl);
+        if (!st.step) { $('out').innerHTML = `<div class="prayers">${list.map(item).join('')}</div>`; return; }
+        idx = Math.max(0, Math.min(idx, list.length - 1));
+        const last = idx === list.length - 1;
+        $('out').innerHTML = `<div class="step">${item(list[idx])}
+          <div class="step-nav">
+            <button class="btn" type="button" id="prev" ${idx === 0 ? 'disabled' : ''}>‹ Προηγούμενη</button>
+            <span class="step-count">${idx + 1} / ${list.length}</span>
+            <button class="btn btn-accent" type="button" id="next">${last ? 'Τέλος' : 'Επόμενη ›'}</button>
+          </div></div>`;
+        $('prev').onclick = () => { idx--; render(); };
+        $('next').onclick = () => {
+          if (last) { $('out').innerHTML = '<div class="step"><p class="intro" style="font-size:18px">Δόξα σοι, ὁ Θεός. Αν μπορείς, άφησε τώρα την οθόνη.</p></div>'; return; }
+          idx++; render(); window.scrollTo({ top: $('out').offsetTop - 20 });
+        };
+      }
+      document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { sec = t.dataset.sec; idx = 0; history.replaceState(null, '', '#' + sec); render(); }));
+      document.querySelectorAll('[data-lvl]').forEach(c => c.addEventListener('click', () => { st.lvl = +c.dataset.lvl; idx = 0; save(); render(); }));
+      $('mono-cb').addEventListener('change', e => { st.mono = e.target.checked; save(); render(); });
+      $('step-cb').addEventListener('change', e => { st.step = e.target.checked; idx = 0; save(); render(); });
+      $('smaller').addEventListener('click', () => { st.size = Math.max(.8, +(st.size - .1).toFixed(2)); save(); render(); });
+      $('bigger').addEventListener('click', () => { st.size = Math.min(1.6, +(st.size + .1).toFixed(2)); save(); render(); });
+      window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (SECTIONS[h]) { sec = h; idx = 0; render(); } });
+      render();
+    })();
+  </script>
+</body>
+
+</html>

@@ -28,5 +28,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/calendar.js": {
+      "includeFiles": "readings/**"
+    }
+  }
 }
