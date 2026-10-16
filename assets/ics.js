@@ -140,7 +140,7 @@
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OrthodoxNotebook//Nisteiodromio//EL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
       'X-WR-CALNAME:' + esc(o.name || 'Ορθόδοξο Σημειωματάριο'),
-      'X-WR-CALDESC:' + esc('Νηστείες, εορτές και υπενθυμίσεις κατά την κοινή πράξη της Εκκλησίας της Ελλάδος, από τις σημειώσεις ενός λαϊκού. Μπορεί να έχουν λάθη· για τη νηστεία σας ρωτήστε τον πνευματικό σας.'),
+      'X-WR-CALDESC:' + esc('Νηστείες, εορτές και υπενθυμίσεις κατά την κοινή πράξη της Εκκλησίας της Ελλάδος. Μπορεί να έχει λάθη.'),
       'X-WR-TIMEZONE:Europe/Athens', 'REFRESH-INTERVAL;VALUE=DURATION:PT12H', 'X-PUBLISHED-TTL:PT12H',
     ];
     for (const e of collect(o)) {

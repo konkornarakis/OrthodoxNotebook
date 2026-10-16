@@ -50,22 +50,15 @@
   // ── Σημείωμα προς όποιον μπαίνει ──────────────────────────────────────
   const EMAIL = 'konkornarakis@gmail.com';
   const LETTER = [
-    'Πριν διαβάσεις οτιδήποτε εδώ, καλό είναι να ξέρεις από πού προέρχεται.',
-    'Δεν είμαι κληρικός ούτε θεολόγος, και τίποτε από όσα υπάρχουν εδώ δεν έχει περάσει από έλεγχο ή ευλογία της Εκκλησίας. ' +
-      'Είμαι λαϊκός και αρχάριος, και μάζεψα λίγα από όσα διάβασα στους Πατέρες. ' +
-      'Στη συγκέντρωση και στη διατύπωσή τους βοήθησε και ένα πρόγραμμα τεχνητής νοημοσύνης, που κι αυτό σφάλλει.',
-    'Μην τα πάρεις λοιπόν ως διδασκαλία· μπορεί να υπάρχουν λάθη. Για τη νηστεία, την προσευχή και τον κανόνα σου ο λόγος ανήκει στον πνευματικό σου.',
-    'Η προσευχή μπροστά σε μια οθόνη δεν είναι ο δρόμος της Εκκλησίας· το κομποσκοίνι στο χέρι και η ησυχία είναι. ' +
-      'Αν κάτι από εδώ σε βοηθήσει να ξεκινήσεις, δόξα τω Θεώ.',
-    'Μια παράκληση μόνο: μην το κάνεις συνήθεια. Μπες για ό,τι χρειάζεσαι και κλείσε την οθόνη.',
-    'Αν δεις κάποιο λάθος, γράψε μου στο <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>.',
+    'Αυτή δεν είναι σελίδα της Εκκλησίας. Τη φτιάχνει ένας απλός πιστός και μπορεί να έχει λάθη.',
+    'Για τη νηστεία, την προσευχή και τον κανόνα σου ρώτα τον πνευματικό σου.',
+    'Μη μένεις εδώ περισσότερο απ’ όσο χρειάζεσαι.',
+    'Λάθη και παρατηρήσεις: <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>',
   ];
-  const LETTER_SIGN = 'Εύχου για μένα.';
-  const NOTICE_SHORT = 'Αδελφέ, τα κείμενα εδώ είναι ενός λαϊκού, όχι της Εκκλησίας, και μπορεί να έχουν λάθη· ρώτα τον πνευματικό σου. ' +
-    '<a href="simeioma.html">Το σημείωμα</a>';
+  const NOTICE_SHORT = 'Δεν είναι σελίδα της Εκκλησίας και μπορεί να έχει λάθη. <a href="simeioma.html">Σημείωμα</a>';
   const NOTICE_EVERY_DAYS = 7;
   function letterHtml() {
-    return LETTER.map(p => '<p>' + p + '</p>').join('') + '<p class="letter-sign">' + LETTER_SIGN + '</p>';
+    return LETTER.map(p => '<p>' + p + '</p>').join('');
   }
 
   const PAGES = [
@@ -109,12 +102,9 @@
       const extra = footer.innerHTML.trim();
       footer.innerHTML =
         '<div class="orn-divider">' + SMALL_CROSS + '</div>' +
-        '<p class="footer-text">Κείμενα ενός λαϊκού, χωρίς έλεγχο από την Εκκλησία· μπορεί να έχουν λάθη. ' +
-        '<a href="simeioma.html">Διάβασε το σημείωμα</a>.</p>' +
-        '<p class="footer-text">Οι κανόνες νηστείας προσπαθούν να ακολουθούν την κοινή πράξη της Εκκλησίας της Ελλάδος (νέο ημερολόγιο). ' +
-        'Για τη δική σου νηστεία ρώτα τον πνευματικό σου.</p>' +
+        '<p class="footer-text">Η νηστεία κατά την κοινή πράξη της Εκκλησίας της Ελλάδος (νέο ημερολόγιο).</p>' +
         (extra ? '<p class="footer-text">' + extra + '</p>' : '') +
-        '<p class="footer-text"><a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
+        '<p class="footer-text"><a href="simeioma.html">Σημείωμα</a> · <a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
     }
 
     if (!document.querySelector('.orn-band')) {
@@ -142,8 +132,7 @@
       '<div class="notice-card" role="dialog" aria-modal="true" aria-labelledby="notice-title" tabindex="-1">' +
         '<h2 class="notice-title" id="notice-title">Αδελφέ,</h2>' +
         '<div class="letter">' + letterHtml() + '</div>' +
-        '<div class="notice-actions"><button type="button" class="btn btn-accent" id="notice-ok">Το κατάλαβα · συνεχίζω με προσοχή</button></div>' +
-        '<p class="notice-later">Μπορείς να το ξαναδιαβάσεις όποτε θέλεις στο <a href="simeioma.html">«Σημείωμα»</a>.</p>' +
+        '<div class="notice-actions"><button type="button" class="btn btn-accent" id="notice-ok">Εντάξει</button></div>' +
       '</div>';
     document.body.appendChild(ov);
     document.documentElement.dataset.notice = 'open';
@@ -175,7 +164,7 @@
     const card = document.createElement('div');
     card.className = 'time-card';
     card.setAttribute('role', 'status');
-    card.innerHTML = '<p>Αδελφέ, σήμερα είσαι εδώ πάνω από ' + minutes + ' λεπτά. Μήπως ήρθε η ώρα να αφήσεις την οθόνη;</p>' +
+    card.innerHTML = '<p>Σήμερα είσαι εδώ πάνω από ' + minutes + ' λεπτά. Μήπως ήρθε η ώρα να αφήσεις την οθόνη;</p>' +
       '<button type="button" class="btn">Εντάξει</button>';
     card.querySelector('button').addEventListener('click', () => card.remove());
     document.body.appendChild(card);
