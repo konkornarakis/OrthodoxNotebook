@@ -55,7 +55,7 @@
     'Μη μένεις εδώ περισσότερο απ’ όσο χρειάζεσαι.',
     'Λάθη και παρατηρήσεις: <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>',
   ];
-  const NOTICE_SHORT = 'Δεν είναι σελίδα της Εκκλησίας και μπορεί να έχει λάθη. <a href="simeioma.html">Σημείωμα</a>';
+  const NOTICE_SHORT = 'Βοήθημα μόνο· οδηγός είναι ο πνευματικός σου. <a href="simeioma.html">Σημείωμα</a>';
   const NOTICE_EVERY_DAYS = 7;
   function letterHtml() {
     return LETTER.map(p => '<p>' + p + '</p>').join('');
