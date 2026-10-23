@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <title>Διαχείριση — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <style>
+    .box { max-width: 760px; margin: 0 auto; }
+    .field { display: block; margin: 0 0 14px; }
+    .field span { display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold-deep); font-family: var(--font-display); margin-bottom: 5px; }
+    .field input, .field textarea { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+    .field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+    .field textarea#f-transcript { min-height: 260px; font-size: 14px; }
+    .field small { display: block; color: var(--ink-faint); font-size: 13px; margin-top: 4px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    @media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .msg { margin: 12px 0; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--rule); background: var(--vellum); }
+    .msg.ok { border-left: 3px solid var(--f-oil); }
+    .msg.err { border-left: 3px solid var(--cinnabar); }
+    .list { list-style: none; margin: 0; padding: 0; }
+    .list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rule-soft); }
+    .list .t { font-family: var(--font-display); font-size: 17px; }
+    .list .s { color: var(--ink-soft); font-size: 14px; }
+    .danger { color: var(--cinnabar) !important; }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="admin" data-title="Διαχείριση" data-subtitle="Ομιλίες"></header>
+
+      <main class="box">
+        <!-- Σύνδεση -->
+        <section id="login" class="panel">
+          <form id="login-form">
+            <label class="field"><span>Κωδικός</span><input type="password" id="pw" autocomplete="current-password" required></label>
+            <button class="btn btn-accent" type="submit">Είσοδος</button>
+          </form>
+          <div id="login-msg"></div>
+        </section>
+
+        <!-- Λίστα -->
+        <section id="list-sec" hidden>
+          <div class="row" style="justify-content:space-between;margin-bottom:.6rem">
+            <h2 class="section-heading" style="margin:0">Ομιλίες</h2>
+            <span class="row"><button class="btn btn-accent" type="button" id="new-btn">Νέα ομιλία</button><button class="btn" type="button" id="logout">Έξοδος</button></span>
+          </div>
+          <div id="list-msg"></div>
+          <ul class="list" id="list"></ul>
+        </section>
+
+        <!-- Φόρμα -->
+        <section id="form-sec" class="panel" hidden>
+          <h2 class="section-heading" id="form-title" style="margin-top:0">Νέα ομιλία</h2>
+          <form id="form">
+            <div class="two">
+              <label class="field"><span>Τίτλος *</span><input id="f-title" required maxlength="120"></label>
+              <label class="field"><span>Ομιλητής</span><input id="f-speaker" maxlength="120" placeholder="π.χ. Μητροπολίτης Λεμεσού Αθανάσιος"></label>
+            </div>
+            <div class="two">
+              <label class="field"><span>Σύνδεσμος βίντεο</span><input id="f-url" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…"></label>
+              <label class="field"><span>Ημερομηνία</span><input id="f-date" type="date"></label>
+            </div>
+            <label class="field"><span>Ετικέτες</span><input id="f-tags" placeholder="χωρισμένες με κόμμα, π.χ. νηστεία, προσευχή"></label>
+            <label class="field"><span>Περίληψη</span><textarea id="f-summary"></textarea></label>
+            <label class="field"><span>Απομαγνητοφώνηση</span><textarea id="f-transcript" placeholder="00:00:02 Speaker 1&#10;Κείμενο…"></textarea>
+              <small>Μορφή: κάθε κομμάτι ξεκινά με ώρα (ΩΩ:ΛΛ:ΔΔ), μετά το κείμενο. Ή φορτώστε αρχείο .txt:
+                <input type="file" id="f-file" accept=".txt,text/plain" style="margin-top:4px"></small>
+              <small><a id="wayin" href="#" target="_blank" rel="noopener" hidden>Απομαγνητοφώνηση του βίντεο με το wayin.ai ↗</a></small>
+            </label>
+            <div id="form-msg"></div>
+            <div class="row">
+              <button class="btn btn-accent" type="submit" id="save">Αποθήκευση</button>
+              <button class="btn" type="button" id="cancel">Άκυρο</button>
+              <button class="btn danger" type="button" id="delete" hidden>Διαγραφή</button>
+            </div>
+          </form>
+        </section>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      let pw = '', sermons = [], editing = null;
+      try { pw = sessionStorage.getItem('adminPw') || ''; } catch (e) { /* */ }
+
+      const show = (id, on) => { $(id).hidden = !on; };
+      const msg = (id, text, kind) => { $(id).innerHTML = text ? `<div class="msg ${kind || ''}">${text}</div>` : ''; };
+
+      async function call(body) {
+        const r = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw }, body: JSON.stringify(body) });
+        let j = {};
+        try { j = await r.json(); } catch (e) { j = { ok: false, error: 'Απάντηση ' + r.status }; }
+        if (r.status === 401) { logout(); throw new Error(j.error); }
+        if (!j.ok) throw new Error(j.error || 'Σφάλμα');
+        return j;
+      }
+
+      async function login(p) {
+        pw = p;
+        try {
+          await call({ action: 'check' });
+          try { sessionStorage.setItem('adminPw', pw); } catch (e) { /* */ }
+          show('login', false); show('list-sec', true);
+          loadList();
+        } catch (e) { pw = ''; msg('login-msg', esc(e.message), 'err'); }
+      }
+      function logout() {
+        pw = ''; try { sessionStorage.removeItem('adminPw'); } catch (e) { /* */ }
+        show('list-sec', false); show('form-sec', false); show('login', true);
+      }
+
+      async function loadList() {
+        try {
+          sermons = await fetch('/sermons-data.json', { cache: 'no-store' }).then(r => r.json());
+        } catch (e) { sermons = []; }
+        $('list').innerHTML = sermons.map((s, i) => `<li><div><div class="t">${esc(s.title)}</div><div class="s">${esc([s.speaker, s.date].filter(Boolean).join(' · '))}</div></div>
+          <button class="btn" type="button" data-i="${i}">Επεξεργασία</button></li>`).join('') || '<li class="s">Δεν υπάρχουν ομιλίες.</li>';
+        $('list').querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => openForm(sermons[+b.dataset.i])));
+      }
+
+      function transcriptText(segs) { return (segs || []).map(s => s.ts + '\n' + s.text).join('\n\n'); }
+      function openForm(s) {
+        editing = s || null;
+        $('form-title').textContent = s ? 'Επεξεργασία ομιλίας' : 'Νέα ομιλία';
+        $('f-title').value = s ? s.title : '';
+        $('f-speaker').value = s ? s.speaker : '';
+        $('f-url').value = s ? s.url : '';
+        $('f-date').value = s ? s.date : new Date().toISOString().slice(0, 10);
+        $('f-tags').value = s ? (s.tags || []).join(', ') : '';
+        $('f-summary').value = s ? s.summary : '';
+        $('f-transcript').value = s ? transcriptText(s.transcript) : '';
+        $('f-file').value = '';
+        show('delete', !!s); msg('form-msg', '');
+        onUrl();
+        show('list-sec', false); show('form-sec', true);
+        window.scrollTo({ top: 0 });
+      }
+      function closeForm() { show('form-sec', false); show('list-sec', true); }
+
+      function onUrl() {
+        const u = $('f-url').value.trim();
+        const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([\w-]{6,})/.exec(u);
+        $('wayin').hidden = !yt;
+        if (yt) $('wayin').href = 'https://wayin.ai/wayinvideo/home/video/result?url=' + encodeURIComponent(u) + '&input_t=URL&v_t_t=transcript_tool_task';
+      }
+      $('f-url').addEventListener('input', onUrl);
+      $('f-file').addEventListener('change', async e => {
+        const f = e.target.files[0]; if (!f) return;
+        $('f-transcript').value = await f.text();
+      });
+
+      $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = $('save'); btn.disabled = true; btn.textContent = 'Αποθήκευση…'; msg('form-msg', '');
+        const body = {
+          action: editing ? 'edit' : 'create', id: editing ? editing.id : undefined,
+          title: $('f-title').value, speaker: $('f-speaker').value, sourceUrl: $('f-url').value, date: $('f-date').value,
+          tags: $('f-tags').value, summary: $('f-summary').value, transcript: $('f-transcript').value,
+        };
+        try {
+          await call(body);
+          closeForm();
+          msg('list-msg', 'Αποθηκεύτηκε. Θα φανεί στο site σε ένα-δύο λεπτά, όταν τελειώσει η ενημέρωση.', 'ok');
+        } catch (err) { msg('form-msg', esc(err.message), 'err'); }
+        btn.disabled = false; btn.textContent = 'Αποθήκευση';
+      });
+      $('delete').addEventListener('click', async () => {
+        if (!editing || !confirm('Να διαγραφεί η ομιλία «' + editing.title + '»;')) return;
+        try {
+          await call({ action: 'delete', id: editing.id });
+          closeForm();
+          msg('list-msg', 'Διαγράφηκε. Θα φύγει από το site σε ένα-δύο λεπτά.', 'ok');
+        } catch (err) { msg('form-msg', esc(err.message), 'err'); }
+      });
+      $('cancel').addEventListener('click', closeForm);
+      $('new-btn').addEventListener('click', () => openForm(null));
+      $('logout').addEventListener('click', logout);
+      $('login-form').addEventListener('submit', e => { e.preventDefault(); login($('pw').value); });
+
+      if (pw) login(pw);
+    })();
+  </script>
+</body>
+
+</html>
