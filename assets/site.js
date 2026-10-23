@@ -215,6 +215,7 @@
     if (document.readyState === 'complete') registerServiceWorker();
     else window.addEventListener('load', registerServiceWorker);
     const isNotePage = !!document.querySelector('header[data-page="note"]');
+    if (document.querySelector('header[data-page="admin"]')) return;   // η σελίδα διαχείρισης: χωρίς σημείωμα
     document.querySelectorAll('[data-letter]').forEach(el => { el.innerHTML = letterHtml(); });
     if (isNotePage) ackNotice();
     else if (!noticeAcked()) showNotice();

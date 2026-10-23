@@ -10,6 +10,7 @@ const path       = require('path');
 const { execSync } = require('child_process');
 const saintsHandler = require('./api/saints.js');
 const calendarHandler = require('./api/calendar.js');
+const adminHandler = require('./api/admin.js');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -88,6 +89,9 @@ const server = http.createServer(async (req, res) => {
     calendarHandler(req, res);
     return;
   }
+
+  // ── POST /api/admin  →  διαχείριση ομιλιών μέσω GitHub (όπως στο Vercel) ── //
+  if (url === '/api/admin') { adminHandler(req, res); return; }
 
   // ── GET /api/local  →  signals the page it's running on the dev server ── //
   if (url === '/api/local' && req.method === 'GET') {
