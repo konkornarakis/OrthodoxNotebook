@@ -21,17 +21,18 @@ function parseTranscript(raw) {
   let lines_ = [];
 
   for (const line of lines) {
-    const m = line.match(/^(\d{1,2}:\d{2}:\d{2})/);
+    // «00:00:02 Speaker 1» ή «[00:00] Ομιλητής 1: κείμενο»
+    const m = line.match(/^\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?/);
     if (m) {
       // Flush previous segment
       if (ts !== null) {
         const text = lines_.join('\n').trim();
         if (text) segments.push({ ts, text });
       }
-      ts = m[1];
+      ts = m[1].split(':').length === 2 ? '00:' + m[1].padStart(5, '0') : m[1].padStart(8, '0');
       // Rest of line after timestamp — skip if it's just "Speaker N"
       const rest = line.slice(m[0].length).trim();
-      lines_ = (rest && !/^Speaker\s+\d+$/i.test(rest)) ? [rest] : [];
+      lines_ = (rest && !/^(Speaker|Ομιλητής)\s+\d+:?$/i.test(rest)) ? [rest] : [];
     } else if (ts !== null) {
       lines_.push(line);
     }
@@ -84,7 +85,10 @@ for (const entry of fs.readdirSync(SERMONS_DIR, { withFileTypes: true })) {
   const dir   = path.join(SERMONS_DIR, entry.name);
   const files = fs.readdirSync(dir);
 
-  const transcriptFile = files.find(f => f !== '_Transcript.txt' && f.endsWith('_Transcript.txt'));
+  // η απομαγνητοφώνηση: «_Transcript.txt» ή (παλιά μορφή) «<φάκελος>_Transcript.txt»
+  const transcriptFile = files.find(f => f === '_Transcript.txt') || files.find(f => f.endsWith('_Transcript.txt'));
+  // το κείμενο μελέτης (Markdown), αν υπάρχει
+  const studyFile      = files.find(f => f === '_Keimeno.md');
   const summaryFile    = files.find(f => f === '_Summary.txt');
   const detailsFile    = files.find(f => f === '_Details.txt');
 
@@ -93,6 +97,11 @@ for (const entry of fs.readdirSync(SERMONS_DIR, { withFileTypes: true })) {
   const details    = parseDetails(readSafe(detailsFile ? path.join(dir, detailsFile) : ''));
 
   const { title: nameTitle, speaker: nameSpeaker } = parseFolderName(entry.name);
+  const study = readSafe(studyFile ? path.join(dir, studyFile) : '').trim();
+  // χωρίς περίληψη: η «Σύντομη περίληψη» του κειμένου μελέτης, σε απλό κείμενο
+  let studySummary = '';
+  const sm = /^###\s+Σύντομη περίληψη\s*\n([\s\S]*?)(?=\n#{2,3}\s)/m.exec(study);
+  if (sm) studySummary = sm[1].replace(/\*\*|__|\*|\[([^\]]+)\]\([^)]+\)/g, (m, t) => t || '').trim();
 
   sermons.push({
     id:         entry.name,
@@ -101,8 +110,9 @@ for (const entry of fs.readdirSync(SERMONS_DIR, { withFileTypes: true })) {
     date:       details.date    || '',
     url:        details.url     || '',
     tags:       details.tags    ? details.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-    summary:    details.summary || summary,
+    summary:    details.summary || summary || studySummary,
     transcript,
+    study,
   });
 }
 

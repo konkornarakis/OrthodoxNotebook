@@ -23,6 +23,19 @@ const API = 'https://api.github.com/repos/' + REPO;
 function sanitizeName(s) {
   return String(s || '').replace(/[\/\\:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim().replace(/^\.+/, '').slice(0, 150);
 }
+// Όνομα φακέλου: μόνο ο τίτλος, κομμένος σε λέξη ώστε να χωρά άνετα (τα ελληνικά πιάνουν 2 bytes ανά γράμμα·
+// τα ονόματα αρχείων δεν πρέπει να ξεπερνούν τα 255 bytes). Ο πλήρης τίτλος και ο ομιλητής μπαίνουν στο _Details.txt.
+const MAX_FOLDER_BYTES = 90;
+function folderName(title) {
+  let out = '';
+  for (const w of sanitizeName(title).split(' ')) {
+    const next = out ? out + ' ' + w : w;
+    if (Buffer.byteLength(next) > MAX_FOLDER_BYTES) break;
+    out = next;
+  }
+  if (!out) out = Array.from(sanitizeName(title)).reduce((a, ch) => Buffer.byteLength(a + ch) <= MAX_FOLDER_BYTES ? a + ch : a, '');
+  return out.replace(/[\s.]+$/, '');
+}
 function validId(id) { return typeof id === 'string' && id === sanitizeName(id) && id.length > 0; }
 
 function passwordOk(given) {
@@ -70,16 +83,22 @@ async function commit(message, writes, deletes) {
 
 function filesFor(folder, b) {
   const details = [];
-  const one = s => String(s || '').replace(/[\r\n]+/g, ' ').trim();
+  const one = v => String(v || '').replace(/[\r\n]+/g, ' ').trim();
+  if (one(b.title)) details.push('title: ' + one(b.title));
+  if (one(b.speaker)) details.push('speaker: ' + one(b.speaker));
   if (one(b.sourceUrl)) details.push('url: ' + one(b.sourceUrl));
   if (/^\d{4}-\d{2}-\d{2}$/.test(one(b.date))) details.push('date: ' + one(b.date));
   if (one(b.tags)) details.push('tags: ' + one(b.tags));
   const dir = 'sermons/' + folder + '/';
-  return {
-    [dir + '_Details.txt']: details.join('\n'),
+  const out = {
+    [dir + '_Details.txt']: details.join('\n') + '\n',
     [dir + '_Summary.txt']: String(b.summary || '').trim(),
-    [dir + folder + '_Transcript.txt']: String(b.transcript || '').replace(/\r\n/g, '\n').trim(),
   };
+  const tr = String(b.transcript || '').replace(/\r\n/g, '\n').trim();
+  if (tr) out[dir + '_Transcript.txt'] = tr;
+  const study = String(b.study || '').replace(/\r\n/g, '\n').trim();
+  if (study) out[dir + '_Keimeno.md'] = study;
+  return out;
 }
 
 async function readBody(req) {
@@ -114,21 +133,25 @@ async function handler(req, res) {
     if (b.action === 'check') return send(res, 200, { ok: true });
 
     if (b.action === 'create' || b.action === 'edit') {
-      const title = sanitizeName(b.title), speaker = sanitizeName(b.speaker);
+      const title = sanitizeName(b.title);
       if (!title) return send(res, 400, { ok: false, error: 'Ο τίτλος είναι υποχρεωτικός.' });
-      const folder = speaker ? title + ' - ' + speaker : title;
-      const existing = await listFolder(folder);
-      let deletes = [];
+      let folder, deletes = [];
       if (b.action === 'create') {
-        if (existing.length) return send(res, 409, { ok: false, error: 'Υπάρχει ήδη ομιλία με αυτόν τον τίτλο και ομιλητή.' });
+        // νέος φάκελος· αν υπάρχει ήδη ίδιο όνομα, «… 2», «… 3»
+        const base = folderName(title);
+        folder = base;
+        for (let n = 2; (await listFolder(folder)).length; n++) {
+          if (n > 20) return send(res, 409, { ok: false, error: 'Υπάρχουν ήδη πολλές ομιλίες με αυτόν τον τίτλο.' });
+          folder = base + ' ' + n;
+        }
       } else {
+        // η επεξεργασία κρατά τον ίδιο φάκελο (και τον ίδιο σύνδεσμο), ακόμη κι αν αλλάξει ο τίτλος
         if (!validId(b.id)) return send(res, 400, { ok: false, error: 'Άγνωστη ομιλία.' });
-        const old = await listFolder(b.id);
-        if (!old.length) return send(res, 404, { ok: false, error: 'Δεν βρέθηκε η ομιλία.' });
-        if (b.id !== folder && existing.length) return send(res, 409, { ok: false, error: 'Υπάρχει ήδη ομιλία με αυτόν τον τίτλο και ομιλητή.' });
-        deletes = old;
+        folder = b.id;
+        deletes = await listFolder(folder);
+        if (!deletes.length) return send(res, 404, { ok: false, error: 'Δεν βρέθηκε η ομιλία.' });
       }
-      const sha = await commit((b.action === 'create' ? 'Νέα ομιλία: ' : 'Διόρθωση ομιλίας: ') + folder, filesFor(folder, b), deletes);
+      const sha = await commit((b.action === 'create' ? 'Νέα ομιλία: ' : 'Διόρθωση ομιλίας: ') + title, filesFor(folder, b), deletes);
       return send(res, 200, { ok: true, id: folder, commit: sha });
     }
 
@@ -148,3 +171,4 @@ async function handler(req, res) {
 
 module.exports = handler;
 module.exports.sanitizeName = sanitizeName;
+module.exports.folderName = folderName;
