@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
   <link rel="stylesheet" href="assets/site.css">
   <script src="assets/site.js"></script>
+  <script src="assets/md.js"></script>
   <style>
     /* ── Views ───────────────────────────────────────────────────────── */
     .view        { display: none; }
@@ -475,6 +476,40 @@
     }
     .back-to-top.visible { display: flex; }
 
+
+    /* ── Κείμενο μελέτης ─────────────────────────────────────────── */
+    .study-lead { margin: 1.2rem 0 .4rem; font-size: 16px; line-height: 1.8; color: var(--ink); }
+    .study-lead p { margin: 0 0 .8em; }
+    .study { margin-top: 1rem; }
+    .study-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 8px; position: sticky; top: 0; z-index: 2; background: var(--vellum); scrollbar-width: none; }
+    .study-tabs::-webkit-scrollbar { display: none; }
+    .study-tab { flex: none; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--rule); background: var(--vellum); color: var(--ink-soft); font-family: var(--font-display); font-size: 15px; cursor: pointer; }
+    .study-tab[aria-selected="true"] { border-color: var(--cinnabar); color: var(--cinnabar); background: rgba(210,171,85,.14); }
+    .study-body { padding-top: .4rem; font-size: 16px; line-height: 1.8; color: var(--ink); }
+    .study-body h2.study-part-title { font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 1.25; margin: .6rem 0 .8rem; color: var(--ink); }
+    .study-body h3 { font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1.3; margin: 1.6rem 0 .5rem; color: var(--cinnabar); }
+    .study-body p { margin: 0 0 .9em; }
+    .study-book p { font-size: 17px; line-height: 1.9; }
+    .study-body ul, .study-body ol { margin: 0 0 1em 1.2em; padding: 0; }
+    .study-body li { margin: .25em 0; }
+    .study-body blockquote { margin: 1em 0; padding: .2em 1em; border-left: 3px solid var(--gold); color: var(--ink-soft); }
+    .study-note { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--rule-soft); font-size: 14px; color: var(--ink-faint); }
+    .ts-jump { font-family: var(--font-body); font-size: .85em; color: var(--gold-deep); text-decoration: none; border-bottom: 1px dotted var(--gold); white-space: nowrap; }
+    .ts-jump:hover { color: var(--cinnabar); }
+    .ts-chapter { margin-left: .4em; font-size: 13px; vertical-align: middle; }
+    .md-table { overflow-x: auto; margin: 0 0 1.2em; }
+    .md-table table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.55; }
+    .md-table th { text-align: left; font-family: var(--font-display); font-weight: 400; color: var(--gold-deep); border-bottom: 1px solid var(--rule); padding: 6px 8px; }
+    .md-table td { border-bottom: 1px solid var(--rule-soft); padding: 7px 8px; vertical-align: top; }
+    @media (max-width: 640px) {
+      /* στο κινητό οι πίνακες γίνονται κάρτες */
+      .md-table thead { display: none; }
+      .md-table table, .md-table tbody, .md-table tr, .md-table td { display: block; width: 100%; box-sizing: border-box; }
+      .md-table tr { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+      .md-table td { border: none; padding: 2px 0; }
+      .md-table td::before { content: attr(data-label); display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold-deep); }
+      .md-table td[data-label="#"] { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -997,8 +1032,12 @@ function renderDetail(s) {
     content.appendChild(wrap);
   }
 
+  // Κείμενο μελέτης (αν υπάρχει): περίληψη και καρτέλες στη θέση της απλής περίληψης
+  if (s.study && window.OrthoMd) {
+    renderStudy(s, content, ytId);
+  }
   // Summary
-  if (s.summary && s.summary.trim()) {
+  else if (s.summary && s.summary.trim()) {
     const sec = document.createElement('div');
     sec.innerHTML =
       `<div class="section open" id="sec-summary">
@@ -1011,7 +1050,7 @@ function renderDetail(s) {
   }
 
   // Transcript
-  if (s.transcript && s.transcript.length > 0) {
+  if (!s.study && s.transcript && s.transcript.length > 0) {
     const sec = document.createElement('div');
     sec.innerHTML =
       `<div class="section open" id="sec-transcript">
@@ -1057,6 +1096,110 @@ function renderDetail(s) {
     }
     content.appendChild(dlEl);
   }
+}
+
+// ── Κείμενο μελέτης ───────────────────────────────────────────────────────────
+// Το έγγραφο Markdown χωρίζεται στα «Μέρη» του· κάθε μέρος γίνεται καρτέλα.
+// Το «Σημεία για επανάκουση» είναι σημειώσεις του συντάκτη και δεν εμφανίζεται.
+const STUDY_TABS = [
+  { re: /^Μέρος Α΄/, label: 'Κείμενο' },
+  { re: /^Μέρος Γ΄/, label: 'Κεφάλαια' },
+  { re: /^Μέρος Β΄/, label: 'Περίληψη' },
+  { re: /^Μέρος Ε΄/, label: 'Ερωτήσεις' },
+  { re: /^Μέρος ΣΤ΄/, label: 'Λόγια' },
+  { re: /^Μέρος Δ΄/, label: 'Πηγές' },
+  { re: /^Μέρος Ζ΄/, label: 'Γλωσσάριο' },
+  { re: /^Μέρος Η΄/, label: 'Ευρετήριο' },
+];
+const STUDY_HIDDEN = /^Μέρος Θ΄|επανάκουση/i;
+
+function studyTimeLinks(html) {
+  // κάθε χρονοσήμανση (02:01, 1:02:33) γίνεται σύνδεσμος που πηγαίνει το βίντεο σε εκείνο το σημείο
+  return html.replace(/(^|[^\d:])(\d{1,2}:\d{2}(?::\d{2})?)(?![\d:])/g, (m, pre, t) =>
+    `${pre}<a class="ts-jump" href="#" data-t="${tsToSec(t)}" title="Στο βίντεο, ${t}">${t}</a>`);
+}
+
+function seekVideo(sec, ytId) {
+  const iframe = document.querySelector('.yt-iframe');
+  if (iframe && ytId) {
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + ytId + '?start=' + sec + '&autoplay=1';
+    iframe.closest('.yt-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (ytId) {
+    window.open('https://www.youtube.com/watch?v=' + ytId + '&t=' + sec + 's', '_blank', 'noopener');
+  }
+}
+
+function renderStudy(s, content, ytId) {
+  const doc = OrthoMd.sections(s.study);
+  const opts = { time: studyTimeLinks, shift: 0 };
+  const parts = doc.parts.filter(p => !STUDY_HIDDEN.test(p.title));
+  const find = re => parts.find(p => re.test(p.title));
+
+  // Σύντομη περίληψη στην κορυφή
+  const B = find(/^Μέρος Β΄/);
+  const short = B && /###\s+Σύντομη περίληψη\s*\n([\s\S]*?)(?=\n###\s|$)/.exec(B.md);
+  if (short) {
+    const el = document.createElement('div');
+    el.className = 'study-lead';
+    el.innerHTML = OrthoMd.render(short[1], opts);
+    content.appendChild(el);
+  }
+
+  // Οι χρόνοι έναρξης κάθε κεφαλαίου (από τον πίνακα του Μέρους Γ΄)
+  const chapterStart = {};
+  const G = find(/^Μέρος Γ΄/);
+  if (G) for (const row of G.md.split('\n')) {
+    const m = /^\|\s*(\d+)\s*\|\s*(\d{1,2}:\d{2}(?::\d{2})?)/.exec(row);
+    if (m) chapterStart[m[1]] = m[2];
+  }
+
+  const tabs = [];
+  for (const t of STUDY_TABS) { const p = find(t.re); if (p) tabs.push({ label: t.label, part: p }); }
+  for (const p of parts) if (!/^Σημείωμα/.test(p.title) && !tabs.some(t => t.part === p)) tabs.push({ label: p.title.replace(/^Μέρος [^—]+—\s*/, ''), part: p });
+  if (s.transcript && s.transcript.length) tabs.push({ label: 'Απομαγνητοφώνηση', transcript: true });
+  if (!tabs.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'study';
+  wrap.innerHTML = `<div class="study-tabs" role="tablist">${tabs.map((t, i) =>
+      `<button type="button" role="tab" class="study-tab" data-i="${i}" aria-selected="${i === 0}">${esc(t.label)}</button>`).join('')}</div>
+    <div class="study-body"></div>`;
+  content.appendChild(wrap);
+  const body = wrap.querySelector('.study-body');
+
+  function show(i) {
+    wrap.querySelectorAll('.study-tab').forEach(b => b.setAttribute('aria-selected', String(+b.dataset.i === i)));
+    const t = tabs[i];
+    if (t.transcript) {
+      body.innerHTML = `<div class="transcript-search-wrap"><span class="transcript-search-icon">⌕</span>
+        <input class="transcript-search" type="search" placeholder="Αναζήτηση στο κείμενο…" oninput="filterTranscript(this.value)"></div>
+        <div class="transcript-body" id="transcript-body">${renderTranscript(s.transcript, s.url)}</div>`;
+      return;
+    }
+    // ο τίτλος «Μέρος Α΄ — …» φαίνεται ήδη στην καρτέλα· οι υποενότητες ### γίνονται επικεφαλίδες
+    body.innerHTML = `<h2 class="study-part-title">${esc(t.part.title.replace(/^Μέρος [^—]+—\s*/, ''))}</h2>` + OrthoMd.render(t.part.md, opts);
+    if (/^Μέρος Α΄/.test(t.part.title)) {
+      body.classList.add('study-book');
+      body.querySelectorAll('h3').forEach(h => {
+        const n = (/^(\d+)\./.exec(h.textContent) || [])[1];
+        if (n && chapterStart[n]) h.insertAdjacentHTML('beforeend', ` <a class="ts-jump ts-chapter" href="#" data-t="${tsToSec(chapterStart[n])}">${chapterStart[n]}</a>`);
+      });
+      // το σημείωμα για τη μεταγραφή, στο τέλος του κειμένου
+      const note = parts.find(p => /^Σημείωμα/.test(p.title));
+      if (note) {
+        const paras = note.md.trim().split(/\n{2,}/).filter(x => !/^Το έγγραφο έχει/.test(x.trim()));
+        body.insertAdjacentHTML('beforeend', `<div class="study-note">${OrthoMd.render(paras.join('\n\n'), opts)}</div>`);
+      }
+    } else body.classList.remove('study-book');
+  }
+  wrap.querySelector('.study-tabs').addEventListener('click', e => {
+    const b = e.target.closest('.study-tab'); if (b) show(+b.dataset.i);
+  });
+  wrap.addEventListener('click', e => {
+    const a = e.target.closest('.ts-jump'); if (!a) return;
+    e.preventDefault(); seekVideo(+a.dataset.t, ytId);
+  });
+  show(0);
 }
 
 function renderSummary(text) {

@@ -73,7 +73,11 @@
               <label class="field"><span>Ημερομηνία</span><input id="f-date" type="date"></label>
             </div>
             <label class="field"><span>Ετικέτες</span><input id="f-tags" placeholder="χωρισμένες με κόμμα, π.χ. νηστεία, προσευχή"></label>
-            <label class="field"><span>Περίληψη</span><textarea id="f-summary"></textarea></label>
+            <label class="field"><span>Κείμενο μελέτης (Markdown)</span><textarea id="f-study" placeholder="# Τίτλος&#10;&#10;## Μέρος Α΄ — …"></textarea>
+              <small>Το έγγραφο με τα μέρη Α΄–Θ΄. Στη σελίδα της ομιλίας κάθε μέρος γίνεται καρτέλα· το «Σημεία για επανάκουση» δεν εμφανίζεται. Ή φορτώστε αρχείο .md:
+                <input type="file" id="f-study-file" accept=".md,.txt,text/markdown,text/plain" style="margin-top:4px"></small></label>
+            <label class="field"><span>Περίληψη</span><textarea id="f-summary"></textarea>
+              <small>Αν μείνει κενή και υπάρχει κείμενο μελέτης, χρησιμοποιείται η «Σύντομη περίληψη» του.</small></label>
             <label class="field"><span>Απομαγνητοφώνηση</span><textarea id="f-transcript" placeholder="00:00:02 Speaker 1&#10;Κείμενο…"></textarea>
               <small>Μορφή: κάθε κομμάτι ξεκινά με ώρα (ΩΩ:ΛΛ:ΔΔ), μετά το κείμενο. Ή φορτώστε αρχείο .txt:
                 <input type="file" id="f-file" accept=".txt,text/plain" style="margin-top:4px"></small>
@@ -147,6 +151,8 @@
         $('f-tags').value = s ? (s.tags || []).join(', ') : '';
         $('f-summary').value = s ? s.summary : '';
         $('f-transcript').value = s ? transcriptText(s.transcript) : '';
+        $('f-study').value = s ? (s.study || '') : '';
+        $('f-study-file').value = '';
         $('f-file').value = '';
         show('delete', !!s); msg('form-msg', '');
         onUrl();
@@ -162,6 +168,19 @@
         if (yt) $('wayin').href = 'https://wayin.ai/wayinvideo/home/video/result?url=' + encodeURIComponent(u) + '&input_t=URL&v_t_t=transcript_tool_task';
       }
       $('f-url').addEventListener('input', onUrl);
+      // Κείμενο μελέτης: συμπληρώνει μόνο του τα κενά πεδία (τίτλος, βίντεο)
+      function fromStudy(md) {
+        const title = (/^#\s+(.+)$/m.exec(md) || [])[1];
+        if (title && !$('f-title').value.trim()) $('f-title').value = title.trim();
+        const yt = (/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}[^\s)]*/.exec(md) || [])[0];
+        if (yt && !$('f-url').value.trim()) { $('f-url').value = yt; onUrl(); }
+      }
+      $('f-study-file').addEventListener('change', async e => {
+        const f = e.target.files[0]; if (!f) return;
+        $('f-study').value = await f.text();
+        fromStudy($('f-study').value);
+      });
+      $('f-study').addEventListener('change', () => fromStudy($('f-study').value));
       $('f-file').addEventListener('change', async e => {
         const f = e.target.files[0]; if (!f) return;
         $('f-transcript').value = await f.text();
@@ -173,7 +192,7 @@
         const body = {
           action: editing ? 'edit' : 'create', id: editing ? editing.id : undefined,
           title: $('f-title').value, speaker: $('f-speaker').value, sourceUrl: $('f-url').value, date: $('f-date').value,
-          tags: $('f-tags').value, summary: $('f-summary').value, transcript: $('f-transcript').value,
+          tags: $('f-tags').value, summary: $('f-summary').value, transcript: $('f-transcript').value, study: $('f-study').value,
         };
         try {
           await call(body);
