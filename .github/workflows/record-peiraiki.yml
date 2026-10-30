@@ -8,9 +8,6 @@ on:
     # Δύο ώρες UTC ώστε να καλύπτεται θερινή και χειμερινή ώρα· το script κρατά τη σωστή.
     - cron: "40 18 * * *"
     - cron: "40 19 * * *"
-  push:
-    branches: [ccr-3237b04d-waz0t4]
-    paths: [.github/workflows/record-peiraiki.yml]
   workflow_dispatch:
     inputs:
       hours:

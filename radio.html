@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Σημειωματάριο">
+  <title>Ραδιόφωνο — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <style>
+    .radio-page { max-width: 720px; margin: 0 auto; }
+    .player { position: sticky; top: 8px; z-index: 2; margin-bottom: 1rem; }
+    .now { font-family: var(--font-display); font-size: 19px; margin-bottom: .5rem; min-height: 1.4em; color: var(--ink); }
+    .player audio { width: 100%; }
+    .day { margin-bottom: .8rem; padding: 0; overflow: hidden; }
+    .day-head { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: .85rem 1.1rem; cursor: pointer; }
+    .day-head:hover { color: var(--cinnabar); }
+    .day-title { font-family: var(--font-display); font-size: 18px; }
+    .day-meta { color: var(--ink-soft); font-size: 14.5px; white-space: nowrap; }
+    .live { color: var(--cinnabar); font-weight: 600; }
+    .tracks { list-style: none; margin: 0; padding: 0 1.1rem .8rem; }
+    .tracks li { display: flex; justify-content: space-between; padding: .35rem 0; border-top: 1px solid var(--rule-soft); cursor: pointer; color: var(--ink-soft); }
+    .tracks li:hover, .tracks li.playing { color: var(--cinnabar); }
+    .tracks li.playing { font-weight: 600; }
+    .tracks a { color: var(--ink-faint); font-size: 14px; }
+    .msg { text-align: center; color: var(--ink-soft); }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="radio" data-title="Ραδιόφωνο" data-subtitle="Ηχογραφήσεις της Πειραϊκής Εκκλησίας 91.2"></header>
+
+      <main class="radio-page">
+        <div class="panel player">
+          <div class="now" id="now">Διάλεξε ηχογράφηση</div>
+          <audio id="audio" controls preload="none"></audio>
+        </div>
+        <div id="list"><p class="msg">Φόρτωση…</p></div>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <script>
+    // Όσο γράφει, η ηχογράφηση έχει κομμάτια των 10 λεπτών που παίζουν διαδοχικά·
+    // η λίστα ανανεώνεται μόνη της, ώστε να προστίθενται τα νέα κομμάτια.
+    const audio = document.getElementById('audio');
+    const nowEl = document.getElementById('now');
+    const listEl = document.getElementById('list');
+    let recordings = [], openTag = null, cur = null;   // cur = { tag, name }
+
+    const src = t => '/api/recordings?asset=' + t.id;
+    const label = name => {
+      if (name.includes('olokliro')) return 'Ολόκληρη η ηχογράφηση';
+      const m = /_(\d{2})-(\d{2})-\d{2}\.mp3$/.exec(name);
+      return m ? m[1] + ':' + m[2] : name;
+    };
+    const tracksOf = tag => (recordings.find(r => r.tag === tag) || { tracks: [] }).tracks;
+
+    function play(tag, name, at) {
+      const t = tracksOf(tag).find(x => x.name === name);
+      if (!t) return;
+      cur = { tag, name };
+      audio.src = src(t);
+      if (at) audio.addEventListener('loadedmetadata', () => { audio.currentTime = at; }, { once: true });
+      audio.play().catch(() => {});
+      nowEl.textContent = tag.replace('rec-', '') + ' · ' + label(name);
+      render();
+    }
+
+    audio.addEventListener('ended', () => {
+      if (!cur) return;
+      const list = tracksOf(cur.tag), i = list.findIndex(t => t.name === cur.name);
+      if (list[i + 1]) play(cur.tag, list[i + 1].name);
+    });
+    // Ο σύνδεσμος του GitHub λήγει μετά από λίγα λεπτά· παίρνουμε νέο και συνεχίζουμε από το ίδιο σημείο.
+    let lastRetry = 0;
+    audio.addEventListener('error', () => {
+      if (!cur || Date.now() - lastRetry < 15000) return;
+      lastRetry = Date.now();
+      play(cur.tag, cur.name, audio.currentTime);
+    });
+
+    function render() {
+      listEl.innerHTML = '';
+      if (!recordings.length) { listEl.innerHTML = '<p class="msg">Δεν υπάρχουν ακόμα ηχογραφήσεις.</p>'; return; }
+      for (const r of recordings) {
+        const day = document.createElement('section');
+        day.className = 'panel day';
+        const head = document.createElement('button');
+        head.className = 'day-head';
+        head.innerHTML = '<span class="day-title"></span><span class="day-meta">' +
+          (r.live ? '<span class="live">● γράφει</span> · ' + r.tracks.length * 10 + '′' : 'ολοκληρώθηκε') + '</span>';
+        head.querySelector('.day-title').textContent = r.title;
+        head.onclick = () => { openTag = openTag === r.tag ? '' : r.tag; render(); };
+        day.appendChild(head);
+        if (openTag === r.tag || (cur && cur.tag === r.tag)) {
+          const ol = document.createElement('ol');
+          ol.className = 'tracks';
+          for (const t of r.tracks) {
+            const li = document.createElement('li');
+            if (cur && cur.tag === r.tag && cur.name === t.name) li.className = 'playing';
+            li.innerHTML = '<span></span><a download>λήψη</a>';
+            li.firstChild.textContent = label(t.name) + ' (' + Math.round(t.size / 1048576) + ' MB)';
+            li.lastChild.href = src(t);
+            li.lastChild.onclick = e => e.stopPropagation();
+            li.onclick = () => play(r.tag, t.name);
+            ol.appendChild(li);
+          }
+          day.appendChild(ol);
+        }
+        listEl.appendChild(day);
+      }
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/recordings', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        recordings = data.recordings;
+        if (openTag === null && recordings[0]) openTag = recordings[0].tag;
+        // Αν φτάσαμε στο «ζωντανό» και μόλις ανέβηκε το επόμενο κομμάτι, συνεχίζουμε.
+        if (cur && audio.ended) {
+          const list = tracksOf(cur.tag), i = list.findIndex(t => t.name === cur.name);
+          if (i >= 0 && list[i + 1]) { play(cur.tag, list[i + 1].name); return; }
+        }
+        render();
+      } catch (e) {
+        listEl.innerHTML = '<p class="msg">Σφάλμα φόρτωσης. Δοκίμασε ξανά σε λίγο.</p>';
+      }
+    }
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+
+</html>
