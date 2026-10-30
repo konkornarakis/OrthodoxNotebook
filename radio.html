@@ -18,20 +18,49 @@
   <script src="assets/site.js"></script>
   <style>
     .radio-page { max-width: 720px; margin: 0 auto; }
-    .player { position: sticky; top: 8px; z-index: 2; margin-bottom: 1rem; }
-    .now { font-family: var(--font-display); font-size: 19px; margin-bottom: .5rem; min-height: 1.4em; color: var(--ink); }
-    .player audio { width: 100%; }
-    .day { margin-bottom: .8rem; padding: 0; overflow: hidden; }
-    .day-head { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: .85rem 1.1rem; cursor: pointer; }
-    .day-head:hover { color: var(--cinnabar); }
-    .day-title { font-family: var(--font-display); font-size: 18px; }
-    .day-meta { color: var(--ink-soft); font-size: 14.5px; white-space: nowrap; }
-    .live { color: var(--cinnabar); font-weight: 600; }
-    .tracks { list-style: none; margin: 0; padding: 0 1.1rem .8rem; }
-    .tracks li { display: flex; justify-content: space-between; padding: .35rem 0; border-top: 1px solid var(--rule-soft); cursor: pointer; color: var(--ink-soft); }
-    .tracks li:hover, .tracks li.playing { color: var(--cinnabar); }
-    .tracks li.playing { font-weight: 600; }
-    .tracks a { color: var(--ink-faint); font-size: 14px; }
+
+    /* ── Player ─────────────────────────────────────────────────────── */
+    .player { position: sticky; top: 8px; z-index: 3; margin-bottom: 1.4rem; text-align: center; }
+    .p-title { font-family: var(--font-display); font-size: 22px; line-height: 1.25; color: var(--ink); }
+    .p-clock { color: var(--ink-soft); font-size: 14.5px; margin-top: 2px; min-height: 1.5em; }
+    .p-clock b { color: var(--cinnabar); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .seek { margin: 14px 0 2px; }
+    .seek input { width: 100%; height: 28px; margin: 0; accent-color: var(--cinnabar); cursor: pointer; touch-action: none; }
+    .times { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+    .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 8px 0 6px; }
+    .cbtn { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--rule); color: var(--ink); cursor: pointer; font-size: 11.5px; line-height: 1; }
+    .cbtn svg { width: 22px; height: 22px; margin-bottom: 1px; }
+    .cbtn:hover { color: var(--cinnabar); border-color: var(--gold); }
+    .cbtn:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+    .cbtn.play { width: 68px; height: 68px; background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .cbtn.play svg { width: 30px; height: 30px; margin: 0; }
+    .cbtn.play:hover { color: #fff8ef; filter: brightness(1.08); }
+    .cbtn.play.busy svg { animation: pulse 1s ease-in-out infinite alternate; }
+    @keyframes pulse { from { opacity: 1; } to { opacity: .35; } }
+    .extra { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-top: 8px; font-size: 14.5px; color: var(--ink-soft); }
+    .extra form { display: inline-flex; align-items: center; gap: 6px; }
+    .extra input { padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; }
+    .extra input[type="text"] { width: 6.5em; }
+    .extra .btn { padding: 5px 12px; font-size: 14px; }
+    .rate { min-width: 3.6em; }
+    .extra label { white-space: nowrap; }
+    .p-msg { margin: 8px 0 0; font-size: 14px; color: var(--ink-soft); min-height: 1.4em; }
+    @media (max-width: 620px) {
+      .player { position: static; }
+      .controls { gap: 8px; }
+    }
+
+    /* ── Λίστα βραδιών ──────────────────────────────────────────────── */
+    .nights { display: grid; gap: 8px; }
+    .night { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline;
+      padding: .8rem 1.1rem; border: 1px solid var(--rule-soft); border-radius: 10px; background: var(--vellum); cursor: pointer; }
+    .night:hover { border-color: var(--gold); }
+    .night:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+    .night[aria-current="true"] { border-color: var(--cinnabar); box-shadow: inset 3px 0 0 var(--cinnabar); }
+    .n-date { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+    .n-dur { color: var(--ink-soft); font-size: 14.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .n-meta { grid-column: 1 / -1; color: var(--ink-faint); font-size: 14px; }
     .msg { text-align: center; color: var(--ink-soft); }
   </style>
 </head>
@@ -42,11 +71,30 @@
       <header data-page="radio" data-title="Ραδιόφωνο" data-subtitle="Ηχογραφήσεις της Πειραϊκής Εκκλησίας 91.2"></header>
 
       <main class="radio-page">
-        <div class="panel player">
-          <div class="now" id="now">Διάλεξε ηχογράφηση</div>
-          <audio id="audio" controls preload="none"></audio>
-        </div>
-        <div id="list"><p class="msg">Φόρτωση…</p></div>
+        <section class="panel player" id="player" hidden aria-label="Αναπαραγωγή">
+          <div class="p-title" id="p-title"></div>
+          <div class="p-clock" id="p-clock"></div>
+          <div class="seek">
+            <input type="range" id="seek" min="0" max="1" step="1" value="0" aria-label="Θέση στην ηχογράφηση">
+            <div class="times"><span id="t-cur">0:00</span><span id="t-total">0:00</span></div>
+          </div>
+          <div class="controls">
+            <button class="cbtn" id="back30" type="button" aria-label="Πίσω 30 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>30</button>
+            <button class="cbtn" id="back10" type="button" aria-label="Πίσω 10 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>10</button>
+            <button class="cbtn play" id="play" type="button" aria-label="Αναπαραγωγή"></button>
+            <button class="cbtn" id="fwd10" type="button" aria-label="Μπροστά 10 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>10</button>
+            <button class="cbtn" id="fwd30" type="button" aria-label="Μπροστά 30 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>30</button>
+          </div>
+          <div class="extra">
+            <button class="btn rate" id="rate" type="button" aria-label="Ταχύτητα αναπαραγωγής">1×</button>
+            <form id="jump-clock"><label for="jc">Ώρα εκπομπής</label><input type="time" id="jc" step="1" required><button class="btn" type="submit">Πήγαινε</button></form>
+            <form id="jump-pos"><label for="jp">Θέση</label><input type="text" id="jp" inputmode="numeric" placeholder="1:20:00" required><button class="btn" type="submit">Πήγαινε</button></form>
+          </div>
+          <p class="p-msg" id="p-msg" role="status"></p>
+        </section>
+
+        <h2 class="section-heading">Ηχογραφήσεις</h2>
+        <div class="nights" id="nights"><p class="msg">Φόρτωση…</p></div>
       </main>
 
       <footer data-site-footer></footer>
@@ -54,96 +102,371 @@
   </div>
 
   <script>
-    // Όσο γράφει, η ηχογράφηση έχει κομμάτια των 10 λεπτών που παίζουν διαδοχικά·
-    // η λίστα ανανεώνεται μόνη της, ώστε να προστίθενται τα νέα κομμάτια.
-    const audio = document.getElementById('audio');
-    const nowEl = document.getElementById('now');
-    const listEl = document.getElementById('list');
-    let recordings = [], openTag = null, cur = null;   // cur = { tag, name }
+    (function () {
+      'use strict';
+      // Κάθε βραδιά είναι κομμάτια των 10 λεπτών· εδώ παρουσιάζονται ως μία συνεχής ηχογράφηση
+      // με έναν άξονα χρόνου. Ένα <audio> παίζει το κομμάτι της τρέχουσας θέσης και περνά στο επόμενο.
+      const $ = id => document.getElementById(id);
+      const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+      const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>';
+      const RATES = [1, 1.25, 1.5, 1.75, 2, 0.75];
+      const store = {
+        get(k) { try { return localStorage.getItem('radio:' + k); } catch (e) { return null; } },
+        set(k, v) { try { localStorage.setItem('radio:' + k, v); } catch (e) { /* ιδιωτική περιήγηση */ } },
+        del(k) { try { localStorage.removeItem('radio:' + k); } catch (e) { /* */ } },
+      };
 
-    const src = t => '/api/recordings?asset=' + t.id;
-    const label = name => {
-      if (name.includes('olokliro')) return 'Ολόκληρη η ηχογράφηση';
-      const m = /_(\d{2})-(\d{2})-\d{2}\.mp3$/.exec(name);
-      return m ? m[1] + ':' + m[2] : name;
-    };
-    const tracksOf = tag => (recordings.find(r => r.tag === tag) || { tracks: [] }).tracks;
+      const audio = new Audio();
+      audio.preload = 'auto';
+      let nights = [];
+      let N = null;              // η βραδιά που έχει επιλεγεί
+      let idx = 0;               // τρέχον κομμάτι
+      let pendingSeek = 0;       // θέση μέσα στο κομμάτι, μέχρι να φορτωθεί
+      let srcId = null;          // το κομμάτι που έχει το <audio>
+      let loadedId = null;       // ... και έχει φορτώσει τα μεταδεδομένα του
+      let wantPlay = false;      // πρόθεση του χρήστη (όχι η στιγμιαία κατάσταση του <audio>)
+      let switching = false;     // αλλαγή κομματιού σε εξέλιξη (αγνοούνται τα «pause» που προκαλεί)
+      let waitingLive = false;   // φτάσαμε στο τέλος βραδιάς που ακόμα μεγαλώνει
+      let dragging = false;
+      let lastKnown = 0;         // τελευταία γνωστή θέση (για επανάληψη μετά από σφάλμα)
+      let retries = 0, retryAt = 0, lastSave = 0;
+      let rate = Number(store.get('rate')) || 1;
+      if (!RATES.includes(rate)) rate = 1;
 
-    function play(tag, name, at) {
-      const t = tracksOf(tag).find(x => x.name === name);
-      if (!t) return;
-      cur = { tag, name };
-      audio.src = src(t);
-      if (at) audio.addEventListener('loadedmetadata', () => { audio.currentTime = at; }, { once: true });
-      audio.play().catch(() => {});
-      nowEl.textContent = tag.replace('rec-', '') + ' · ' + label(name);
-      render();
-    }
-
-    audio.addEventListener('ended', () => {
-      if (!cur) return;
-      const list = tracksOf(cur.tag), i = list.findIndex(t => t.name === cur.name);
-      if (list[i + 1]) play(cur.tag, list[i + 1].name);
-    });
-    // Ο σύνδεσμος του GitHub λήγει μετά από λίγα λεπτά· παίρνουμε νέο και συνεχίζουμε από το ίδιο σημείο.
-    let lastRetry = 0;
-    audio.addEventListener('error', () => {
-      if (!cur || Date.now() - lastRetry < 15000) return;
-      lastRetry = Date.now();
-      play(cur.tag, cur.name, audio.currentTime);
-    });
-
-    function render() {
-      listEl.innerHTML = '';
-      if (!recordings.length) { listEl.innerHTML = '<p class="msg">Δεν υπάρχουν ακόμα ηχογραφήσεις.</p>'; return; }
-      for (const r of recordings) {
-        const day = document.createElement('section');
-        day.className = 'panel day';
-        const head = document.createElement('button');
-        head.className = 'day-head';
-        head.innerHTML = '<span class="day-title"></span><span class="day-meta">' +
-          (r.live ? '<span class="live">● γράφει</span> · ' + r.tracks.length * 10 + '′' : 'ολοκληρώθηκε') + '</span>';
-        head.querySelector('.day-title').textContent = r.title;
-        head.onclick = () => { openTag = openTag === r.tag ? '' : r.tag; render(); };
-        day.appendChild(head);
-        if (openTag === r.tag || (cur && cur.tag === r.tag)) {
-          const ol = document.createElement('ol');
-          ol.className = 'tracks';
-          for (const t of r.tracks) {
-            const li = document.createElement('li');
-            if (cur && cur.tag === r.tag && cur.name === t.name) li.className = 'playing';
-            li.innerHTML = '<span></span><a download>λήψη</a>';
-            li.firstChild.textContent = label(t.name) + ' (' + Math.round(t.size / 1048576) + ' MB)';
-            li.lastChild.href = src(t);
-            li.lastChild.onclick = e => e.stopPropagation();
-            li.onclick = () => play(r.tag, t.name);
-            ol.appendChild(li);
-          }
-          day.appendChild(ol);
-        }
-        listEl.appendChild(day);
+      // ── Χρόνος ──────────────────────────────────────────────────────
+      const pad = n => String(n).padStart(2, '0');
+      function fmt(t) {
+        t = Math.max(0, Math.floor(t || 0));
+        const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+        return h ? h + ':' + pad(m) + ':' + pad(s) : m + ':' + pad(s);
       }
-    }
+      function fmtDur(t) {
+        const h = Math.floor(t / 3600), m = Math.round(t % 3600 / 60);
+        return h ? h + ' ώρ.' + (m ? ' ' + m + '′' : '') : m + '′';
+      }
+      const clockFmt = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+      const hmFmt = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const dayFmt = new Intl.DateTimeFormat('el-GR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const nightTitle = n => { const [y, m, d] = n.date.split('-').map(Number); const s = dayFmt.format(Date.UTC(y, m - 1, d)); return s.charAt(0).toUpperCase() + s.slice(1); };
+      // Ώρα Ελλάδας → epoch ms (με Intl, ώστε να ισχύει και η θερινή ώρα)
+      function athensToEpoch(y, mo, d, h, mi, s) {
+        const guess = Date.UTC(y, mo - 1, d, h, mi, s);
+        const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Athens', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          .formatToParts(new Date(guess)).reduce((o, x) => (o[x.type] = +x.value, o), {});
+        return guess - (Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - guess);
+      }
+      function parsePos(str) {
+        const parts = String(str).trim().split(/[:.,\s]+/).filter(Boolean).map(Number);
+        if (!parts.length || parts.length > 3 || parts.some(n => !Number.isFinite(n) || n < 0)) return null;
+        return parts.reduce((a, n) => a * 60 + n, 0) * (parts.length === 1 ? 60 : 1);   // σκέτος αριθμός = λεπτά
+      }
 
-    async function load() {
-      try {
-        const res = await fetch('/api/recordings', { cache: 'no-store' });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-        recordings = data.recordings;
-        if (openTag === null && recordings[0]) openTag = recordings[0].tag;
-        // Αν φτάσαμε στο «ζωντανό» και μόλις ανέβηκε το επόμενο κομμάτι, συνεχίζουμε.
-        if (cur && audio.ended) {
-          const list = tracksOf(cur.tag), i = list.findIndex(t => t.name === cur.name);
-          if (i >= 0 && list[i + 1]) { play(cur.tag, list[i + 1].name); return; }
-        }
+      // ── Άξονας χρόνου ───────────────────────────────────────────────
+      function layout(n) {
+        let off = 0;
+        for (const s of n.segments) { s.off = off; off += s.dur; }
+        n.total = off;
+      }
+      function locate(t) {
+        const segs = N.segments;
+        t = Math.min(Math.max(0, t), Math.max(0, N.total - 0.5));
+        let i = segs.findIndex(s => t < s.off + s.dur);
+        if (i < 0) i = segs.length - 1;
+        return [i, Math.max(0, t - segs[i].off)];
+      }
+      const seg = () => N && N.segments[idx];
+      function now() {
+        if (!N || !seg()) return 0;
+        return seg().off + (loadedId === seg().id && srcId === seg().id ? audio.currentTime : pendingSeek);
+      }
+      function clockAt(t) {
+        const [i, off] = locate(t), s = N.segments[i];
+        return s.start ? s.start + off * 1000 : null;
+      }
+
+      // ── Αναπαραγωγή ─────────────────────────────────────────────────
+      function loadSeg(i, off) {
+        idx = i; pendingSeek = off;
+        const s = seg();
+        switching = true; loadedId = null; srcId = s.id;
+        audio.src = '/api/recordings?asset=' + s.id;
+        audio.load();
+        if (wantPlay) audio.play().catch(playFailed);
         render();
-      } catch (e) {
-        listEl.innerHTML = '<p class="msg">Σφάλμα φόρτωσης. Δοκίμασε ξανά σε λίγο.</p>';
       }
-    }
-    load();
-    setInterval(load, 60000);
+      function playFailed(e) {
+        if (e && e.name === 'NotAllowedError') { wantPlay = false; render(); }
+        // τα υπόλοιπα (π.χ. AbortError από αλλαγή κομματιού) τα χειρίζονται τα συμβάντα του <audio>
+      }
+      function play() {
+        if (!N) return;
+        wantPlay = true; waitingLive = false; msg('');
+        if (srcId !== seg().id) loadSeg(idx, pendingSeek);
+        else audio.play().catch(playFailed);
+        render();
+      }
+      function pause() {
+        wantPlay = false; waitingLive = false;
+        audio.pause();
+        save(true); render();
+      }
+      function seek(t) {
+        if (!N || !N.segments.length) return;
+        const [i, off] = locate(t);
+        waitingLive = false;
+        if (srcId === N.segments[i].id) {
+          idx = i;
+          if (loadedId === srcId) audio.currentTime = off; else pendingSeek = off;
+        } else if (wantPlay) {
+          loadSeg(i, off);
+        } else {
+          idx = i; pendingSeek = off;
+        }
+        lastKnown = N.segments[i].off + off;
+        save(true); render();
+      }
+      const skip = d => seek(now() + d);
+
+      audio.addEventListener('loadedmetadata', () => {
+        const s = seg();
+        if (!s || srcId !== s.id) return;
+        loadedId = s.id; switching = false;
+        if (Number.isFinite(audio.duration) && audio.duration > 1 && Math.abs(audio.duration - s.dur) > 0.4) { s.dur = audio.duration; layout(N); }
+        if (pendingSeek > 0) audio.currentTime = Math.min(pendingSeek, Math.max(0, audio.duration - 0.3) || pendingSeek);
+        pendingSeek = 0;
+        audio.playbackRate = rate;
+        render();
+      });
+      audio.addEventListener('timeupdate', () => {
+        if (loadedId !== srcId || !N) return;
+        lastKnown = now();
+        if (audio.currentTime > 0.5) retries = 0;
+        save(false);
+        if (!dragging) render();
+      });
+      audio.addEventListener('playing', () => {
+        switching = false;
+        if (/Επανασύνδεση|Συνεχίζεται|Πρόβλημα/.test($('p-msg').textContent)) msg('');
+        render();
+      });
+      audio.addEventListener('waiting', render);
+      audio.addEventListener('pause', () => {
+        // παύση από το σύστημα (π.χ. κλήση, ακουστικά) — όχι από αλλαγή κομματιού ή τέλος
+        if (switching || audio.ended) return;
+        if (wantPlay) { wantPlay = false; save(true); render(); }
+      });
+      audio.addEventListener('ended', () => {
+        if (!N) return;
+        if (idx + 1 < N.segments.length) { loadSeg(idx + 1, 0); return; }
+        if (N.growing) { waitingLive = true; msg('Συνεχίζεται σε λίγο…'); setTimeout(refresh, 15000); render(); return; }
+        wantPlay = false; store.del('pos:' + N.tag); render();
+      });
+      // Ο σύνδεσμος του GitHub λήγει μετά από λίγα λεπτά (π.χ. σε μακριά παύση) ή το κομμάτι ενώθηκε με άλλα:
+      // ξαναφορτώνουμε τη λίστα και συνεχίζουμε από το ίδιο σημείο.
+      audio.addEventListener('error', () => {
+        if (!N || !srcId) return;
+        if (Date.now() - retryAt > 60000) retries = 0;
+        retryAt = Date.now();
+        if (++retries > 3) {
+          retries = 0;
+          // κομμάτι που δεν παίζει: συνεχίζουμε από το επόμενο, αν υπάρχει
+          if (wantPlay && idx + 1 < N.segments.length) { msg(''); loadSeg(idx + 1, 0); return; }
+          wantPlay = false; switching = false; srcId = null; loadedId = null;
+          msg('Πρόβλημα φόρτωσης. Πάτησε ▶ για νέα προσπάθεια.'); render(); return;
+        }
+        const t = lastKnown, resume = wantPlay;
+        msg('Επανασύνδεση…');
+        setTimeout(async () => {
+          await refresh();
+          if (!N || !N.segments.length) return;
+          const [i, off] = locate(t);
+          wantPlay = resume;
+          loadSeg(i, off);
+        }, 800 * retries);
+      });
+
+      // ── Αποθήκευση θέσης ────────────────────────────────────────────
+      function save(force) {
+        if (!N || (!force && Date.now() - lastSave < 5000)) return;
+        lastSave = Date.now();
+        store.set('pos:' + N.tag, String(Math.floor(now())));
+        store.set('night', N.tag);
+      }
+
+      // ── Επιλογή βραδιάς ─────────────────────────────────────────────
+      function select(tag, autoplay) {
+        const n = nights.find(x => x.tag === tag);
+        if (!n) return;
+        if (N && N.tag !== tag) save(true);
+        audio.pause(); audio.removeAttribute('src'); audio.load();
+        srcId = null; loadedId = null; switching = false; waitingLive = false; wantPlay = false; retries = 0;
+        N = n;
+        const saved = Number(store.get('pos:' + tag)) || 0;
+        [idx, pendingSeek] = locate(saved < N.total - 5 ? saved : 0);
+        lastKnown = now();
+        store.set('night', tag);
+        $('player').hidden = false;
+        $('p-title').textContent = nightTitle(N);
+        msg('');
+        if ('mediaSession' in navigator && window.MediaMetadata) {
+          navigator.mediaSession.metadata = new MediaMetadata({ title: 'Πειραϊκή Εκκλησία 91.2', artist: nightTitle(N), album: 'Ορθόδοξο Σημειωματάριο',
+            artwork: [{ src: '/assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' }] });
+        }
+        if (autoplay) play(); else render();
+        renderNights();
+      }
+
+      // ── Εμφάνιση ────────────────────────────────────────────────────
+      function msg(t) { $('p-msg').textContent = t; }
+      function render() {
+        if (!N) return;
+        const t = dragging ? Number($('seek').value) : now();
+        const total = Math.max(1, Math.floor(N.total));
+        const sk = $('seek');
+        sk.max = total;
+        if (!dragging) sk.value = Math.min(Math.floor(t), total);
+        $('t-cur').textContent = fmt(t);
+        $('t-total').textContent = fmt(N.total);
+        const c = clockAt(t);
+        $('p-clock').innerHTML = c ? 'Ώρα εκπομπής <b>' + clockFmt.format(c) + '</b>' : '';
+        const busy = wantPlay && (switching || audio.readyState < 3 || waitingLive);
+        const p = $('play');
+        p.innerHTML = wantPlay ? ICON_PAUSE : ICON_PLAY;
+        p.setAttribute('aria-label', wantPlay ? 'Παύση' : 'Αναπαραγωγή');
+        p.classList.toggle('busy', busy);
+        $('rate').textContent = String(rate).replace('.', ',') + '×';
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = wantPlay ? 'playing' : 'paused';
+          try { navigator.mediaSession.setPositionState({ duration: N.total, position: Math.min(t, N.total), playbackRate: rate }); } catch (e) { /* */ }
+        }
+      }
+      function renderNights() {
+        const box = $('nights');
+        box.innerHTML = '';
+        if (!nights.length) { box.innerHTML = '<p class="msg">Δεν υπάρχουν ακόμα ηχογραφήσεις.</p>'; return; }
+        for (const n of nights) {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'night';
+          if (N && N.tag === n.tag) b.setAttribute('aria-current', 'true');
+          const first = n.segments[0], last = n.segments[n.segments.length - 1];
+          const range = first.start ? hmFmt.format(first.start) + ' – ' + hmFmt.format(last.start + last.dur * 1000) : '';
+          const saved = Number(store.get('pos:' + n.tag)) || 0;
+          const parts = [range, saved > 5 && saved < n.total - 5 ? 'Συνέχεια από ' + fmt(saved) : ''].filter(Boolean);
+          b.innerHTML = '<span class="n-date"></span><span class="n-dur"></span>' + (parts.length ? '<span class="n-meta"></span>' : '');
+          b.querySelector('.n-date').textContent = nightTitle(n);
+          b.querySelector('.n-dur').textContent = fmtDur(n.total);
+          if (parts.length) b.querySelector('.n-meta').textContent = parts.join(' · ');
+          b.addEventListener('click', () => {
+            if (N && N.tag === n.tag) { wantPlay ? pause() : play(); return; }
+            select(n.tag, true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+          box.appendChild(b);
+        }
+      }
+
+      // ── Λίστα από τον server ────────────────────────────────────────
+      async function refresh() {
+        let data;
+        try {
+          data = await fetch('/api/recordings', { cache: 'no-store' }).then(r => r.json());
+          if (!data.ok) throw new Error(data.error);
+        } catch (e) {
+          if (!nights.length) $('nights').innerHTML = '<p class="msg">Σφάλμα φόρτωσης. Δοκίμασε ξανά σε λίγο.</p>';
+          return;
+        }
+        nights = data.nights;
+        for (const n of nights) {
+          // κρατάμε τις πραγματικές διάρκειες όσων κομματιών έχουν ήδη φορτωθεί
+          if (N && N.tag === n.tag) for (const s of n.segments) { const o = N.segments.find(x => x.id === s.id); if (o) s.dur = o.dur; }
+          layout(n);
+        }
+        if (N) {
+          const fresh = nights.find(n => n.tag === N.tag);
+          if (!fresh) { audio.pause(); audio.removeAttribute('src'); N = null; wantPlay = false; $('player').hidden = true; renderNights(); return; }
+          const curId = seg() && seg().id, t = lastKnown;
+          N = fresh;
+          const ni = N.segments.findIndex(s => s.id === curId);
+          if (ni >= 0) {
+            idx = ni;
+            if (waitingLive && idx + 1 < N.segments.length) { waitingLive = false; msg(''); loadSeg(idx + 1, 0); }
+            else if (waitingLive) setTimeout(refresh, 20000);
+          } else {
+            // το κομμάτι δεν υπάρχει πια (π.χ. ενώθηκε σε ενιαίο αρχείο): ίδια θέση στο νέο άξονα
+            const [i, off] = locate(t);
+            if (wantPlay) loadSeg(i, off); else { idx = i; pendingSeek = off; srcId = null; loadedId = null; }
+          }
+          render();
+        }
+        renderNights();
+      }
+
+      // ── Χειριστήρια ─────────────────────────────────────────────────
+      $('play').addEventListener('click', () => (wantPlay ? pause() : play()));
+      $('back30').addEventListener('click', () => skip(-30));
+      $('back10').addEventListener('click', () => skip(-10));
+      $('fwd10').addEventListener('click', () => skip(10));
+      $('fwd30').addEventListener('click', () => skip(30));
+      $('rate').addEventListener('click', () => {
+        rate = RATES[(RATES.indexOf(rate) + 1) % RATES.length];
+        audio.playbackRate = audio.defaultPlaybackRate = rate;
+        store.set('rate', String(rate)); render();
+      });
+      const sk = $('seek');
+      sk.addEventListener('input', () => { dragging = true; render(); });
+      sk.addEventListener('change', () => { dragging = false; seek(Number(sk.value)); });
+      sk.addEventListener('pointerup', () => { if (dragging) { dragging = false; seek(Number(sk.value)); } });
+      sk.addEventListener('blur', () => { dragging = false; });
+
+      $('jump-clock').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!N) return;
+        const [h, m, s] = $('jc').value.split(':').map(Number);
+        if (!Number.isFinite(h) || !N.segments[0].start) { msg('Η ώρα εκπομπής δεν είναι γνωστή για αυτή την ηχογράφηση.'); return; }
+        // Οι ώρες μετά τα μεσάνυχτα (πριν τις 12:00) ανήκουν στην επόμενη μέρα της βραδιάς.
+        const [y, mo, d] = N.date.split('-').map(Number);
+        const base = new Date(Date.UTC(y, mo - 1, d + (h < 12 ? 1 : 0)));
+        const target = athensToEpoch(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), h, m || 0, s || 0);
+        const segs = N.segments;
+        if (target < segs[0].start) { msg('Η ηχογράφηση αρχίζει στις ' + clockFmt.format(segs[0].start) + '.'); seek(0); return; }
+        const i = segs.findIndex(x => target < x.start + x.dur * 1000);
+        if (i < 0) { msg('Η ηχογράφηση φτάνει έως τις ' + clockFmt.format(clockAt(N.total - 0.5)) + '.'); seek(N.total - 1); return; }
+        msg('');
+        seek(segs[i].off + Math.max(0, (target - segs[i].start) / 1000));   // αν πέσει σε κενό, πηγαίνει στο επόμενο κομμάτι
+      });
+      $('jump-pos').addEventListener('submit', e => {
+        e.preventDefault();
+        const t = parsePos($('jp').value);
+        if (t == null) { msg('Γράψε θέση όπως 1:20:00 ή 45:30.'); return; }
+        if (N && t > N.total) { msg('Η ηχογράφηση διαρκεί ' + fmt(N.total) + '.'); return; }
+        msg(''); seek(t);
+      });
+
+      document.addEventListener('keydown', e => {
+        if (!N || e.target.closest('input, textarea, select, button') || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === ' ' || e.key === 'k') { e.preventDefault(); wantPlay ? pause() : play(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); skip(e.shiftKey ? -30 : -10); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); skip(e.shiftKey ? 30 : 10); }
+      });
+
+      if ('mediaSession' in navigator) {
+        const ms = navigator.mediaSession;
+        const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) { /* μη υποστηριζόμενο */ } };
+        set('play', play);
+        set('pause', pause);
+        set('seekbackward', d => skip(-(d && d.seekOffset || 10)));
+        set('seekforward', d => skip(d && d.seekOffset || 10));
+        set('seekto', d => { if (d && Number.isFinite(d.seekTime)) seek(d.seekTime); });
+      }
+      window.addEventListener('pagehide', () => save(true));
+
+      refresh().then(() => {
+        if (!nights.length) return;
+        const last = store.get('night');
+        select(nights.some(n => n.tag === last) ? last : nights[0].tag, false);
+      });
+      setInterval(refresh, 60000);
+    })();
   </script>
 </body>
 
