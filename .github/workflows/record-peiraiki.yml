@@ -1,0 +1,118 @@
+name: Ηχογράφηση Πειραϊκής Εκκλησίας (91.2)
+
+# Ξεκινά αυτόματα με push του αρχείου αυτού στο branch, ή χειροκίνητα από το Actions tab.
+on:
+  push:
+    branches: [ccr-3237b04d-waz0t4]
+    paths: [.github/workflows/record-peiraiki.yml]
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Διάρκεια σε ώρες (έως 5.5)"
+        default: "3"
+      stream_url:
+        description: "URL ροής (προαιρετικό — αν μείνει κενό, εντοπίζεται αυτόματα)"
+        default: ""
+
+concurrency:
+  group: record-peiraiki
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    env:
+      HOURS: ${{ github.event.inputs.hours || '3' }}
+      STREAM_URL: ${{ github.event.inputs.stream_url || '' }}
+    steps:
+      - name: Εγκατάσταση ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg jq
+
+      - name: Εντοπισμός ροής
+        id: find
+        run: |
+          set -u
+          cands=()
+          [ -n "$STREAM_URL" ] && cands+=("$STREAM_URL")
+
+          # 1) RadioBrowser (κοινοτικός κατάλογος ραδιοφώνων)
+          for q in "Πειραϊκή Εκκλησία" "Πειραϊκή" "Peiraiki Ekklisia" "Peiraiki" "Church of Piraeus" "Ekklisia Piraeus"; do
+            enc=$(jq -rn --arg s "$q" '$s|@uri')
+            curl -sS --max-time 20 -A "orthodoxnotebook-recorder" \
+              "https://all.api.radio-browser.info/json/stations/search?name=${enc}&hidebroken=true&order=votes&reverse=true" \
+              -o rb.json || continue
+            jq -r '.[] | "\(.name)\t\(.url_resolved)\t\(.url)"' rb.json | tee -a rb.log
+            while IFS= read -r u; do [ -n "$u" ] && cands+=("$u"); done < <(jq -r '.[] | .url_resolved, .url' rb.json)
+          done
+
+          # 2) Επίσημες σελίδες — αναζήτηση συνδέσμων ήχου
+          for page in https://www.ecclesiapiraeus.gr/ https://ecclesiapiraeus.gr/ https://www.imp.gr/ https://www.peiraikiekklisia.gr/; do
+            curl -sSL --max-time 20 "$page" 2>/dev/null \
+              | grep -oiE 'https?://[^"'"'"' <>]+' \
+              | grep -iE '(\.mp3|\.aac|\.m3u8?|\.pls|/stream|/live|/listen|icecast|shoutcast|:[0-9]{4,5}/)' \
+              | sort -u | while read -r u; do echo "$u"; done >> page.log || true
+          done
+          [ -f page.log ] && while IFS= read -r u; do cands+=("$u"); done < page.log
+
+          echo "Υποψήφια URL:"; printf '  %s\n' "${cands[@]:-}"
+
+          for u in "${cands[@]:-}"; do
+            [ -z "$u" ] && continue
+            if timeout 25 ffprobe -v error -rw_timeout 15000000 -show_entries stream=codec_type -of csv=p=0 "$u" 2>/dev/null | grep -q audio; then
+              echo "Επιλέχθηκε: $u"
+              echo "url=$u" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Απέτυχε: $u"
+          done
+          echo "::error::Δεν βρέθηκε λειτουργική ροή. Ξανατρέξε το workflow δίνοντας stream_url."
+          exit 1
+
+      - name: Ηχογράφηση
+        env:
+          URL: ${{ steps.find.outputs.url }}
+        run: |
+          mkdir -p out parts
+          total=$(awk "BEGIN{printf \"%d\", $HOURS*3600}")
+          end=$(( $(date +%s) + total ))
+          start_tag=$(TZ=Europe/Athens date +%Y-%m-%d_%H%M)
+          echo "START_TAG=$start_tag" >> "$GITHUB_ENV"
+          echo "Ηχογράφηση $URL για ${total}s (έως $(TZ=Europe/Athens date -d @$end '+%H:%M') ώρα Ελλάδας)"
+          n=0
+          # Αν κοπεί η ροή, ξαναξεκινά μέχρι να συμπληρωθεί ο χρόνος.
+          while [ "$(date +%s)" -lt "$end" ]; do
+            left=$(( end - $(date +%s) ))
+            [ "$left" -lt 5 ] && break
+            n=$((n+1))
+            ffmpeg -nostdin -hide_banner -loglevel warning \
+              -reconnect 1 -reconnect_streamed 1 -reconnect_at_eof 1 -reconnect_delay_max 30 \
+              -rw_timeout 30000000 -i "$URL" -t "$left" -vn \
+              -c:a libmp3lame -b:a 96k -ac 2 -ar 44100 \
+              "parts/part_$(printf %03d $n).mp3" || true
+            [ "$(date +%s)" -lt "$end" ] && sleep 5
+          done
+          ls -la parts
+          for f in parts/*.mp3; do echo "file '$PWD/$f'"; done > list.txt
+          ffmpeg -nostdin -hide_banner -loglevel warning -f concat -safe 0 -i list.txt -c copy \
+            "out/peiraiki-ekklisia_${start_tag}.mp3"
+          ls -la out
+
+      - name: Αποθήκευση mp3
+        uses: actions/upload-artifact@v4
+        with:
+          name: peiraiki-ekklisia-${{ env.START_TAG }}
+          path: out/*.mp3
+          retention-days: 30
+          compression-level: 0
+
+      # Αν κάτι πάει στραβά, κρατάμε ό,τι ηχογραφήθηκε.
+      - name: Αποθήκευση τμημάτων (σε αποτυχία)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peiraiki-ekklisia-parts-${{ github.run_id }}
+          path: parts/*.mp3
+          if-no-files-found: ignore
+          retention-days: 30
+          compression-level: 0
