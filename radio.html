@@ -331,10 +331,24 @@
       }
 
       // ── Επιλογή βραδιάς ─────────────────────────────────────────────
-      function select(tag, autoplay) {
-        const n = nights.find(x => x.tag === tag);
-        if (!n) return;
+      // Οι λεπτομέρειες (κομμάτια, εκπομπές) μιας ημέρας
+      async function fetchNight(tag) {
+        const r = await fetch('/api/recordings?night=' + encodeURIComponent(tag), { cache: 'no-store' });
+        if (r.status === 404) return null;
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.error);
+        layout(data.night);
+        return data.night;
+      }
+
+      let selSeq = 0;
+      async function select(tag, autoplay) {
+        const seq = ++selSeq;
         if (N && N.tag !== tag) save(true);
+        let n;
+        try { n = await fetchNight(tag); } catch (e) { n = undefined; }
+        if (seq !== selSeq) return;   // στο μεταξύ επιλέχθηκε άλλη ημέρα
+        if (!n) { msg(n === null ? 'Η ηχογράφηση δεν βρέθηκε.' : 'Σφάλμα φόρτωσης. Δοκίμασε ξανά.'); return; }
         audio.pause(); audio.removeAttribute('src'); audio.load();
         srcId = null; loadedId = null; switching = false; waitingLive = false; wantPlay = false; retries = 0;
         N = n;
@@ -422,15 +436,14 @@
           const b = document.createElement('button');
           b.type = 'button'; b.className = 'night';
           if (N && N.tag === n.tag) b.setAttribute('aria-current', 'true');
-          const first = n.segments[0], last = n.segments[n.segments.length - 1];
-          const range = first.start ? hmFmt.format(first.start) + ' – ' + hmFmt.format(last.start + last.dur * 1000) : '';
+          const range = n.from && n.to ? hmFmt.format(n.from) + ' – ' + hmFmt.format(n.to) : '';
           const saved = Number(store.get('pos:' + n.tag)) || 0;
-          const parts = [range, saved > 5 && saved < n.total - 5 ? 'Συνέχεια από ' + fmt(saved) : ''].filter(Boolean);
-          const titles = [...new Set(listed(n).map(s => s.title))];
+          const parts = [range, saved > 5 && saved < n.dur - 5 ? 'Συνέχεια από ' + fmt(saved) : ''].filter(Boolean);
+          const titles = n.titles || [];
           b.innerHTML = '<span class="n-date"></span><span class="n-dur"></span>' + (parts.length ? '<span class="n-meta"></span>' : '') + (titles.length ? '<span class="n-shows"></span>' : '');
           if (titles.length) b.querySelector('.n-shows').textContent = titles.join(' · ');
           b.querySelector('.n-date').textContent = nightTitle(n);
-          b.querySelector('.n-dur').textContent = fmtDur(n.total);
+          b.querySelector('.n-dur').textContent = fmtDur(N && N.tag === n.tag ? N.total : n.dur);
           if (parts.length) b.querySelector('.n-meta').textContent = parts.join(' · ');
           b.addEventListener('click', () => {
             if (N && N.tag === n.tag) { wantPlay ? pause() : play(); return; }
@@ -452,14 +465,14 @@
           return;
         }
         nights = data.nights;
-        for (const n of nights) {
-          // κρατάμε τις πραγματικές διάρκειες όσων κομματιών έχουν ήδη φορτωθεί
-          if (N && N.tag === n.tag) for (const s of n.segments) { const o = N.segments.find(x => x.id === s.id); if (o) s.dur = o.dur; }
-          layout(n);
-        }
         if (N) {
-          const fresh = nights.find(n => n.tag === N.tag);
+          let fresh;
+          try { fresh = await fetchNight(N.tag); } catch (e) { renderNights(); return; }
+          if (!N) return;
           if (!fresh) { audio.pause(); audio.removeAttribute('src'); N = null; wantPlay = false; $('player').hidden = true; renderNights(); return; }
+          // κρατάμε τις πραγματικές διάρκειες όσων κομματιών έχουν ήδη φορτωθεί
+          for (const s of fresh.segments) { const o = N.segments.find(x => x.id === s.id); if (o) s.dur = o.dur; }
+          layout(fresh);
           const curId = seg() && seg().id, t = lastKnown;
           N = fresh;
           ticksTotal = -1;
@@ -469,7 +482,7 @@
             if (waitingLive && idx + 1 < N.segments.length) { waitingLive = false; msg(''); loadSeg(idx + 1, 0); }
             else if (waitingLive) setTimeout(refresh, 20000);
           } else {
-            // το κομμάτι δεν υπάρχει πια (π.χ. ενώθηκε σε ενιαίο αρχείο): ίδια θέση στο νέο άξονα
+            // το κομμάτι δεν υπάρχει πια (π.χ. ενώθηκε σε ενιαίο αρχείο ή σβήστηκε): ίδια θέση στο νέο άξονα
             const [i, off] = locate(t);
             if (wantPlay) loadSeg(i, off); else { idx = i; pendingSeek = off; srcId = null; loadedId = null; }
           }
@@ -539,8 +552,8 @@
 
       refresh().then(() => {
         if (!nights.length) return;
-        const last = store.get('night');
-        select(nights.some(n => n.tag === last) ? last : nights[0].tag, false);
+        const want = new URLSearchParams(location.search).get('night'), last = store.get('night');
+        select(nights.some(n => n.tag === want) ? want : nights.some(n => n.tag === last) ? last : nights[0].tag, false);
       });
       setInterval(refresh, 60000);
     })();
