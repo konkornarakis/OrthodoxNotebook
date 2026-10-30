@@ -1,0 +1,188 @@
+name: Ηχογράφηση Πειραϊκής Εκκλησίας (91.2)
+
+# Ηχογραφεί τη ροή του σταθμού στο ωράριο του radio/config.json (ώρα Ελλάδας).
+# Κάθε κομμάτι των 10 λεπτών ανεβαίνει, μόλις κλείσει, σε ένα GitHub Release της βραδιάς
+# (tag rec-ΕΕΕΕ-ΜΜ-ΗΗ)· η σελίδα radio.html τα παίζει ως μία συνεχή ηχογράφηση.
+# Η διαχείριση (diaxeirisi.html) αλλάζει το ωράριο και στέλνει έναρξη/διακοπή μέσω του radio/control.json.
+on:
+  schedule:
+    # Κάθε μισή ώρα· το βήμα «Απόφαση» κρίνει αν είναι ώρα ηχογράφησης.
+    - cron: "13,43 * * * *"
+  push:
+    branches: [main]
+    paths: [radio/control.json]
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Ηχογράφηση τώρα για τόσες ώρες (κενό = κανονικό ωράριο)"
+        default: ""
+      stream_url:
+        description: "URL ροής (κενό = αυτόματος εντοπισμός)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: peiraiki-live
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    env:
+      TZ: Europe/Athens
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      HOURS: ${{ github.event.inputs.hours || '' }}
+      STREAM_URL: ${{ github.event.inputs.stream_url || '' }}
+      EVENT: ${{ github.event_name }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Απόφαση
+        id: when
+        run: |
+          t0=$(date +%s)
+          echo "t0=$t0" >> "$GITHUB_OUTPUT"
+          get() {
+            local o; o=$(gh api "repos/$GH_REPO/contents/radio/$1?ref=main" --jq .content 2>/dev/null | base64 -d 2>/dev/null || true)
+            if jq -e 'type == "object"' >/dev/null 2>&1 <<<"$o"; then echo "$o"; else echo '{}'; fi
+          }
+          cfg=$(get config.json); ctl=$(get control.json)
+          echo "config: $cfg"; echo "control: $ctl"
+          enabled=$(jq -r 'if .enabled == false then "false" else "true" end' <<<"$cfg")
+          s_hm=$(jq -r '.start // "22:00"' <<<"$cfg"); e_hm=$(jq -r '.end // "03:00"' <<<"$cfg")
+          cmd=$(jq -r '.cmd // ""' <<<"$ctl"); c_at=$(jq -r '.at // 0 | floor' <<<"$ctl"); c_until=$(jq -r '.until // 0 | floor' <<<"$ctl")
+
+          # Ώρα που δεν υπάρχει (αλλαγή σε θερινή ώρα) → παίρνεται ως χειμερινή.
+          ts() { date -d "$1" +%s 2>/dev/null || echo $(( $(TZ=UTC date -d "$1" +%s) - 7200 )); }
+          start=""; end=""
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$HOURS" ]; then
+            start=$t0; end=$(awk "BEGIN{printf \"%d\", $t0 + $HOURS*3600}")
+          elif [ "$EVENT" = push ]; then
+            if [ "$cmd" = start ] && [ "$c_until" -gt $((t0 + 60)) ]; then start=$t0; end=$c_until; fi
+          elif [ "$enabled" = true ]; then
+            # Το παράθυρο χθες→σήμερα ή σήμερα→αύριο (αν η λήξη είναι πριν την έναρξη, περνά τα μεσάνυχτα).
+            for d in yesterday today; do
+              day0=$(date -d "$d" +%F)
+              ws=$(ts "$day0 $s_hm"); we=$(ts "$day0 $e_hm")
+              [ "$we" -le "$ws" ] && we=$(ts "$(date -d "$day0 +1 day" +%F) $e_hm")
+              if [ "$t0" -ge $((ws - 35*60)) ] && [ "$t0" -lt $((we - 120)) ]; then
+                if [ "$cmd" = stop ] && [ "$c_at" -ge $((ws - 35*60)) ]; then echo "Διακόπηκε από τη διαχείριση για αυτό το παράθυρο."; break; fi
+                start=$(( t0 > ws ? t0 : ws )); end=$we; break
+              fi
+            done
+          fi
+          if [ -z "$start" ]; then echo "Τίποτα για ηχογράφηση τώρα ($(date '+%d/%m %H:%M'))."; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          # Μια δουλειά του GitHub ζει έως 6 ώρες· ό,τι περισσεύει το συνεχίζει η επόμενη προγραμματισμένη.
+          cap=$((t0 + 340*60)); [ "$end" -gt "$cap" ] && end=$cap
+          day=$(date -d "@$(( start - 6*3600 ))" +%F)
+          { echo "start=$start"; echo "end=$end"; echo "day=$day"; } >> "$GITHUB_OUTPUT"
+          echo "Ηχογράφηση $(date -d @$start '+%d/%m %H:%M') – $(date -d @$end '+%d/%m %H:%M') → rec-$day"
+
+      - name: Εγκατάσταση ffmpeg
+        if: steps.when.outputs.skip != '1'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Εντοπισμός ροής
+        if: steps.when.outputs.skip != '1'
+        id: find
+        run: |
+          cands=()
+          [ -n "$STREAM_URL" ] && cands+=("$STREAM_URL")
+          cands+=("https://impradio.bytemasters.gr/8002/stream")
+          for q in "Πειραϊκή Εκκλησία" "Peiraiki Ekklisia" "Church of Piraeus"; do
+            enc=$(jq -rn --arg s "$q" '$s|@uri')
+            curl -sS --max-time 20 -A "peiraiki-recorder" \
+              "https://all.api.radio-browser.info/json/stations/search?name=${enc}&hidebroken=true&order=votes&reverse=true" -o rb.json || continue
+            while IFS= read -r u; do [ -n "$u" ] && cands+=("$u"); done < <(jq -r '.[] | .url_resolved' rb.json 2>/dev/null || true)
+          done
+          for u in "${cands[@]}"; do
+            if timeout 25 ffprobe -v error -rw_timeout 15000000 -show_entries stream=codec_type -of csv=p=0 "$u" 2>/dev/null | grep -q audio; then
+              echo "Ροή: $u"; echo "url=$u" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            echo "Απέτυχε: $u"
+          done
+          echo "::error::Δεν βρέθηκε λειτουργική ροή."; exit 1
+
+      - name: Ηχογράφηση
+        if: steps.when.outputs.skip != '1'
+        env:
+          URL: ${{ steps.find.outputs.url }}
+          T0: ${{ steps.when.outputs.t0 }}
+          START: ${{ steps.when.outputs.start }}
+          END: ${{ steps.when.outputs.end }}
+          DAY: ${{ steps.when.outputs.day }}
+        run: |
+          TAG="rec-$DAY"; echo "TAG=$TAG" >> "$GITHUB_ENV"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "Πειραϊκή Εκκλησία — $(date -d "$DAY" +%d/%m/%Y)" --notes "Ηχογράφηση από τη ροή $URL"
+          # Η κατάσταση γράφεται ως σχόλιο στο κείμενο του release· τη διαβάζει η διαχείριση.
+          status() {
+            local notes; notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
+            printf '%s\n<!--status:{"recording":%s,"since":%s,"until":%s,"updated":%s,"run":"%s"}-->\n' \
+              "$notes" "$1" "$START" "$END" "$(date +%s)" "$RUN_URL" > notes.md
+            gh release edit "$TAG" --notes-file notes.md >/dev/null || true
+          }
+          stop_requested() {
+            local ctl; ctl=$(gh api "repos/$GH_REPO/contents/radio/control.json?ref=main" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || return 1
+            [ "$(jq -r '.cmd // ""' <<<"$ctl" 2>/dev/null)" = stop ] && [ "$(jq -r '.at // 0 | floor' <<<"$ctl" 2>/dev/null)" -gt "$T0" ]
+          }
+
+          wait_s=$(( START - $(date +%s) ))
+          if [ "$wait_s" -gt 0 ]; then echo "Αναμονή $((wait_s/60))′ έως την έναρξη"; sleep "$wait_s"; fi
+
+          # Έλεγχος για οδηγία διακοπής από τη διαχείριση.
+          ( while sleep 45; do
+              if stop_requested; then echo "Διακοπή από τη διαχείριση."; touch stop.flag; pkill -INT -x ffmpeg || true; break; fi
+            done ) &
+          WATCH=$!
+
+          # Ανεβάζει κάθε κλεισμένο κομμάτι (όλα εκτός από αυτό που γράφεται).
+          mkdir -p parts; : > uploaded.txt
+          ( while :; do
+              shopt -s nullglob; files=(parts/*.mp3); n=${#files[@]}
+              for ((i=0; i<n-1; i++)); do
+                f=${files[i]}
+                [ "$(stat -c %s "$f")" -lt 24576 ] && continue   # υπόλοιπο χωρίς ήχο
+                grep -qxF "$f" uploaded.txt || { gh release upload "$TAG" "$f" --clobber && echo "$f" >> uploaded.txt && status true; } || true
+              done
+              [ -f done.flag ] && break
+              sleep 20
+            done ) &
+          UP=$!
+          status true
+
+          # Αν κοπεί η ροή, ξαναξεκινά μέχρι να τελειώσει ο χρόνος.
+          while [ ! -f stop.flag ]; do
+            left=$(( END - $(date +%s) )); [ "$left" -lt 10 ] && break
+            ffmpeg -nostdin -hide_banner -loglevel warning \
+              -reconnect 1 -reconnect_streamed 1 -reconnect_at_eof 1 -reconnect_delay_max 30 \
+              -rw_timeout 30000000 -i "$URL" -t "$left" -vn \
+              -c:a libmp3lame -b:a 96k -ac 1 -ar 44100 \
+              -f segment -segment_time 600 -reset_timestamps 1 -strftime 1 \
+              "parts/peiraiki_%Y-%m-%d_%H-%M-%S.mp3" || true
+            if [ ! -f stop.flag ] && [ "$(( END - $(date +%s) ))" -ge 10 ]; then sleep 5; fi
+          done
+          touch done.flag; kill "$WATCH" 2>/dev/null || true; wait "$UP" || true
+
+      # Τρέχει και σε ακύρωση ή αποτυχία, ώστε να μη χαθεί το τελευταίο κομμάτι.
+      - name: Ανέβασμα υπολοίπων
+        if: always() && env.TAG != ''
+        run: |
+          touch done.flag
+          shopt -s nullglob
+          for f in parts/*.mp3; do
+            [ "$(stat -c %s "$f")" -ge 24576 ] || continue
+            grep -qxF "$f" uploaded.txt 2>/dev/null || gh release upload "$TAG" "$f" --clobber || true
+          done
+          notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
+          printf '%s\n<!--status:{"recording":false,"updated":%s,"run":"%s"}-->\n' "$notes" "$(date +%s)" "$RUN_URL" > notes.md
+          gh release edit "$TAG" --notes-file notes.md >/dev/null || true
+          # Κρατά ενεργό το πρόγραμμα: το GitHub σταματά τα schedules μετά από 60 μέρες χωρίς commits.
+          if [ "$(date +%d)" = 01 ]; then
+            sha=$(gh api "repos/$GH_REPO/contents/radio/heartbeat.txt" --jq .sha 2>/dev/null || true)
+            gh api -X PUT "repos/$GH_REPO/contents/radio/heartbeat.txt" -f message="radio: heartbeat" \
+              -f content="$(date +%F | base64)" ${sha:+-f sha="$sha"} >/dev/null || true
+          fi

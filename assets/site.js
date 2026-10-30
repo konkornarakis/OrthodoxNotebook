@@ -69,6 +69,7 @@
     { id: 'prayer',     href: 'prayer.html',     label: 'Νοερά προσευχή' },
     { id: 'fasting',    href: 'fasting.html',    label: 'Περί νηστείας' },
     { id: 'sermons',    href: 'sermons.html',    label: 'Ομιλίες' },
+    { id: 'radio',      href: 'radio.html',      label: 'Ραδιόφωνο' },
   ];
 
   function renderChrome() {

@@ -15,6 +15,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const recordings = require('./recordings.js');
 
 const REPO = process.env.GITHUB_REPO || 'konkornarakis/OrthodoxNotebook';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
@@ -109,6 +110,54 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
+// ── Ραδιόφωνο ──────────────────────────────────────────────────────────
+// radio/config.json: ωράριο (το διαβάζει το workflow σε κάθε εκτέλεση)
+// radio/control.json: έναρξη/διακοπή· το commit του ξεκινά το workflow (push), που το ελέγχει και ενώ γράφει.
+const HM = /^([01]\d|2[0-3]):[0-5]\d$/;
+async function readJson(path, fallback) {
+  const f = await gh('/contents/' + path + '?ref=' + BRANCH, { allow404: true });
+  if (!f) return fallback;
+  try { return JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); } catch { return fallback; }
+}
+async function radio(b) {
+  if (b.action === 'radio-get') {
+    const [config, control, nights] = await Promise.all([
+      readJson('radio/config.json', { enabled: true, start: '22:00', end: '03:00' }),
+      readJson('radio/control.json', {}),
+      recordings.nights(),
+    ]);
+    return { config, control, nights: nights.map(n => ({ id: n.id, tag: n.tag, date: n.date, title: n.title, growing: n.growing, status: n.status,
+      segments: n.segments.length, size: n.segments.reduce((a, s) => a + s.size, 0), dur: n.segments.reduce((a, s) => a + s.dur, 0) })) };
+  }
+  if (b.action === 'radio-config') {
+    if (!HM.test(b.start) || !HM.test(b.end) || b.start === b.end) throw new Error('Μη έγκυρες ώρες.');
+    const cfg = { enabled: !!b.enabled, start: b.start, end: b.end };
+    await commit('Ραδιόφωνο: ωράριο ' + cfg.start + '–' + cfg.end + (cfg.enabled ? '' : ' (ανενεργό)'), { 'radio/config.json': JSON.stringify(cfg, null, 2) + '\n' }, []);
+    return { config: cfg };
+  }
+  if (b.action === 'radio-start') {
+    const hours = Number(b.hours);
+    if (!(hours >= 0.25 && hours <= 12)) throw new Error('Η διάρκεια πρέπει να είναι από 0,25 έως 12 ώρες.');
+    const at = Math.floor(Date.now() / 1000);
+    await commit('Ραδιόφωνο: έναρξη ηχογράφησης', { 'radio/control.json': JSON.stringify({ cmd: 'start', at, until: at + Math.round(hours * 3600) }, null, 2) + '\n' }, []);
+    return {};
+  }
+  if (b.action === 'radio-stop') {
+    await commit('Ραδιόφωνο: διακοπή ηχογράφησης', { 'radio/control.json': JSON.stringify({ cmd: 'stop', at: Math.floor(Date.now() / 1000) }, null, 2) + '\n' }, []);
+    return {};
+  }
+  if (b.action === 'radio-delete') {
+    if (!/^rec-\d{4}-\d{2}-\d{2}$/.test(b.tag || '') || !/^\d+$/.test(String(b.id || ''))) throw new Error('Άγνωστη ηχογράφηση.');
+    const rel = await gh('/releases/' + b.id, { allow404: true });
+    if (!rel || rel.tag_name !== b.tag) throw new Error('Δεν βρέθηκε η ηχογράφηση.');
+    const del = await fetch(API + '/releases/' + b.id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN, 'User-Agent': 'orthodox-notebook-admin' } });
+    if (!del.ok) throw new Error('GitHub ' + del.status);
+    await fetch(API + '/git/refs/tags/' + b.tag, { method: 'DELETE', headers: { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN, 'User-Agent': 'orthodox-notebook-admin' } });
+    return {};
+  }
+  return null;
+}
+
 function send(res, status, obj) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -161,6 +210,11 @@ async function handler(req, res) {
       if (!old.length) return send(res, 404, { ok: false, error: 'Δεν βρέθηκε η ομιλία.' });
       const sha = await commit('Διαγραφή ομιλίας: ' + b.id, {}, old);
       return send(res, 200, { ok: true, commit: sha });
+    }
+
+    if (String(b.action || '').startsWith('radio-')) {
+      const out = await radio(b);
+      if (out) return send(res, 200, Object.assign({ ok: true }, out));
     }
 
     return send(res, 400, { ok: false, error: 'Άγνωστη ενέργεια.' });

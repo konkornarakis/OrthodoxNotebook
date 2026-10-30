@@ -32,13 +32,20 @@
     .list .t { font-family: var(--font-display); font-size: 17px; }
     .list .s { color: var(--ink-soft); font-size: 14px; }
     .danger { color: var(--cinnabar) !important; }
+    .radio-panel { margin-bottom: 1.6rem; }
+    .radio-panel .row + .row { margin-top: 10px; }
+    .radio-panel input[type="time"], .radio-panel input[type="number"] { padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font: inherit; }
+    .radio-panel input[type="number"] { width: 5em; }
+    .r-status { font-size: 16px; margin: 0 0 12px; }
+    .r-status .live { color: var(--cinnabar); font-weight: 600; }
+    .r-sub { color: var(--ink-soft); font-size: 14px; }
   </style>
 </head>
 
 <body>
   <div class="ort-root">
     <div class="ort-shell">
-      <header data-page="admin" data-title="Διαχείριση" data-subtitle="Ομιλίες"></header>
+      <header data-page="admin" data-title="Διαχείριση" data-subtitle="Ομιλίες και ραδιόφωνο"></header>
 
       <main class="box">
         <!-- Σύνδεση -->
@@ -52,6 +59,24 @@
 
         <!-- Λίστα -->
         <section id="list-sec" hidden>
+          <!-- Ραδιόφωνο -->
+          <div class="panel radio-panel">
+            <h2 class="section-heading" style="margin-top:0">Ραδιόφωνο</h2>
+            <p class="r-status" id="r-status">Φόρτωση…</p>
+            <div class="row">
+              <button class="btn danger" type="button" id="r-stop" hidden>Διακοπή ηχογράφησης</button>
+              <span class="row" id="r-start-row">Ηχογράφηση τώρα για <input type="number" id="r-hours" value="1" min="0.25" max="12" step="0.25"> ώρες
+                <button class="btn" type="button" id="r-start">Έναρξη</button></span>
+            </div>
+            <form class="row" id="r-config">
+              <label class="row"><input type="checkbox" id="r-enabled"> Κάθε μέρα</label>
+              από <input type="time" id="r-from" required> έως <input type="time" id="r-to" required>
+              <button class="btn btn-accent" type="submit">Αποθήκευση ωραρίου</button>
+            </form>
+            <div id="r-msg"></div>
+            <ul class="list" id="r-list"></ul>
+          </div>
+
           <div class="row" style="justify-content:space-between;margin-bottom:.6rem">
             <h2 class="section-heading" style="margin:0">Ομιλίες</h2>
             <span class="row"><button class="btn btn-accent" type="button" id="new-btn">Νέα ομιλία</button><button class="btn" type="button" id="logout">Έξοδος</button></span>
@@ -123,7 +148,7 @@
           await call({ action: 'check' });
           try { sessionStorage.setItem('adminPw', pw); } catch (e) { /* */ }
           show('login', false); show('list-sec', true);
-          loadList();
+          loadList(); startRadioTimer();
         } catch (e) { pw = ''; msg('login-msg', esc(e.message), 'err'); }
       }
       function logout() {
@@ -209,6 +234,63 @@
           msg('list-msg', 'Διαγράφηκε. Θα φύγει από το site σε ένα-δύο λεπτά.', 'ok');
         } catch (err) { msg('form-msg', esc(err.message), 'err'); }
       });
+      // ── Ραδιόφωνο ──────────────────────────────────────────────────────
+      const hm = t => new Date(t).toLocaleTimeString('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const dur = s => { const h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? h + ' ώρ. ' + m + '′' : m + '′'; };
+      let radioTimer = null, radio = null, cfgSavedAt = 0;
+      async function loadRadio() {
+        if ($('list-sec').hidden) return;
+        try { radio = await call({ action: 'radio-get' }); } catch (e) { $('r-status').innerHTML = '<span class="danger">' + esc(e.message) + '</span>'; return; }
+        const { config, control, nights } = radio;
+        if (Date.now() - cfgSavedAt > 90000 && !(document.activeElement && document.activeElement.closest('#r-config'))) {
+          $('r-enabled').checked = config.enabled !== false; $('r-from').value = config.start || '22:00'; $('r-to').value = config.end || '03:00';
+        }
+        const nowS = Date.now() / 1000;
+        const live = nights.find(n => n.growing && n.status && n.status.recording);
+        let html;
+        if (live) {
+          const st = live.status;
+          html = '<span class="live">● Ηχογραφεί τώρα</span> — ' + esc(hm(st.since * 1000)) + ' έως ' + esc(hm(st.until * 1000)) +
+            ' · ' + dur(live.dur) + ' έτοιμα' + (control.cmd === 'stop' && control.at > st.since ? ' · <b>σταματά…</b>' : '') +
+            '<br><span class="r-sub">Τα κομμάτια ανεβαίνουν κάθε 10 λεπτά. <a href="' + esc(st.run) + '" target="_blank" rel="noopener">Εκτέλεση στο GitHub ↗</a></span>';
+        } else if (control.cmd === 'start' && control.until > nowS && nowS - control.at < 600) {
+          html = 'Ξεκινά… <span class="r-sub">(1–2 λεπτά για να ξεκινήσει, το πρώτο κομμάτι εμφανίζεται 10 λεπτά μετά)</span>';
+        } else {
+          html = 'Δεν ηχογραφεί τώρα. ' + (config.enabled !== false ? 'Επόμενη: ' + esc(config.start) + '–' + esc(config.end) + ' (ώρα Ελλάδας).' : '<b>Η καθημερινή ηχογράφηση είναι ανενεργή.</b>');
+        }
+        $('r-status').innerHTML = html;
+        $('r-stop').hidden = !live;
+        $('r-start-row').hidden = !!live;
+        $('r-list').innerHTML = nights.map(n => `<li><div><div class="t">${esc(n.date.split('-').reverse().join('/'))}</div>
+            <div class="s">${dur(n.dur)} · ${Math.round(n.size / 1048576)} MB · ${n.segments} κομμάτια${n.growing ? ' · <span class="danger">γράφει</span>' : ''}</div></div>
+            <span class="row"><a class="btn" href="radio.html">Άκουσε</a><button class="btn danger" type="button" data-del="${esc(n.id)}" data-tag="${esc(n.tag)}">Διαγραφή</button></span></li>`).join('')
+          || '<li class="s">Δεν υπάρχουν ηχογραφήσεις.</li>';
+        $('r-list').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('Να διαγραφεί οριστικά η ηχογράφηση της ' + b.dataset.tag.slice(4).split('-').reverse().join('/') + ';')) return;
+          try { await call({ action: 'radio-delete', id: b.dataset.del, tag: b.dataset.tag }); msg('r-msg', 'Διαγράφηκε.', 'ok'); loadRadio(); }
+          catch (e) { msg('r-msg', esc(e.message), 'err'); }
+        }));
+      }
+      function startRadioTimer() { clearInterval(radioTimer); radioTimer = setInterval(loadRadio, 30000); loadRadio(); }
+      $('r-config').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          await call({ action: 'radio-config', enabled: $('r-enabled').checked, start: $('r-from').value.slice(0, 5), end: $('r-to').value.slice(0, 5) });
+          cfgSavedAt = Date.now();
+          msg('r-msg', 'Το ωράριο αποθηκεύτηκε.', 'ok'); document.activeElement.blur(); loadRadio();
+        } catch (err) { msg('r-msg', esc(err.message), 'err'); }
+      });
+      $('r-start').addEventListener('click', async () => {
+        const h = Number($('r-hours').value);
+        try { await call({ action: 'radio-start', hours: h }); msg('r-msg', 'Η ηχογράφηση ξεκινά σε 1–2 λεπτά.', 'ok'); setTimeout(loadRadio, 1500); }
+        catch (e) { msg('r-msg', esc(e.message), 'err'); }
+      });
+      $('r-stop').addEventListener('click', async () => {
+        if (!confirm('Να σταματήσει η ηχογράφηση; (Για απόψε δεν θα ξαναξεκινήσει αυτόματα.)')) return;
+        try { await call({ action: 'radio-stop' }); msg('r-msg', 'Η ηχογράφηση σταματά μέσα σε ένα λεπτό· το τελευταίο κομμάτι ανεβαίνει κανονικά.', 'ok'); setTimeout(loadRadio, 1500); }
+        catch (e) { msg('r-msg', esc(e.message), 'err'); }
+      });
+
       $('cancel').addEventListener('click', closeForm);
       $('new-btn').addEventListener('click', () => openForm(null));
       $('logout').addEventListener('click', logout);
