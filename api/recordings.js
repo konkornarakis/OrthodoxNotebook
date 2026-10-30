@@ -1,6 +1,6 @@
 // api/recordings.js — ηχογραφήσεις της Πειραϊκής Εκκλησίας (91.2) για τη σελίδα radio.html
 //
-// GET /api/recordings             →  { ok, nights: [{ tag, date, title, growing, segments: [{ id, start, dur, size }] }] }
+// GET /api/recordings             →  { ok, nights: [{ tag, date, title, growing, segments: [{ id, start, dur, size }], shows: [{ start, title, desc }] }] }
 // GET /api/recordings?asset=<id>  →  302 προς προσωρινό σύνδεσμο του mp3
 //
 // Τα mp3 ανεβαίνουν από το workflow record-peiraiki.yml ως assets σε GitHub Releases (tag rec-ΕΕΕΕ-ΜΜ-ΗΗ),
@@ -38,10 +38,25 @@ function segmentStart(name) {
   return m ? athensToEpoch(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]) : null;
 }
 
-// Κατάσταση που γράφει το workflow στο κείμενο του release: <!--status:{...}-->
-function parseStatus(body) {
-  const m = /<!--status:(\{.*?\})-->/.exec(body || '');
+// Κατάσταση και πρόγραμμα που γράφει το workflow στο κείμενο του release: <!--status:{...}--> και <!--program:{...}-->
+function parseMarker(body, name) {
+  const m = new RegExp('<!--' + name + ':(\\{.*?\\})-->').exec(body || '');
   try { return m ? JSON.parse(m[1]) : null; } catch { return null; }
+}
+
+// Οι εκπομπές (από το πρόγραμμα του σταθμού) που πέφτουν μέσα στο διάστημα [from, to)
+function showsFor(program, from, to) {
+  if (!program || !program.days) return [];
+  const items = [];
+  for (const [date, rows] of Object.entries(program.days)) {
+    const [y, mo, d] = date.split('-').map(Number);
+    for (const [hm, title, desc] of rows || []) {
+      const [h, mi] = String(hm).split(':').map(Number);
+      if (Number.isFinite(h) && Number.isFinite(mi) && title) items.push({ start: athensToEpoch(y, mo, d, h, mi, 0), title: String(title), desc: String(desc || '') });
+    }
+  }
+  items.sort((a, b) => a.start - b.start);
+  return items.filter((it, i) => (i + 1 < items.length ? items[i + 1].start : Infinity) > from && it.start < to);
 }
 
 async function releases() {
@@ -55,13 +70,19 @@ function night(rel) {
   const segments = rel.assets.filter(a => isTrack(a.name) && a.state === 'uploaded' && a.size >= MIN_BYTES)
     .map(a => ({ id: a.id, name: a.name, start: segmentStart(a.name), size: a.size, dur: Math.max(1, Math.round((a.size - 1000) * 8 / (KBPS * 1000))) }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const status = parseStatus(rel.body);
+  const status = parseMarker(rel.body, 'status');
+  // ενιαίο αρχείο χωρίς ώρα στο όνομα: η ώρα έναρξης από την κατάσταση, αν υπάρχει
+  if (segments.length && segments.some(x => !x.start) && status && status.since) {
+    let t = status.since * 1000;
+    for (const x of segments) { x.start = t; t += x.dur * 1000; }
+  }
   const now = Date.now();
   const last = segments[segments.length - 1];
+  const shows = last && segments[0].start ? showsFor(parseMarker(rel.body, 'program'), segments[0].start, last.start + last.dur * 1000) : [];
   // «Μεγαλώνει» όσο το workflow δηλώνει ότι γράφει (με πρόσφατη ενημέρωση) ή αν το τελευταίο κομμάτι είναι πολύ πρόσφατο.
   const growing = !!((status && status.recording && now - status.updated * 1000 < 25 * 60e3) ||
     (last && last.start && now - last.start < 22 * 60e3));
-  return { id: rel.id, tag: rel.tag_name, date: rel.tag_name.slice(4), title: rel.name || rel.tag_name, growing, status, segments };
+  return { id: rel.id, tag: rel.tag_name, date: rel.tag_name.slice(4), title: rel.name || rel.tag_name, growing, status, segments, shows };
 }
 
 async function nights() {
@@ -91,7 +112,7 @@ async function handler(req, res) {
       return;
     }
     const list = (await nights()).map(n => ({
-      tag: n.tag, date: n.date, title: n.title, growing: n.growing,
+      tag: n.tag, date: n.date, title: n.title, growing: n.growing, shows: n.shows,
       segments: n.segments.map(s => ({ id: s.id, start: s.start, dur: s.dur, size: s.size })),
     }));
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
