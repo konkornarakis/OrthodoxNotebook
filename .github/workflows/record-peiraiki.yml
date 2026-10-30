@@ -1,9 +1,10 @@
 name: Ηχογράφηση Πειραϊκής Εκκλησίας (91.2)
 
-# Ηχογραφεί τη ροή του σταθμού στο ωράριο του radio/config.json (ώρα Ελλάδας).
-# Κάθε κομμάτι των 10 λεπτών ανεβαίνει, μόλις κλείσει, σε ένα GitHub Release της βραδιάς
+# Ηχογραφεί τη ροή του σταθμού σύμφωνα με το πρόγραμμα του radio/config.json (ώρα Ελλάδας).
+# Κάθε κομμάτι των 10 λεπτών ανεβαίνει, μόλις κλείσει, σε ένα GitHub Release της ημέρας
 # (tag rec-ΕΕΕΕ-ΜΜ-ΗΗ)· η σελίδα radio.html τα παίζει ως μία συνεχή ηχογράφηση.
-# Η διαχείριση (diaxeirisi.html) αλλάζει το ωράριο και στέλνει έναρξη/διακοπή μέσω του radio/control.json.
+# Όλα ρυθμίζονται από τη διαχείριση (radio-admin.html): πρόγραμμα, ποιότητα, διατήρηση, έναρξη/διακοπή.
+# Η λογική του προγράμματος είναι στο radio/schedule.js, κοινή με τη διαχείριση.
 on:
   schedule:
     # Κάθε μισή ώρα· το βήμα «Απόφαση» κρίνει αν είναι ώρα ηχογράφησης.
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       hours:
-        description: "Ηχογράφηση τώρα για τόσες ώρες (κενό = κανονικό ωράριο)"
+        description: "Ηχογράφηση τώρα για τόσες ώρες (κενό = κανονικό πρόγραμμα)"
         default: ""
       stream_url:
         description: "URL ροής (κενό = αυτόματος εντοπισμός)"
@@ -27,7 +28,7 @@ permissions:
   contents: write
 
 jobs:
-  # Ενημέρωση του προγράμματος μιας βραδιάς που υπάρχει ήδη (χειροκίνητα, από το Actions).
+  # Ενημέρωση του προγράμματος μιας ημέρας που υπάρχει ήδη (χειροκίνητα).
   program:
     if: github.event.inputs.program_tag != ''
     runs-on: ubuntu-latest
@@ -54,52 +55,32 @@ jobs:
       HOURS: ${{ github.event.inputs.hours || '' }}
       STREAM_URL: ${{ github.event.inputs.stream_url || '' }}
       EVENT: ${{ github.event_name }}
+      RUN_ID: ${{ github.run_id }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: radio }
+
       - name: Απόφαση
         id: when
         run: |
-          t0=$(date +%s)
-          echo "t0=$t0" >> "$GITHUB_OUTPUT"
-          get() {
-            local o; o=$(gh api "repos/$GH_REPO/contents/radio/$1?ref=main" --jq .content 2>/dev/null | base64 -d 2>/dev/null || true)
-            if jq -e 'type == "object"' >/dev/null 2>&1 <<<"$o"; then echo "$o"; else echo '{}'; fi
-          }
-          cfg=$(get config.json); ctl=$(get control.json)
-          echo "config: $cfg"; echo "control: $ctl"
-          enabled=$(jq -r 'if .enabled == false then "false" else "true" end' <<<"$cfg")
-          s_hm=$(jq -r '.start // "22:00"' <<<"$cfg"); e_hm=$(jq -r '.end // "03:00"' <<<"$cfg")
-          cmd=$(jq -r '.cmd // ""' <<<"$ctl"); c_at=$(jq -r '.at // 0 | floor' <<<"$ctl"); c_until=$(jq -r '.until // 0 | floor' <<<"$ctl")
+          echo "t0=$(date +%s)" >> "$GITHUB_OUTPUT"
+          get() { gh api "repos/$GH_REPO/contents/radio/$1?ref=main" --jq .content 2>/dev/null | base64 -d > "$2" 2>/dev/null || echo '{}' > "$2"; }
+          get config.json cfg.json; get control.json ctl.json
+          node radio/schedule.js decide cfg.json ctl.json | tee -a "$GITHUB_OUTPUT"
 
-          # Ώρα που δεν υπάρχει (αλλαγή σε θερινή ώρα) → παίρνεται ως χειμερινή.
-          ts() { date -d "$1" +%s 2>/dev/null || echo $(( $(TZ=UTC date -d "$1" +%s) - 7200 )); }
-          start=""; end=""
-          if [ "$EVENT" = workflow_dispatch ] && [ -n "$HOURS" ]; then
-            start=$t0; end=$(awk "BEGIN{printf \"%d\", $t0 + $HOURS*3600}")
-          elif [ "$EVENT" = push ]; then
-            if [ "$cmd" = start ] && [ "$c_until" -gt $((t0 + 60)) ]; then start=$t0; end=$c_until; fi
-          elif [ "$enabled" = true ]; then
-            # Το παράθυρο χθες→σήμερα ή σήμερα→αύριο (αν η λήξη είναι πριν την έναρξη, περνά τα μεσάνυχτα).
-            for d in yesterday today; do
-              day0=$(date -d "$d" +%F)
-              ws=$(ts "$day0 $s_hm"); we=$(ts "$day0 $e_hm")
-              [ "$we" -le "$ws" ] && we=$(ts "$(date -d "$day0 +1 day" +%F) $e_hm")
-              if [ "$t0" -ge $((ws - 35*60)) ] && [ "$t0" -lt $((we - 120)) ]; then
-                if [ "$cmd" = stop ] && [ "$c_at" -ge $((ws - 35*60)) ]; then echo "Διακόπηκε από τη διαχείριση για αυτό το παράθυρο."; break; fi
-                start=$(( t0 > ws ? t0 : ws )); end=$we; break
-              fi
-            done
+      # Αυτόματη διαγραφή με βάση τη διατήρηση και το όριο χώρου (σε κάθε προγραμματισμένο τρέξιμο).
+      - name: Διατήρηση χώρου
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          out=$(node radio/maintain.js cleanup cfg.json) || { echo "::warning::Η διατήρηση χώρου απέτυχε"; exit 0; }
+          echo "$out"
+          if [ "$(jq '.deleted | length' <<<"$out")" -gt 0 ]; then
+            radio/log.sh "$(jq -c --arg id "$RUN_ID-cleanup" --arg url "$RUN_URL" --argjson at "$(date +%s)" \
+              '{id: $id, type: "cleanup", at: $at, url: $url, deleted: .deleted, totalBytes: .totalBytes}' <<<"$out")"
           fi
-          if [ -z "$start" ]; then echo "Τίποτα για ηχογράφηση τώρα ($(date '+%d/%m %H:%M'))."; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
-          # Μια δουλειά του GitHub ζει έως 6 ώρες· ό,τι περισσεύει το συνεχίζει η επόμενη προγραμματισμένη.
-          cap=$((t0 + 340*60)); [ "$end" -gt "$cap" ] && end=$cap
-          day=$(date -d "@$(( start - 6*3600 ))" +%F)
-          { echo "start=$start"; echo "end=$end"; echo "day=$day"; } >> "$GITHUB_OUTPUT"
-          echo "Ηχογράφηση $(date -d @$start '+%d/%m %H:%M') – $(date -d @$end '+%d/%m %H:%M') → rec-$day"
-
-      - uses: actions/checkout@v4
-        if: steps.when.outputs.skip != '1'
-        with: { sparse-checkout: radio }
 
       - name: Εγκατάσταση ffmpeg
         if: steps.when.outputs.skip != '1'
@@ -109,6 +90,7 @@ jobs:
         if: steps.when.outputs.skip != '1'
         id: find
         run: |
+          echo "ERR=Δεν βρέθηκε λειτουργική ροή του σταθμού." >> "$GITHUB_ENV"
           cands=()
           [ -n "$STREAM_URL" ] && cands+=("$STREAM_URL")
           cands+=("https://impradio.bytemasters.gr/8002/stream")
@@ -119,8 +101,13 @@ jobs:
             while IFS= read -r u; do [ -n "$u" ] && cands+=("$u"); done < <(jq -r '.[] | .url_resolved' rb.json 2>/dev/null || true)
           done
           for u in "${cands[@]}"; do
-            if timeout 25 ffprobe -v error -rw_timeout 15000000 -show_entries stream=codec_type -of csv=p=0 "$u" 2>/dev/null | grep -q audio; then
-              echo "Ροή: $u"; echo "url=$u" >> "$GITHUB_OUTPUT"; exit 0
+            if info=$(timeout 25 ffprobe -v error -rw_timeout 15000000 -show_entries stream=codec_name,bit_rate,channels,sample_rate:format=bit_rate -of json "$u" 2>/dev/null) \
+               && jq -e '.streams | length > 0' >/dev/null <<<"$info"; then
+              src=$(jq -c '{codec: .streams[0].codec_name, kbps: (((.streams[0].bit_rate // .format.bit_rate // "0") | tonumber) / 1000 | floor), channels: .streams[0].channels, rate: ((.streams[0].sample_rate // "0") | tonumber)}' <<<"$info")
+              echo "Ροή: $u  $src"
+              { echo "url=$u"; echo "source=$src"; } >> "$GITHUB_OUTPUT"
+              echo "ERR=" >> "$GITHUB_ENV"
+              exit 0
             fi
             echo "Απέτυχε: $u"
           done
@@ -130,22 +117,35 @@ jobs:
         if: steps.when.outputs.skip != '1'
         env:
           URL: ${{ steps.find.outputs.url }}
+          SOURCE: ${{ steps.find.outputs.source }}
           T0: ${{ steps.when.outputs.t0 }}
           START: ${{ steps.when.outputs.start }}
           END: ${{ steps.when.outputs.end }}
           DAY: ${{ steps.when.outputs.day }}
+          WHY: ${{ steps.when.outputs.why }}
+          BITRATE: ${{ steps.when.outputs.bitrate }}
+          CHANNELS: ${{ steps.when.outputs.channels }}
         run: |
           TAG="rec-$DAY"; echo "TAG=$TAG" >> "$GITHUB_ENV"
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
-            --title "Πειραϊκή Εκκλησία — $(date -d "$DAY" +%d/%m/%Y)" --notes "Ηχογράφηση από τη ροή $URL"
+          echo "ERR=Η ηχογράφηση διακόπηκε απρόσμενα." >> "$GITHUB_ENV"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --latest=false \
+            --title "Πειραϊκή Εκκλησία — $(date -d "$DAY" +%d/%m/%Y)" --notes "Ηχογραφήσεις από τη ροή $URL"
           # Το πρόγραμμα του σταθμού αλλάζει· διαβάζεται σε κάθε ηχογράφηση.
           radio/update-program.sh "$TAG" "$DAY"
           # Η κατάσταση γράφεται ως σχόλιο στο κείμενο του release· τη διαβάζει η διαχείριση.
           status() {
             local notes; notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
-            printf '%s\n<!--status:{"recording":%s,"since":%s,"until":%s,"updated":%s,"run":"%s"}-->\n' \
-              "$notes" "$1" "$START" "$END" "$(date +%s)" "$RUN_URL" > notes.md
+            printf '%s\n<!--status:{"recording":%s,"since":%s,"until":%s,"updated":%s,"run":"%s","bitrate":%s,"channels":%s,"source":%s}-->\n' \
+              "$notes" "$1" "$START" "$END" "$(date +%s)" "$RUN_URL" "$BITRATE" "$CHANNELS" "${SOURCE:-null}" > notes.md
             gh release edit "$TAG" --notes-file notes.md >/dev/null || true
+          }
+          log() {
+            local n b; n=$(cat uploaded.txt 2>/dev/null | wc -l); b=0
+            for f in $(cat uploaded.txt 2>/dev/null); do b=$((b + $(stat -c %s "$f"))); done
+            radio/log.sh "$(jq -cn --arg id "$RUN_ID-rec" --arg url "$RUN_URL" --arg tag "$TAG" --arg why "$WHY" --arg ev "$EVENT" \
+              --arg state "$1" --arg err "${2:-}" --argjson since "$START" --argjson until "$END" --argjson at "$(date +%s)" \
+              --argjson segs "$n" --argjson bytes "$b" --argjson q "{\"bitrate\":$BITRATE,\"channels\":$CHANNELS}" --argjson src "${SOURCE:-null}" \
+              '{id: $id, type: "record", state: $state, error: $err, at: $at, url: $url, tag: $tag, why: $why, event: $ev, since: $since, until: $until, segments: $segs, bytes: $bytes, quality: $q, source: $src}')"
           }
           stop_requested() {
             local ctl; ctl=$(gh api "repos/$GH_REPO/contents/radio/control.json?ref=main" --jq .content 2>/dev/null | base64 -d 2>/dev/null) || return 1
@@ -153,7 +153,7 @@ jobs:
           }
 
           wait_s=$(( START - $(date +%s) ))
-          if [ "$wait_s" -gt 0 ]; then echo "Αναμονή $((wait_s/60))′ έως την έναρξη"; sleep "$wait_s"; fi
+          if [ "$wait_s" -gt 0 ]; then echo "Αναμονή $((wait_s/60))′ έως την έναρξη"; log waiting; sleep "$wait_s"; fi
 
           # Έλεγχος για οδηγία διακοπής από τη διαχείριση.
           ( while sleep 45; do
@@ -168,13 +168,13 @@ jobs:
               for ((i=0; i<n-1; i++)); do
                 f=${files[i]}
                 [ "$(stat -c %s "$f")" -lt 24576 ] && continue   # υπόλοιπο χωρίς ήχο
-                grep -qxF "$f" uploaded.txt || { gh release upload "$TAG" "$f" --clobber && echo "$f" >> uploaded.txt && status true; } || true
+                grep -qxF "$f" uploaded.txt || { gh release upload "$TAG" "$f" --clobber && echo "$f" >> uploaded.txt && status true && log recording; } || true
               done
               [ -f done.flag ] && break
               sleep 20
             done ) &
           UP=$!
-          status true
+          status true; log recording
 
           # Αν κοπεί η ροή, ξαναξεκινά μέχρι να τελειώσει ο χρόνος.
           while [ ! -f stop.flag ]; do
@@ -182,27 +182,48 @@ jobs:
             ffmpeg -nostdin -hide_banner -loglevel warning \
               -reconnect 1 -reconnect_streamed 1 -reconnect_at_eof 1 -reconnect_delay_max 30 \
               -rw_timeout 30000000 -i "$URL" -t "$left" -vn \
-              -c:a libmp3lame -b:a 96k -ac 1 -ar 44100 \
+              -c:a libmp3lame -b:a "${BITRATE}k" -ac "$CHANNELS" -ar 44100 \
               -f segment -segment_time 600 -reset_timestamps 1 -strftime 1 \
-              "parts/peiraiki_%Y-%m-%d_%H-%M-%S.mp3" || true
+              "parts/peiraiki_%Y-%m-%d_%H-%M-%S_${BITRATE}k.mp3" || true
             if [ ! -f stop.flag ] && [ "$(( END - $(date +%s) ))" -ge 10 ]; then sleep 5; fi
           done
           touch done.flag; kill "$WATCH" 2>/dev/null || true; wait "$UP" || true
+          [ -f stop.flag ] && echo "STOPPED=1" >> "$GITHUB_ENV"
+          echo "ERR=" >> "$GITHUB_ENV"
 
-      # Τρέχει και σε ακύρωση ή αποτυχία, ώστε να μη χαθεί το τελευταίο κομμάτι.
-      - name: Ανέβασμα υπολοίπων
-        if: always() && env.TAG != ''
+      # Τρέχει και σε ακύρωση ή αποτυχία, ώστε να μη χαθεί το τελευταίο κομμάτι και να καταγραφεί το αποτέλεσμα.
+      - name: Ολοκλήρωση
+        if: always() && steps.when.outputs.skip != '1'
+        env:
+          START: ${{ steps.when.outputs.start }}
+          END: ${{ steps.when.outputs.end }}
+          WHY: ${{ steps.when.outputs.why }}
+          BITRATE: ${{ steps.when.outputs.bitrate }}
+          CHANNELS: ${{ steps.when.outputs.channels }}
+          SOURCE: ${{ steps.find.outputs.source }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           touch done.flag
           shopt -s nullglob
-          for f in parts/*.mp3; do
-            [ "$(stat -c %s "$f")" -ge 24576 ] || continue
-            grep -qxF "$f" uploaded.txt 2>/dev/null || gh release upload "$TAG" "$f" --clobber || true
-          done
-          notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
-          printf '%s\n<!--status:{"recording":false,"updated":%s,"run":"%s"}-->\n' "$notes" "$(date +%s)" "$RUN_URL" > notes.md
-          gh release edit "$TAG" --notes-file notes.md >/dev/null || true
-          radio/update-program.sh "$TAG" "${TAG#rec-}"
+          if [ -n "$TAG" ]; then
+            for f in parts/*.mp3; do
+              [ "$(stat -c %s "$f")" -ge 24576 ] || continue
+              grep -qxF "$f" uploaded.txt 2>/dev/null || { gh release upload "$TAG" "$f" --clobber && echo "$f" >> uploaded.txt; } || true
+            done
+            notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
+            printf '%s\n<!--status:{"recording":false,"since":%s,"until":%s,"updated":%s,"run":"%s","bitrate":%s,"channels":%s,"source":%s}-->\n' \
+              "$notes" "$START" "$END" "$(date +%s)" "$RUN_URL" "${BITRATE:-0}" "${CHANNELS:-0}" "${SOURCE:-null}" > notes.md
+            gh release edit "$TAG" --notes-file notes.md >/dev/null || true
+            radio/update-program.sh "$TAG" "${TAG#rec-}"
+          fi
+          if [ -n "$ERR" ] || [ "$JOB_STATUS" != success ]; then state=failed; elif [ -n "$STOPPED" ]; then state=stopped; else state=done; fi
+          [ "$JOB_STATUS" = cancelled ] && { state=failed; ERR="Η εκτέλεση ακυρώθηκε."; }
+          n=$(cat uploaded.txt 2>/dev/null | wc -l); b=0
+          for f in $(cat uploaded.txt 2>/dev/null); do b=$((b + $(stat -c %s "$f"))); done
+          radio/log.sh "$(jq -cn --arg id "$RUN_ID-rec" --arg url "$RUN_URL" --arg tag "${TAG:-}" --arg why "${WHY:-}" --arg ev "$EVENT" \
+            --arg state "$state" --arg err "${ERR:-}" --argjson since "${START:-0}" --argjson until "${END:-0}" --argjson at "$(date +%s)" \
+            --argjson segs "$n" --argjson bytes "$b" --argjson q "{\"bitrate\":${BITRATE:-0},\"channels\":${CHANNELS:-0}}" --argjson src "${SOURCE:-null}" \
+            '{id: $id, type: "record", state: $state, error: $err, at: $at, url: $url, tag: $tag, why: $why, event: $ev, since: $since, until: $until, segments: $segs, bytes: $bytes, quality: $q, source: $src}')"
           # Κρατά ενεργό το πρόγραμμα: το GitHub σταματά τα schedules μετά από 60 μέρες χωρίς commits.
           if [ "$(date +%d)" = 01 ]; then
             sha=$(gh api "repos/$GH_REPO/contents/radio/heartbeat.txt" --jq .sha 2>/dev/null || true)

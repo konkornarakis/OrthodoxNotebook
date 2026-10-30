@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="el">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#5e1a33">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <title>Διαχείριση ραδιοφώνου — Ορθόδοξο Σημειωματάριο</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js"></script>
+  <script src="radio/schedule.js"></script>
+  <style>
+    .box { max-width: 860px; margin: 0 auto; padding-bottom: 80px; }
+    .box .panel { margin-bottom: 1.2rem; }
+    .box h2 { margin-top: 0; }
+    .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
+    .muted { color: var(--ink-soft); font-size: 14.5px; }
+    .faint { color: var(--ink-faint); font-size: 13.5px; }
+    .msg { margin: 10px 0; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--rule); background: var(--vellum); }
+    .msg.ok { border-left: 3px solid var(--f-oil); }
+    .msg.err { border-left: 3px solid var(--cinnabar); }
+    input[type="time"], input[type="number"], input[type="date"], input[type="text"], input[type="password"], select {
+      padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font: inherit; font-size: 15px; }
+    input[type="number"] { width: 5.5em; }
+    .btn.small { padding: 4px 10px; font-size: 13.5px; }
+    .danger { color: var(--cinnabar) !important; }
+    .live { color: var(--cinnabar); font-weight: 600; }
+    .big { font-size: 18px; }
+    .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: .6rem 0; font-size: 15px; }
+    .kv dt { color: var(--ink-soft); }
+    .kv dd { margin: 0; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: .6rem 0; }
+    .stat { border: 1px solid var(--rule-soft); border-radius: 8px; padding: .6rem .8rem; background: var(--vellum); }
+    .stat b { display: block; font-family: var(--font-display); font-size: 22px; font-weight: 400; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--ink-soft); font-size: 13.5px; }
+    table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+    table.t th, table.t td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+    table.t th { font-weight: 400; color: var(--ink-soft); font-size: 13.5px; }
+    table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .scroll { overflow-x: auto; }
+
+    /* κανόνες προγράμματος */
+    .rule { border: 1px solid var(--rule-soft); border-radius: 8px; padding: .6rem .7rem; margin-bottom: 8px; background: var(--vellum); }
+    .rule.off { opacity: .55; }
+    .rule .row + .row { margin-top: 6px; }
+    .rule input[type="text"] { flex: 1; min-width: 160px; }
+    .chips { display: inline-flex; gap: 3px; }
+    .chip { all: unset; box-sizing: border-box; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--rule); text-align: center; line-height: 28px; cursor: pointer; font-size: 13px; }
+    .chip[aria-pressed="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .chip:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px; }
+
+    /* εβδομάδα */
+    .week { margin: .8rem 0; }
+    .wrow { display: grid; grid-template-columns: 7.2em 1fr; gap: 8px; align-items: center; margin: 3px 0; font-size: 13.5px; }
+    .wbar { position: relative; height: 18px; border-radius: 4px; background: color-mix(in srgb, var(--rule) 35%, transparent); overflow: hidden; }
+    .wbar i { position: absolute; top: 0; bottom: 0; background: var(--cinnabar); opacity: .85; }
+    .wbar u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+    .wscale { display: grid; grid-template-columns: 7.2em 1fr; gap: 8px; font-size: 11.5px; color: var(--ink-faint); }
+    .wscale div { display: flex; justify-content: space-between; }
+
+    /* πρόγραμμα σταθμού */
+    .station-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: .5rem 0; }
+    .station-tabs button[aria-pressed="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .station li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule-soft); }
+    .station ul { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+    .station time { flex: none; width: 6.5em; color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 14px; }
+    .station .s-t { flex: 1; min-width: 0; font-size: 14.5px; }
+    .station .s-t small { display: block; color: var(--ink-faint); font-size: 12.5px; }
+    .station .s-b { flex: none; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12.5px; border: 1px solid var(--rule); white-space: nowrap; }
+    .badge.ok { border-color: var(--f-oil); color: var(--f-oil); }
+    .badge.run { border-color: var(--cinnabar); color: var(--cinnabar); }
+    .badge.err { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .segs { list-style: none; margin: .4rem 0; padding: 0; max-height: 320px; overflow-y: auto; font-size: 14px; }
+    .segs li { padding: 3px 0; border-bottom: 1px solid var(--rule-soft); }
+    .segs label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+    .meter { height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--rule) 40%, transparent); overflow: hidden; margin: 6px 0; }
+    .meter i { display: block; height: 100%; background: var(--cinnabar); }
+
+    .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 10px 16px; background: var(--vellum); border-top: 2px solid var(--cinnabar);
+      display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: 0 -4px 14px rgba(0,0,0,.12); }
+    @media (max-width: 560px) { .kv { grid-template-columns: 1fr; } .kv dt { margin-top: 4px; } }
+  </style>
+</head>
+
+<body>
+  <div class="ort-root">
+    <div class="ort-shell">
+      <header data-page="admin" data-title="Διαχείριση ραδιοφώνου" data-subtitle="Πειραϊκή Εκκλησία 91.2 — ηχογραφήσεις"></header>
+
+      <main class="box">
+        <section id="login" class="panel" hidden>
+          <form id="login-form" class="row">
+            <label>Κωδικός <input type="password" id="pw" autocomplete="current-password" required></label>
+            <button class="btn btn-accent" type="submit">Είσοδος</button>
+          </form>
+          <div id="login-msg"></div>
+        </section>
+
+        <div id="app" hidden>
+          <p class="row muted" style="justify-content:space-between">
+            <span><a href="diaxeirisi.html">← Διαχείριση ομιλιών</a> · <a href="radio.html">Σελίδα ακρόασης</a></span>
+            <span><span id="updated"></span> <button class="btn small" type="button" id="reload">Ανανέωση</button></span>
+          </p>
+          <div id="top-msg"></div>
+
+          <!-- 1. Τώρα -->
+          <section class="panel">
+            <h2 class="section-heading">Τώρα</h2>
+            <div id="now-box">Φόρτωση…</div>
+            <div class="row" id="start-box" style="margin-top:.8rem">
+              <span>Ηχογράφηση τώρα</span>
+              <select id="start-mode"><option value="hours">για</option><option value="until">έως τις</option></select>
+              <input type="number" id="start-hours" value="1" min="0.25" max="24" step="0.25" aria-label="ώρες"><span id="start-hours-l">ώρες</span>
+              <input type="time" id="start-until" hidden aria-label="έως">
+              <button class="btn btn-accent" type="button" id="start-btn">Έναρξη</button>
+              <button class="btn" type="button" id="start-show" hidden></button>
+            </div>
+            <h3 class="muted" style="margin:1rem 0 .3rem">Επόμενες ηχογραφήσεις</h3>
+            <div id="upcoming"></div>
+          </section>
+
+          <!-- 2. Πρόγραμμα ηχογράφησης -->
+          <section class="panel">
+            <h2 class="section-heading">Πρόγραμμα ηχογράφησης</h2>
+            <label class="row big"><input type="checkbox" id="cfg-enabled"> Αυτόματες ηχογραφήσεις σύμφωνα με τους κανόνες</label>
+            <p class="faint">Όλες οι ώρες είναι ώρα Ελλάδας. Αν η λήξη είναι πριν την έναρξη (π.χ. 22:00–03:00), η ηχογράφηση περνά τα μεσάνυχτα. Κανόνες που επικαλύπτονται ενώνονται σε μία ηχογράφηση.</p>
+            <div id="rules"></div>
+            <div class="row">
+              <button class="btn" type="button" id="add-weekly">+ Επαναλαμβανόμενη</button>
+              <button class="btn" type="button" id="add-once">+ Μία φορά</button>
+              <button class="btn" type="button" id="station-btn">+ Από το πρόγραμμα του σταθμού</button>
+            </div>
+            <div id="station" class="station" hidden></div>
+            <h3 class="muted" style="margin:1.1rem 0 .2rem">Οι επόμενες 7 ημέρες</h3>
+            <div class="week" id="week"></div>
+            <div id="long-note"></div>
+          </section>
+
+          <!-- 3. Ποιότητα -->
+          <section class="panel">
+            <h2 class="section-heading">Ποιότητα ήχου</h2>
+            <div class="row">
+              <label>Ρυθμός <select id="q-bitrate"></select></label>
+              <label><input type="radio" name="q-ch" value="1"> Mono</label>
+              <label><input type="radio" name="q-ch" value="2"> Stereo</label>
+            </div>
+            <p class="muted" id="q-note"></p>
+            <p class="faint">Ισχύει από την επόμενη ηχογράφηση. Πάνω από την ποιότητα που εκπέμπει ο σταθμός δεν κερδίζεις τίποτα. Για ομιλία το mono στα 64–96 kbps είναι αρκετό. Το stereo στον ίδιο ρυθμό μοιράζει τα bits σε δύο κανάλια.</p>
+          </section>
+
+          <!-- 4. Χώρος -->
+          <section class="panel">
+            <h2 class="section-heading">Χώρος αποθήκευσης</h2>
+            <div class="stats" id="storage-stats"></div>
+            <div id="storage-meter"></div>
+            <div class="row" style="margin-top:.6rem">
+              <label>Διαγραφή ηχογραφήσεων παλαιότερων από <input type="number" id="c-retention" min="0" step="1"> ημέρες</label>
+            </div>
+            <div class="row" style="margin-top:.4rem">
+              <label>Ανώτατος χώρος <input type="number" id="c-maxgb" min="0" step="1"> GB</label>
+              <span class="faint">(0 = χωρίς όριο· όταν ξεπεραστεί, σβήνονται οι παλαιότερες)</span>
+            </div>
+            <div id="cleanup-preview"></div>
+            <p class="faint">Οι ηχογραφήσεις αποθηκεύονται στο GitHub (Releases του αποθετηρίου), όχι στη Vercel ούτε σε δική σου συσκευή. Το GitHub δεν βάζει συνολικό όριο χώρου, μόνο έως 2 GB ανά αρχείο (κάθε κομμάτι είναι λίγα MB). Πάνω από ~100 GB το GitHub μπορεί να το θεωρήσει υπερβολική χρήση. Η σημερινή και η χθεσινή ημέρα δεν σβήνονται ποτέ αυτόματα.</p>
+          </section>
+
+          <!-- 5. Εκτιμήσεις -->
+          <section class="panel">
+            <h2 class="section-heading">Εκτιμήσεις</h2>
+            <div class="stats" id="est-stats"></div>
+            <p class="muted" id="est-note"></p>
+            <div class="scroll"><table class="t" id="est-table"></table></div>
+          </section>
+
+          <!-- 6. Κατανάλωση -->
+          <section class="panel">
+            <h2 class="section-heading">Κατανάλωση</h2>
+            <div class="stats" id="usage-stats"></div>
+            <p class="faint">Η ηχογράφηση τρέχει σε servers του GitHub (GitHub Actions), που χρεώνει τα λεπτά που μένει ανοιχτός ο server. Επειδή το αποθετήριο είναι δημόσιο, τα λεπτά είναι <b>απεριόριστα και δωρεάν</b>. Κάθε εκτέλεση ζει έως 6 ώρες, οπότε μια μεγάλη ηχογράφηση συνεχίζεται αυτόματα από την επόμενη, με κενό περίπου ενός λεπτού.</p>
+          </section>
+
+          <!-- 7. Ιστορικό -->
+          <section class="panel">
+            <h2 class="section-heading">Ιστορικό εκτελέσεων</h2>
+            <div class="scroll" id="log"></div>
+          </section>
+
+          <!-- 8. Ηχογραφήσεις -->
+          <section class="panel">
+            <h2 class="section-heading">Ηχογραφήσεις</h2>
+            <div id="recs"></div>
+          </section>
+        </div>
+      </main>
+
+      <footer data-site-footer></footer>
+    </div>
+  </div>
+
+  <div class="savebar" id="savebar" hidden>
+    <span>Υπάρχουν αλλαγές που δεν έχουν αποθηκευτεί.</span>
+    <button class="btn btn-accent" type="button" id="save">Αποθήκευση ρυθμίσεων</button>
+    <button class="btn" type="button" id="revert">Αναίρεση</button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      const RS = window.RadioSchedule;
+      const $ = id => document.getElementById(id);
+      const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const DAY_SHORT = ['Δ', 'Τ', 'Τ', 'Π', 'Π', 'Σ', 'Κ'];
+      const DAY_NAME = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
+      const DAY_ACC = ['κάθε Δευτέρα', 'κάθε Τρίτη', 'κάθε Τετάρτη', 'κάθε Πέμπτη', 'κάθε Παρασκευή', 'κάθε Σάββατο', 'κάθε Κυριακή'];
+      let pw = '', D = null, cfg = null, saved = '', station = null, stationDay = null, recLimit = 20, openNight = null, nightCache = {};
+      try { pw = sessionStorage.getItem('adminPw') || ''; } catch (e) { /* */ }
+
+      // ── Μορφοποίηση ────────────────────────────────────────────────
+      const num = (n, d = 0) => Number(n).toLocaleString('el-GR', { minimumFractionDigits: d, maximumFractionDigits: d });
+      function bytes(b) {
+        if (b >= 1e9) return num(b / 1e9, b >= 1e11 ? 0 : 1) + ' GB';
+        if (b >= 1e6) return num(b / 1e6, 0) + ' MB';
+        return num(b / 1e3, 0) + ' KB';
+      }
+      function hours(sec) {
+        const h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60);
+        return h ? h + ' ώρ.' + (m ? ' ' + m + '′' : '') : m + '′';
+      }
+      const fmtT = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const fmtDT = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const fmtD = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', day: 'numeric', month: 'long' });
+      const dateLabel = iso => { const [y, m, d] = iso.split('-').map(Number); return new Intl.DateTimeFormat('el-GR', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric' }).format(Date.UTC(y, m - 1, d)); };
+      const t = ms => fmtT.format(ms);
+      const range = (a, b) => t(a) + '–' + t(b);
+      const msg = (id, text, kind) => { $(id).innerHTML = text ? '<div class="msg ' + (kind || '') + '">' + text + '</div>' : ''; };
+      const mbPerHour = kbps => kbps * 1000 / 8 * 3600;
+
+      // ── Επικοινωνία ────────────────────────────────────────────────
+      async function call(body) {
+        const r = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw }, body: JSON.stringify(body) });
+        let j = {};
+        try { j = await r.json(); } catch (e) { j = { ok: false, error: 'Απάντηση ' + r.status }; }
+        if (r.status === 401) { logout(); throw new Error(j.error || 'Λάθος κωδικός.'); }
+        if (!j.ok) throw new Error(j.error || 'Σφάλμα');
+        return j;
+      }
+      async function login(p) {
+        pw = p;
+        try {
+          await call({ action: 'check' });
+          try { sessionStorage.setItem('adminPw', pw); } catch (e) { /* */ }
+          $('login').hidden = true; $('app').hidden = false;
+          await load();
+          setInterval(() => { if (!document.hidden) load(); }, 30000);
+          loadStation(false);
+        } catch (e) { pw = ''; $('login').hidden = false; $('app').hidden = true; msg('login-msg', esc(e.message), 'err'); }
+      }
+      function logout() { pw = ''; try { sessionStorage.removeItem('adminPw'); } catch (e) { /* */ } $('app').hidden = true; $('login').hidden = false; }
+
+      async function load() {
+        try {
+          D = await call({ action: 'radio-get' });
+        } catch (e) { msg('top-msg', esc(e.message), 'err'); return; }
+        msg('top-msg', '');
+        const fresh = !cfg || !dirty();
+        if (fresh) { cfg = JSON.parse(JSON.stringify(D.config)); saved = JSON.stringify(cfg); }
+        $('updated').textContent = 'Ενημέρωση ' + new Date().toLocaleTimeString('el-GR', { hourCycle: 'h23' });
+        const live = liveNight();
+        if (live) { try { nightCache[live.tag] = (await call({ action: 'radio-night', tag: live.tag })).night; } catch (e) { /* */ } }
+        renderAll(fresh);
+      }
+      const dirty = () => cfg && JSON.stringify(cfg) !== saved;
+
+      // ── 1. Τώρα ────────────────────────────────────────────────────
+      function liveNight() {
+        return D && D.nights.find(n => n.growing && n.status && n.status.recording && Date.now() - n.status.updated * 1000 < 25 * 60e3);
+      }
+      function showAt(shows, ms) { let cur = null, next = null; for (const s of shows || []) { if (s.start <= ms) cur = s; else if (!next) next = s; } return { cur, next }; }
+      function stationNow() {
+        // η τρέχουσα εκπομπή από το πρόγραμμα του σταθμού (σήμερα)
+        if (!station) return null;
+        const now = Date.now(), today = RS.athensDate(now), rows = station.week[station.days[RS.weekday(today)]] || [];
+        let cur = null, next = null;
+        for (const r of rows) { const s = RS.at(today, r[0]); if (s <= now) cur = { start: s, title: r[1] }; else if (!next) next = { start: s, title: r[1] }; }
+        return cur && next ? { cur, next } : null;
+      }
+      function renderNow() {
+        const now = Date.now(), live = liveNight(), ctl = D.control || {}, last = (D.log || []).find(e => e.type === 'record');
+        let h = '';
+        if (live) {
+          const st = live.status, det = nightCache[live.tag], sh = det ? showAt(det.shows, now) : {};
+          h += '<p class="big"><span class="live">● Ηχογραφεί τώρα</span> · ' + esc(range(st.since * 1000, st.until * 1000)) + '</p>';
+          h += '<dl class="kv">';
+          if (sh.cur) h += '<dt>Εκπομπή</dt><dd>' + esc(sh.cur.title) + (sh.next ? ' <span class="faint">· μετά ' + esc(t(sh.next.start)) + ': ' + esc(sh.next.title) + '</span>' : '') + '</dd>';
+          h += '<dt>Έτοιμα</dt><dd>' + hours(live.dur) + ' · ' + bytes(live.size) + ' · ' + live.segments + ' κομμάτια <span class="faint">(ανεβαίνουν κάθε 10′· το τρέχον κομμάτι δεν φαίνεται ακόμα)</span></dd>';
+          h += '<dt>Απομένουν</dt><dd>' + hours(Math.max(0, st.until - now / 1000)) + '</dd>';
+          if (st.bitrate) h += '<dt>Ποιότητα</dt><dd>' + st.bitrate + ' kbps ' + (st.channels === 2 ? 'stereo' : 'mono') + '</dd>';
+          if (st.source) h += '<dt>Πηγή σταθμού</dt><dd>' + esc(sourceText(st.source)) + '</dd>';
+          h += '</dl><p class="row"><a class="btn" href="radio.html?night=' + esc(live.tag) + '">Άκουσε από την αρχή</a>' +
+            (ctl.cmd === 'stop' && ctl.at > st.since ? '<b>Σταματά… (μέσα σε 1 λεπτό)</b>' : '<button class="btn danger" type="button" id="stop-btn">Διακοπή</button>') + '</p>';
+        } else if (ctl.cmd === 'start' && ctl.until * 1000 > now && now - ctl.at * 1000 < 10 * 60e3) {
+          h += '<p class="big">Ξεκινά… <span class="muted">έως ' + esc(t(ctl.until * 1000)) + '</span></p><p class="faint">Χρειάζεται 1–2 λεπτά για να ξεκινήσει. Το πρώτο κομμάτι εμφανίζεται 10 λεπτά μετά.</p>';
+        } else {
+          const nx = D.upcoming[0];
+          h += '<p class="big">Δεν ηχογραφεί τώρα.</p>';
+          h += '<p class="muted">' + (!D.config.enabled ? '<b>Οι αυτόματες ηχογραφήσεις είναι ανενεργές.</b>' : nx ? 'Επόμενη: ' + esc(fmtDT.format(nx.start)) + '–' + esc(t(nx.end)) + (nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '') : 'Δεν υπάρχει προγραμματισμένη ηχογράφηση.') + '</p>';
+        }
+        if (last) {
+          const s = stateOf(last);
+          h += '<p class="faint">Τελευταία εκτέλεση: ' + esc(fmtDT.format(last.at * 1000)) + ' — ' + s.html + (last.error ? ' · <span class="danger">' + esc(last.error) + '</span>' : '') + '</p>';
+        }
+        $('now-box').innerHTML = h;
+        const sb = $('stop-btn');
+        if (sb) sb.onclick = stop;
+        $('start-box').hidden = !!live;
+        const sn = stationNow(), b = $('start-show');
+        b.hidden = !sn || !!live;
+        if (sn) { b.textContent = 'Τρέχουσα εκπομπή έως ' + t(sn.next.start) + ' («' + sn.cur.title.slice(0, 40) + '»)'; b.dataset.until = t(sn.next.start); }
+      }
+      function sourceText(s) {
+        return [s.codec && s.codec.toUpperCase(), s.kbps ? s.kbps + ' kbps' : '', s.channels ? (s.channels === 2 ? 'stereo' : 'mono') : '', s.rate ? num(s.rate / 1000, 1) + ' kHz' : ''].filter(Boolean).join(', ');
+      }
+      function lastSource() {
+        for (const e of D.log || []) if (e.source && e.source.codec) return e.source;
+        for (const n of D.nights) if (n.status && n.status.source) return n.status.source;
+        return null;
+      }
+      async function startNow(until) {
+        const body = { action: 'radio-start' };
+        if (until) body.until = until;
+        else if ($('start-mode').value === 'until') { if (!$('start-until').value) { msg('top-msg', 'Διάλεξε ώρα λήξης.', 'err'); return; } body.until = $('start-until').value.slice(0, 5); }
+        else body.hours = Number($('start-hours').value);
+        try { const r = await call(body); msg('top-msg', 'Η ηχογράφηση ξεκινά σε 1–2 λεπτά και θα κρατήσει έως τις ' + esc(fmtDT.format(r.until)) + '.', 'ok'); setTimeout(load, 2000); }
+        catch (e) { msg('top-msg', esc(e.message), 'err'); }
+      }
+      async function stop() {
+        if (!confirm('Να σταματήσει η ηχογράφηση; Το τρέχον κομμάτι ανεβαίνει κανονικά. Για το σημερινό παράθυρο δεν θα ξαναξεκινήσει αυτόματα.')) return;
+        try { await call({ action: 'radio-stop' }); msg('top-msg', 'Η ηχογράφηση σταματά μέσα σε ένα λεπτό.', 'ok'); setTimeout(load, 2000); }
+        catch (e) { msg('top-msg', esc(e.message), 'err'); }
+      }
+      function renderUpcoming() {
+        const now = Date.now(), ws = RS.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3).filter(w => w.end > now).slice(0, 6);
+        $('upcoming').innerHTML = ws.length ? '<table class="t"><tbody>' + ws.map(w => '<tr><td>' + esc(fmtD.format(w.start)) + '</td><td class="n">' + esc(range(w.start, w.end)) + '</td><td class="n">' + hours((w.end - w.start) / 1000) + '</td><td>' + esc(w.labels.join(', ')) + '</td></tr>').join('') + '</tbody></table>' + (dirty() ? '<p class="faint">Με τις αλλαγές που δεν έχουν αποθηκευτεί.</p>' : '')
+          : '<p class="muted">Καμία ηχογράφηση τις επόμενες 8 ημέρες.</p>';
+      }
+
+      // ── 2. Πρόγραμμα ───────────────────────────────────────────────
+      function newId() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+      function ruleDur(r) { const [a, b] = [r.start, r.end].map(x => { const [h, m] = x.split(':').map(Number); return h * 60 + m; }); return ((b - a + 1440) % 1440 || 1440) * 60; }
+      function renderRules() {
+        $('cfg-enabled').checked = cfg.enabled;
+        const box = $('rules');
+        box.innerHTML = cfg.rules.length ? '' : '<p class="muted">Κανένας κανόνας. Πρόσθεσε έναν παρακάτω.</p>';
+        cfg.rules.forEach((r, i) => {
+          const el = document.createElement('div');
+          el.className = 'rule' + (r.enabled ? '' : ' off');
+          const once = !!r.date;
+          el.innerHTML =
+            '<div class="row"><label class="row"><input type="checkbox" data-k="enabled"' + (r.enabled ? ' checked' : '') + '> ενεργός</label>' +
+            '<input type="text" data-k="label" placeholder="Όνομα (π.χ. Νυχτερινό)" maxlength="80" value="' + esc(r.label) + '">' +
+            '<button class="btn small danger" type="button" data-del>Διαγραφή</button></div>' +
+            '<div class="row">' + (once
+              ? '<span>Μία φορά, στις</span><input type="date" data-k="date" value="' + esc(r.date) + '">'
+              : '<span class="chips">' + DAY_SHORT.map((d, k) => '<button type="button" class="chip" data-day="' + k + '" title="' + DAY_NAME[k] + '" aria-pressed="' + r.days.includes(k) + '">' + d + '</button>').join('') + '</span>' +
+                '<button type="button" class="btn small" data-all>Όλες</button>') +
+            '<span>από</span><input type="time" data-k="start" value="' + esc(r.start) + '"><span>έως</span><input type="time" data-k="end" value="' + esc(r.end) + '">' +
+            '<span class="faint dur"></span></div>';
+          const dur = () => { el.querySelector('.dur').textContent = hours(ruleDur(r)) + (r.end <= r.start ? ' · περνά τα μεσάνυχτα' : ''); };
+          dur();
+          el.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener('change', () => {
+            const k = inp.dataset.k;
+            if ((k === 'start' || k === 'end') && !inp.value) return;
+            r[k] = inp.type === 'checkbox' ? inp.checked : (k === 'start' || k === 'end') ? inp.value.slice(0, 5) : inp.value;
+            el.classList.toggle('off', !r.enabled); dur();
+            changed();
+          }));
+          el.querySelectorAll('[data-day]').forEach(c => c.addEventListener('click', () => {
+            const k = Number(c.dataset.day);
+            r.days = r.days.includes(k) ? r.days.filter(x => x !== k) : [...r.days, k].sort();
+            c.setAttribute('aria-pressed', String(r.days.includes(k)));
+            changed();
+          }));
+          const all = el.querySelector('[data-all]');
+          if (all) all.addEventListener('click', () => {
+            r.days = r.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6];
+            el.querySelectorAll('[data-day]').forEach(c => c.setAttribute('aria-pressed', String(r.days.includes(Number(c.dataset.day)))));
+            changed();
+          });
+          el.querySelector('[data-del]').addEventListener('click', () => { if (confirm('Διαγραφή του κανόνα' + (r.label ? ' «' + r.label + '»' : '') + ';')) { cfg.rules.splice(i, 1); changed(true); } });
+          box.appendChild(el);
+        });
+      }
+      function renderWeek() {
+        const today = RS.athensDate(Date.now()), now = Date.now();
+        let h = '<div class="wscale"><span></span><div><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>';
+        let longest = 0;
+        for (let i = 0; i < 7; i++) {
+          const d = RS.addDays(today, i), from = RS.at(d, '00:00'), to = RS.at(RS.addDays(d, 1), '00:00'), span = to - from;
+          const ws = RS.windows(cfg, from, to);
+          for (const w of ws) longest = Math.max(longest, w.end - w.start);
+          const blocks = ws.map(w => { const a = Math.max(w.start, from), b = Math.min(w.end, to); return '<i style="left:' + ((a - from) / span * 100).toFixed(2) + '%;width:' + ((b - a) / span * 100).toFixed(2) + '%" title="' + esc(range(w.start, w.end) + ' ' + w.labels.join(', ')) + '"></i>'; }).join('');
+          const mark = i === 0 ? '<u style="left:' + ((now - from) / span * 100).toFixed(2) + '%" title="τώρα"></u>' : '';
+          h += '<div class="wrow"><span>' + esc((i === 0 ? 'Σήμερα ' : '') + dateLabel(d).replace(/\s\d{4}$/, '')) + '</span><div class="wbar">' + blocks + mark + '</div></div>';
+        }
+        $('week').innerHTML = h;
+        $('long-note').innerHTML = longest > RS.JOB_CAP_MS ? '<p class="faint">Ηχογραφήσεις πάνω από 5 ώρες και 40 λεπτά συνεχίζονται αυτόματα από νέα εκτέλεση, με κενό περίπου ενός λεπτού κάθε 5 ώρες και 40 λεπτά.</p>' : '';
+      }
+      async function loadStation(show) {
+        if (!station) {
+          if (show) $('station').innerHTML = '<p class="muted">Φόρτωση προγράμματος από το peradio.com…</p>';
+          try { station = await call({ action: 'radio-station' }); }
+          catch (e) { if (show) $('station').innerHTML = '<p class="danger">Το πρόγραμμα του σταθμού δεν φορτώθηκε: ' + esc(e.message) + '</p>'; return; }
+          if (D) renderNow();
+        }
+        if (show) renderStation();
+      }
+      function renderStation() {
+        const today = RS.athensDate(Date.now());
+        if (stationDay == null) stationDay = RS.weekday(today);
+        const rows = station.week[station.days[stationDay]] || [];
+        // η επόμενη ημερομηνία αυτής της ημέρας της εβδομάδας (σήμερα, αν είναι η ίδια)
+        const date = RS.addDays(today, (stationDay - RS.weekday(today) + 7) % 7);
+        let h = '<p class="faint">Από το <a href="' + esc(station.src) + '" target="_blank" rel="noopener">εβδομαδιαίο πρόγραμμα του σταθμού</a>. Η λήξη είναι η ώρα έναρξης της επόμενης εκπομπής. Μετά τις 22:30 ο σταθμός δεν δημοσιεύει αναλυτικό πρόγραμμα.</p>';
+        h += '<div class="station-tabs">' + DAY_NAME.map((d, k) => '<button type="button" class="btn small" data-sd="' + k + '" aria-pressed="' + (k === stationDay) + '">' + d + '</button>').join('') + '</div><ul>';
+        rows.forEach((r, i) => {
+          const end = rows[i + 1] ? rows[i + 1][0] : '23:59';
+          h += '<li><time>' + esc(r[0] + '–' + end) + '</time><span class="s-t">' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</span>' +
+            '<span class="s-b"><button type="button" class="btn small" data-add="w" data-i="' + i + '">+ ' + DAY_ACC[stationDay] + '</button>' +
+            '<button type="button" class="btn small" data-add="o" data-i="' + i + '">+ μόνο ' + esc(dateLabel(date).replace(/\s\d{4}$/, '')) + '</button></span></li>';
+        });
+        h += '</ul>';
+        $('station').innerHTML = h;
+        $('station').querySelectorAll('[data-sd]').forEach(b => b.addEventListener('click', () => { stationDay = Number(b.dataset.sd); renderStation(); }));
+        $('station').querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => {
+          const i = Number(b.dataset.i), r = rows[i], end = rows[i + 1] ? rows[i + 1][0] : '23:59';
+          const rule = { id: newId(), label: r[1].slice(0, 80), start: r[0], end, enabled: true };
+          if (b.dataset.add === 'w') rule.days = [stationDay]; else rule.date = date;
+          cfg.rules.push(rule); changed(true);
+          msg('top-msg', 'Προστέθηκε: «' + esc(rule.label) + '» ' + esc(rule.start + '–' + rule.end) + (rule.date ? ' στις ' + esc(dateLabel(rule.date)) : ' ' + DAY_ACC[stationDay]) + '. Πάτα «Αποθήκευση ρυθμίσεων».', 'ok');
+        }));
+      }
+
+      // ── 3. Ποιότητα ────────────────────────────────────────────────
+      function renderQuality() {
+        const sel = $('q-bitrate');
+        if (!sel.options.length) {
+          sel.innerHTML = RS.BITRATES.map(k => '<option value="' + k + '">' + k + ' kbps — ' + num(mbPerHour(k) / 1e6) + ' MB/ώρα' + (k === 96 ? ' (προτεινόμενο)' : k <= 48 ? ' (μόνο ομιλία)' : '') + '</option>').join('');
+          sel.addEventListener('change', () => { cfg.quality.bitrate = Number(sel.value); changed(); });
+          document.querySelectorAll('[name="q-ch"]').forEach(r => r.addEventListener('change', () => { cfg.quality.channels = Number(r.value); changed(); }));
+        }
+        sel.value = String(cfg.quality.bitrate);
+        document.querySelectorAll('[name="q-ch"]').forEach(r => { r.checked = Number(r.value) === cfg.quality.channels; });
+        const src = lastSource();
+        let note = 'Με ' + cfg.quality.bitrate + ' kbps ' + (cfg.quality.channels === 2 ? 'stereo' : 'mono') + ': ' + num(mbPerHour(cfg.quality.bitrate) / 1e6) + ' MB ανά ώρα, ' + bytes(mbPerHour(cfg.quality.bitrate) * 24) + ' ανά 24ωρο.';
+        if (src) {
+          note += ' Ο σταθμός εκπέμπει: ' + sourceText(src) + '.';
+          if (src.kbps && cfg.quality.bitrate > src.kbps) note += ' <b>Ο ρυθμός που διάλεξες είναι μεγαλύτερος από της πηγής: πιάνει περισσότερο χώρο χωρίς καλύτερο ήχο.</b>';
+          if (src.channels === 1 && cfg.quality.channels === 2) note += ' <b>Η πηγή είναι mono: το stereo δεν προσφέρει τίποτα.</b>';
+        }
+        $('q-note').innerHTML = note;
+      }
+
+      // ── 4. Χώρος ───────────────────────────────────────────────────
+      function renderStorage() {
+        const st = D.storage, oldest = D.nights[D.nights.length - 1];
+        $('storage-stats').innerHTML =
+          stat(bytes(st.bytes), 'πιάνουν οι ηχογραφήσεις') + stat(num(st.count), st.count === 1 ? 'ημέρα' : 'ημέρες') +
+          stat(hours(st.seconds), 'συνολικά') + stat(oldest ? dateLabel(oldest.date) : '—', 'παλαιότερη');
+        $('storage-meter').innerHTML = cfg.maxGB ? '<div class="meter"><i style="width:' + Math.min(100, st.bytes / (cfg.maxGB * 1e9) * 100).toFixed(1) + '%"></i></div><p class="faint">' + bytes(st.bytes) + ' από ' + num(cfg.maxGB) + ' GB (' + num(st.bytes / (cfg.maxGB * 1e9) * 100, 0) + '%)</p>' : '';
+        if (document.activeElement !== $('c-retention')) $('c-retention').value = cfg.retentionDays;
+        if (document.activeElement !== $('c-maxgb')) $('c-maxgb').value = cfg.maxGB;
+        const plan = RS.cleanupPlan(D.nights.map(n => ({ tag: n.tag, date: n.date, bytes: n.size })), cfg);
+        $('cleanup-preview').innerHTML = plan.length
+          ? '<div class="msg err">Με αυτές τις ρυθμίσεις θα διαγραφούν στο επόμενο τρέξιμο (μέσα σε 30′ από την αποθήκευση): <b>' + plan.length + ' ' + (plan.length === 1 ? 'ημέρα' : 'ημέρες') + ', ' + bytes(plan.reduce((a, r) => a + r.bytes, 0)) + '</b> (' + esc(plan.slice(0, 6).map(r => dateLabel(r.date)).join(', ')) + (plan.length > 6 ? '…' : '') + ').</div>'
+          : '<p class="faint">Με αυτές τις ρυθμίσεις δεν διαγράφεται τίποτα τώρα.' + (cfg.retentionDays ? ' Κάθε ηχογράφηση κρατιέται ' + cfg.retentionDays + ' ημέρες.' : ' Οι ηχογραφήσεις κρατιούνται για πάντα.') + '</p>';
+      }
+      const stat = (v, l) => '<div class="stat"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>';
+
+      // ── 5. Εκτιμήσεις ──────────────────────────────────────────────
+      function renderEstimates() {
+        const e = RS.estimate(cfg), bph = mbPerHour(cfg.quality.bitrate);
+        $('est-stats').innerHTML = stat(num(e.hoursPerWeek, 1) + ' ώρ.', 'ηχογράφηση την εβδομάδα') + stat(bytes(e.perDay), 'ανά ημέρα (μέσος όρος)') +
+          stat(bytes(e.perMonth), 'ανά μήνα') + stat(bytes(e.perYear), 'ανά έτος') + (e.steady != null ? stat(bytes(e.steady), 'σταθερός χώρος με διαγραφή στις ' + cfg.retentionDays + ' ημ.') : '');
+        let note = '';
+        if (e.oneOffHours) note += 'Επιπλέον ' + num(e.oneOffHours, 1) + ' ώρες από ηχογραφήσεις μίας φοράς (' + bytes(e.oneOffHours * bph) + '). ';
+        const growth = e.perDay;
+        if (cfg.maxGB && growth > 0) {
+          const left = cfg.maxGB * 1e9 - D.storage.bytes;
+          note += left > 0 ? 'Το όριο των ' + num(cfg.maxGB) + ' GB συμπληρώνεται σε περίπου ' + num(Math.ceil(left / growth)) + ' ημέρες. Μετά σβήνονται οι παλαιότερες. ' : 'Το όριο χώρου έχει ήδη ξεπεραστεί. Οι παλαιότερες θα σβηστούν. ';
+        }
+        if (e.steady != null && cfg.maxGB && e.steady > cfg.maxGB * 1e9) note += 'Με αυτό το πρόγραμμα, το όριο χώρου θα κόβει νωρίτερα από τις ' + cfg.retentionDays + ' ημέρες. ';
+        if (!cfg.retentionDays && !cfg.maxGB && growth > 0) note += 'Χωρίς διαγραφή, ο χώρος μεγαλώνει κατά ' + bytes(e.perYear) + ' τον χρόνο. ';
+        if (!cfg.enabled) note += 'Οι αυτόματες ηχογραφήσεις είναι ανενεργές. ';
+        $('est-note').innerHTML = note + (dirty() ? '<span class="faint">(Με τις αλλαγές που δεν έχουν αποθηκευτεί.)</span>' : '');
+        const rows = [[1, '1 ώρα την ημέρα'], [5, '5 ώρες την ημέρα'], [12, '12 ώρες την ημέρα'], [24, 'Όλο το 24ωρο']];
+        $('est-table').innerHTML = '<thead><tr><th>Με ' + cfg.quality.bitrate + ' kbps</th><th class="n">Ημέρα</th><th class="n">Μήνας</th><th class="n">Έτος</th>' + (cfg.retentionDays ? '<th class="n">Με διαγραφή στις ' + cfg.retentionDays + ' ημ.</th>' : '') + '</tr></thead><tbody>' +
+          rows.map(([h, l]) => '<tr><td>' + l + '</td><td class="n">' + bytes(h * bph) + '</td><td class="n">' + bytes(h * bph * 30.44) + '</td><td class="n">' + bytes(h * bph * 365.25) + '</td>' + (cfg.retentionDays ? '<td class="n">' + bytes(h * bph * cfg.retentionDays) + '</td>' : '') + '</tr>').join('') + '</tbody>';
+      }
+
+      // ── 6. Κατανάλωση ──────────────────────────────────────────────
+      function renderUsage() {
+        const month = RS.athensDate(Date.now()).slice(0, 7), inMonth = D.nights.filter(n => n.date.startsWith(month));
+        const runs = (D.log || []).filter(e => e.type === 'record' && RS.athensDate(e.at * 1000).startsWith(month));
+        const failed = runs.filter(e => e.state === 'failed').length;
+        const realRate = D.storage.seconds ? D.storage.bytes / (D.storage.seconds / 3600) : 0;
+        $('usage-stats').innerHTML = stat(hours(inMonth.reduce((a, n) => a + n.dur, 0)), 'ηχογραφήθηκαν αυτόν τον μήνα') + stat(bytes(inMonth.reduce((a, n) => a + n.size, 0)), 'χώρος αυτού του μήνα') +
+          stat(num(runs.length), 'εκτελέσεις αυτόν τον μήνα' + (failed ? ' (' + failed + ' απέτυχαν)' : '')) + stat('∞', 'λεπτά GitHub Actions (δωρεάν)') +
+          (realRate ? stat(num(realRate / 1e6) + ' MB', 'πραγματικά ανά ώρα ηχογράφησης') : '');
+      }
+
+      // ── 7. Ιστορικό ────────────────────────────────────────────────
+      function stateOf(e) {
+        if (e.type === 'cleanup') return { html: '<span class="badge">Διαγραφή</span>' };
+        const stale = (e.state === 'recording' || e.state === 'waiting') && Date.now() - e.at * 1000 > 30 * 60e3;
+        const m = { waiting: ['Σε αναμονή', 'run'], recording: ['Γράφει', 'run'], done: ['Ολοκληρώθηκε', 'ok'], stopped: ['Διακόπηκε', ''], failed: ['Απέτυχε', 'err'] }[e.state] || [e.state, ''];
+        return { html: stale ? '<span class="badge err">Χάθηκε η επαφή</span>' : '<span class="badge ' + m[1] + '">' + m[0] + '</span>' };
+      }
+      function renderLog() {
+        const log = D.log || [];
+        if (!log.length) { $('log').innerHTML = '<p class="muted">Δεν υπάρχουν ακόμα εγγραφές. Το ιστορικό γράφεται από την επόμενη ηχογράφηση και μετά.</p>'; return; }
+        $('log').innerHTML = '<table class="t"><thead><tr><th>Πότε</th><th>Κατάσταση</th><th>Λεπτομέρειες</th><th class="n">Μέγεθος</th></tr></thead><tbody>' + log.slice(0, 50).map(e => {
+          let det = '';
+          if (e.type === 'cleanup') det = 'Αυτόματη διαγραφή: ' + esc((e.deleted || []).map(d => dateLabel(d.tag.slice(4))).join(', ')) + ' (' + bytes((e.deleted || []).reduce((a, d) => a + d.bytes, 0)) + ')';
+          else {
+            det = (e.since ? esc(range(e.since * 1000, e.until * 1000)) : '') + (e.why ? ' · ' + esc(e.why) : '') + (e.event === 'push' ? ' · από τη διαχείριση' : '') +
+              (e.segments ? ' · ' + e.segments + ' κομμάτια' : '') + (e.quality && e.quality.bitrate ? ' · ' + e.quality.bitrate + 'k ' + (e.quality.channels === 2 ? 'stereo' : 'mono') : '') +
+              (e.error ? '<br><span class="danger">' + esc(e.error) + '</span>' : '');
+          }
+          return '<tr><td style="white-space:nowrap">' + esc(fmtDT.format(e.at * 1000)) + '</td><td>' + stateOf(e).html + '</td><td>' + det + ' <a class="faint" href="' + esc(e.url) + '" target="_blank" rel="noopener">↗</a></td><td class="n">' + (e.bytes ? bytes(e.bytes) : '') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+      }
+
+      // ── 8. Ηχογραφήσεις ────────────────────────────────────────────
+      function renderRecs() {
+        const list = D.nights.slice(0, recLimit);
+        if (!list.length) { $('recs').innerHTML = '<p class="muted">Δεν υπάρχουν ηχογραφήσεις.</p>'; return; }
+        $('recs').innerHTML = '<div class="scroll"><table class="t"><thead><tr><th>Ημέρα</th><th>Ώρες</th><th class="n">Διάρκεια</th><th class="n">Μέγεθος</th><th></th></tr></thead><tbody>' + list.map(n =>
+          '<tr><td><b>' + esc(dateLabel(n.date)) + '</b>' + (n.growing ? ' <span class="badge run">γράφει</span>' : '') +
+          (n.titles.length ? '<br><span class="faint">' + esc(n.titles.slice(0, 5).join(' · ')) + '</span>' : '') + '</td>' +
+          '<td>' + (n.first ? esc(t(n.first)) + '–' + esc(t(n.first + n.dur * 1000)) : '') + '<br><span class="faint">' + esc(n.kbps.map(k => k + 'k').join(', ')) + '</span></td>' +
+          '<td class="n">' + hours(n.dur) + '</td><td class="n">' + bytes(n.size) + '</td>' +
+          '<td class="n"><a class="btn small" href="radio.html?night=' + esc(n.tag) + '">Άκουσε</a> <button class="btn small" type="button" data-parts="' + esc(n.tag) + '">Κομμάτια</button> <button class="btn small danger" type="button" data-delnight="' + esc(n.tag) + '">Διαγραφή</button></td></tr>' +
+          (openNight === n.tag ? '<tr><td colspan="5" id="parts-' + esc(n.tag) + '">Φόρτωση…</td></tr>' : '')).join('') + '</tbody></table></div>' +
+          (D.nights.length > recLimit ? '<p><button class="btn" type="button" id="more-recs">Περισσότερες (' + (D.nights.length - recLimit) + ')</button></p>' : '');
+        $('recs').querySelectorAll('[data-parts]').forEach(b => b.addEventListener('click', () => { openNight = openNight === b.dataset.parts ? null : b.dataset.parts; renderRecs(); }));
+        $('recs').querySelectorAll('[data-delnight]').forEach(b => b.addEventListener('click', () => deleteNight(b.dataset.delnight)));
+        const more = $('more-recs');
+        if (more) more.addEventListener('click', () => { recLimit += 30; renderRecs(); });
+        if (openNight) renderParts(openNight);
+      }
+      async function renderParts(tag) {
+        const box = $('parts-' + tag);
+        if (!box) return;
+        let n;
+        try { n = (await call({ action: 'radio-night', tag })).night; } catch (e) { box.innerHTML = '<span class="danger">' + esc(e.message) + '</span>'; return; }
+        nightCache[tag] = n;
+        if (!$('parts-' + tag)) return;
+        $('parts-' + tag).innerHTML = '<div class="row"><label class="row"><input type="checkbox" id="sel-all"> Επιλογή όλων</label><button class="btn small danger" type="button" id="del-sel">Διαγραφή επιλεγμένων</button><span class="faint" id="sel-info"></span></div>' +
+          '<ul class="segs">' + n.segments.map(s => {
+            const sh = s.start ? showAt(n.shows, s.start + 1000).cur : null;
+            return '<li><label><input type="checkbox" value="' + s.id + '" data-size="' + s.size + '"><span style="width:7.5em;font-variant-numeric:tabular-nums">' + (s.start ? esc(range(s.start, s.start + s.dur * 1000)) : esc(s.name)) + '</span><span class="faint" style="width:5em">' + bytes(s.size) + '</span><span>' + (sh ? esc(sh.title) : '') + '</span></label></li>';
+          }).join('') + '</ul>';
+        const boxes = () => [...document.querySelectorAll('#parts-' + tag + ' .segs input')];
+        const info = () => { const sel = boxes().filter(b => b.checked); $('sel-info').textContent = sel.length ? sel.length + ' επιλεγμένα · ' + bytes(sel.reduce((a, b) => a + Number(b.dataset.size), 0)) : ''; };
+        boxes().forEach(b => b.addEventListener('change', info));
+        $('sel-all').addEventListener('change', e => { boxes().forEach(b => { b.checked = e.target.checked; }); info(); });
+        $('del-sel').addEventListener('click', async () => {
+          const ids = boxes().filter(b => b.checked).map(b => b.value);
+          if (!ids.length) return;
+          if (!confirm('Να διαγραφούν οριστικά ' + ids.length + ' κομμάτια από ' + dateLabel(n.date) + ';')) return;
+          try { await call({ action: 'radio-delete', id: n.id, tag: n.tag, assets: ids }); msg('top-msg', 'Διαγράφηκαν ' + ids.length + ' κομμάτια.', 'ok'); await load(); }
+          catch (e) { msg('top-msg', esc(e.message), 'err'); }
+        });
+      }
+      async function deleteNight(tag) {
+        const n = D.nights.find(x => x.tag === tag);
+        if (!n || !confirm('Να διαγραφεί οριστικά όλη η ηχογράφηση της ' + dateLabel(n.date) + ' (' + hours(n.dur) + ', ' + bytes(n.size) + ');')) return;
+        try { await call({ action: 'radio-delete', id: n.id, tag: n.tag }); msg('top-msg', 'Διαγράφηκε η ' + esc(dateLabel(n.date)) + '.', 'ok'); if (openNight === tag) openNight = null; await load(); }
+        catch (e) { msg('top-msg', esc(e.message), 'err'); }
+      }
+
+      // ── Αποθήκευση ─────────────────────────────────────────────────
+      // Οι κανόνες ξαναστήνονται μόνο όταν αλλάζει η λίστα (προσθήκη/διαγραφή) ή φορτώνονται νέες ρυθμίσεις,
+      // ώστε να μη χάνεται η εστίαση την ώρα που γράφεις· τα υπόλοιπα ενημερώνονται σε κάθε αλλαγή.
+      function changed(structural) { if (structural) renderRules(); renderDerived(); }
+      function renderDerived() {
+        renderNow(); renderUpcoming(); renderWeek(); renderQuality(); renderStorage(); renderEstimates();
+        $('savebar').hidden = !dirty();
+      }
+      function renderAll(withRules) {
+        if (!D || !cfg) return;
+        if (withRules) renderRules();
+        renderDerived(); renderUsage(); renderLog(); renderRecs();
+      }
+      $('save').addEventListener('click', async () => {
+        const errs = RS.validate(cfg);
+        if (errs.length) { msg('top-msg', esc(errs.join(' ')), 'err'); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        const plan = RS.cleanupPlan(D.nights.map(n => ({ tag: n.tag, date: n.date, bytes: n.size })), cfg);
+        if (plan.length && !confirm('Με τις νέες ρυθμίσεις θα διαγραφούν αυτόματα ' + plan.length + ' ημέρες (' + bytes(plan.reduce((a, r) => a + r.bytes, 0)) + '). Συνέχεια;')) return;
+        const b = $('save'); b.disabled = true; b.textContent = 'Αποθήκευση…';
+        try {
+          const r = await call({ action: 'radio-config', config: cfg });
+          cfg = r.config; saved = JSON.stringify(cfg);
+          msg('top-msg', 'Οι ρυθμίσεις αποθηκεύτηκαν. Ισχύουν από το επόμενο τρέξιμο (το πολύ σε 30 λεπτά).', 'ok');
+          await load();
+        } catch (e) { msg('top-msg', esc(e.message), 'err'); }
+        b.disabled = false; b.textContent = 'Αποθήκευση ρυθμίσεων';
+      });
+      $('revert').addEventListener('click', () => { cfg = JSON.parse(saved); renderAll(true); });
+      window.addEventListener('beforeunload', e => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+      // ── Χειριστήρια ────────────────────────────────────────────────
+      $('cfg-enabled').addEventListener('change', e => { cfg.enabled = e.target.checked; changed(); });
+      $('add-weekly').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', days: [0, 1, 2, 3, 4, 5, 6], start: '22:00', end: '03:00', enabled: true }); changed(true); });
+      $('add-once').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', date: RS.athensDate(Date.now()), start: '20:00', end: '21:00', enabled: true }); changed(true); });
+      $('station-btn').addEventListener('click', () => { const s = $('station'); s.hidden = !s.hidden; if (!s.hidden) loadStation(true); });
+      $('c-retention').addEventListener('change', e => { cfg.retentionDays = Math.max(0, Math.floor(Number(e.target.value) || 0)); changed(); });
+      $('c-maxgb').addEventListener('change', e => { cfg.maxGB = Math.max(0, Number(e.target.value) || 0); changed(); });
+      $('start-mode').addEventListener('change', e => { const u = e.target.value === 'until'; $('start-hours').hidden = u; $('start-hours-l').hidden = u; $('start-until').hidden = !u; });
+      $('start-btn').addEventListener('click', () => startNow());
+      $('start-show').addEventListener('click', e => startNow(e.target.dataset.until));
+      $('reload').addEventListener('click', load);
+      $('login-form').addEventListener('submit', e => { e.preventDefault(); login($('pw').value); });
+
+      if (pw) login(pw); else $('login').hidden = false;
+    })();
+  </script>
+</body>
+
+</html>
