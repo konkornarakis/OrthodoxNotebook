@@ -1,118 +1,147 @@
 name: Ηχογράφηση Πειραϊκής Εκκλησίας (91.2)
 
-# Ξεκινά αυτόματα με push του αρχείου αυτού στο branch, ή χειροκίνητα από το Actions tab.
+# Κάθε βράδυ 22:00–03:00 ώρα Ελλάδας. Τα κομμάτια των 10 λεπτών ανεβαίνουν
+# σε ένα GitHub Release της ημέρας όσο γράφει, ώστε να ακούγονται αμέσως.
+# Στο τέλος ενώνονται σε ένα mp3 και τα κομμάτια σβήνονται.
 on:
+  schedule:
+    # Δύο ώρες UTC ώστε να καλύπτεται θερινή και χειμερινή ώρα· το script κρατά τη σωστή.
+    - cron: "40 18 * * *"
+    - cron: "40 19 * * *"
   push:
     branches: [ccr-3237b04d-waz0t4]
     paths: [.github/workflows/record-peiraiki.yml]
   workflow_dispatch:
     inputs:
       hours:
-        description: "Διάρκεια σε ώρες (έως 5.5)"
-        default: "3"
+        description: "Διάρκεια σε ώρες από τώρα (κενό = έως τις 03:00)"
+        default: ""
       stream_url:
-        description: "URL ροής (προαιρετικό — αν μείνει κενό, εντοπίζεται αυτόματα)"
+        description: "URL ροής (κενό = αυτόματος εντοπισμός)"
         default: ""
 
+permissions:
+  contents: write
+  actions: write
+
 concurrency:
-  group: record-peiraiki
+  group: peiraiki-live
   cancel-in-progress: false
 
 jobs:
   record:
     runs-on: ubuntu-latest
-    timeout-minutes: 345
+    timeout-minutes: 350
     env:
-      HOURS: ${{ github.event.inputs.hours || '3' }}
+      TZ: Europe/Athens
+      HOURS: ${{ github.event.inputs.hours || '' }}
       STREAM_URL: ${{ github.event.inputs.stream_url || '' }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
+      - name: Χρονοπρογραμματισμός
+        id: when
+        run: |
+          now=$(date +%s); hm=$((10#$(date +%H%M)))
+          if [ -n "$HOURS" ]; then
+            start=$now; end=$(awk "BEGIN{printf \"%d\", $now + $HOURS*3600}")
+          elif [ "$hm" -ge 2100 ]; then
+            start=$(date -d 'today 22:00' +%s); end=$(date -d 'tomorrow 03:00' +%s)
+          elif [ "$hm" -lt 250 ]; then
+            start=$now; end=$(date -d 'today 03:00' +%s)
+          else
+            echo "Εκτός ωραρίου ($(date +%H:%M)), παράλειψη."; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # Η ημέρα της ηχογράφησης είναι το βράδυ που ξεκίνησε.
+          day=$(date -d "@$(( start - 4*3600 ))" +%Y-%m-%d)
+          { echo "start=$start"; echo "end=$end"; echo "day=$day"; } >> "$GITHUB_OUTPUT"
+          echo "Ηχογράφηση $(date -d @$start '+%d/%m %H:%M') – $(date -d @$end '+%d/%m %H:%M')"
+          # Κρατά ενεργό το πρόγραμμα (το GitHub το απενεργοποιεί μετά από 60 μέρες αδράνειας).
+          gh api -X PUT "repos/$GH_REPO/actions/workflows/record-peiraiki.yml/enable" >/dev/null 2>&1 || true
+
       - name: Εγκατάσταση ffmpeg
+        if: steps.when.outputs.skip != '1'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg jq
 
       - name: Εντοπισμός ροής
+        if: steps.when.outputs.skip != '1'
         id: find
         run: |
-          set -u
           cands=()
           [ -n "$STREAM_URL" ] && cands+=("$STREAM_URL")
-
-          # 1) RadioBrowser (κοινοτικός κατάλογος ραδιοφώνων)
           for q in "Πειραϊκή Εκκλησία" "Πειραϊκή" "Peiraiki Ekklisia" "Peiraiki" "Church of Piraeus" "Ekklisia Piraeus"; do
             enc=$(jq -rn --arg s "$q" '$s|@uri')
-            curl -sS --max-time 20 -A "orthodoxnotebook-recorder" \
+            curl -sS --max-time 20 -A "peiraiki-recorder" \
               "https://all.api.radio-browser.info/json/stations/search?name=${enc}&hidebroken=true&order=votes&reverse=true" \
               -o rb.json || continue
-            jq -r '.[] | "\(.name)\t\(.url_resolved)\t\(.url)"' rb.json | tee -a rb.log
+            jq -r '.[] | "\(.name)\t\(.url_resolved)"' rb.json
             while IFS= read -r u; do [ -n "$u" ] && cands+=("$u"); done < <(jq -r '.[] | .url_resolved, .url' rb.json)
           done
-
-          # 2) Επίσημες σελίδες — αναζήτηση συνδέσμων ήχου
-          for page in https://www.ecclesiapiraeus.gr/ https://ecclesiapiraeus.gr/ https://www.imp.gr/ https://www.peiraikiekklisia.gr/; do
+          for page in https://www.ecclesiapiraeus.gr/ https://ecclesiapiraeus.gr/ https://www.imp.gr/; do
             curl -sSL --max-time 20 "$page" 2>/dev/null \
               | grep -oiE 'https?://[^"'"'"' <>]+' \
               | grep -iE '(\.mp3|\.aac|\.m3u8?|\.pls|/stream|/live|/listen|icecast|shoutcast|:[0-9]{4,5}/)' \
-              | sort -u | while read -r u; do echo "$u"; done >> page.log || true
+              | sort -u >> page.log || true
           done
           [ -f page.log ] && while IFS= read -r u; do cands+=("$u"); done < page.log
-
-          echo "Υποψήφια URL:"; printf '  %s\n' "${cands[@]:-}"
-
-          for u in "${cands[@]:-}"; do
-            [ -z "$u" ] && continue
+          for u in "${cands[@]}"; do
             if timeout 25 ffprobe -v error -rw_timeout 15000000 -show_entries stream=codec_type -of csv=p=0 "$u" 2>/dev/null | grep -q audio; then
-              echo "Επιλέχθηκε: $u"
-              echo "url=$u" >> "$GITHUB_OUTPUT"
-              exit 0
+              echo "Επιλέχθηκε: $u"; echo "url=$u" >> "$GITHUB_OUTPUT"; exit 0
             fi
             echo "Απέτυχε: $u"
           done
-          echo "::error::Δεν βρέθηκε λειτουργική ροή. Ξανατρέξε το workflow δίνοντας stream_url."
-          exit 1
+          echo "::error::Δεν βρέθηκε λειτουργική ροή. Ξανατρέξε δίνοντας stream_url."; exit 1
 
-      - name: Ηχογράφηση
+      - name: Ηχογράφηση και ζωντανό ανέβασμα
+        if: steps.when.outputs.skip != '1'
         env:
           URL: ${{ steps.find.outputs.url }}
+          START: ${{ steps.when.outputs.start }}
+          END: ${{ steps.when.outputs.end }}
+          DAY: ${{ steps.when.outputs.day }}
         run: |
-          mkdir -p out parts
-          total=$(awk "BEGIN{printf \"%d\", $HOURS*3600}")
-          end=$(( $(date +%s) + total ))
-          start_tag=$(TZ=Europe/Athens date +%Y-%m-%d_%H%M)
-          echo "START_TAG=$start_tag" >> "$GITHUB_ENV"
-          echo "Ηχογράφηση $URL για ${total}s (έως $(TZ=Europe/Athens date -d @$end '+%H:%M') ώρα Ελλάδας)"
-          n=0
+          TAG="rec-$DAY"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "Πειραϊκή Εκκλησία — $(date -d "$DAY" +%d/%m/%Y) 22:00–03:00" \
+            --notes "Ηχογράφηση από τη ροή: $URL"
+
+          wait_s=$(( START - $(date +%s) ))
+          [ "$wait_s" -gt 0 ] && { echo "Αναμονή ${wait_s}s έως την έναρξη"; sleep "$wait_s"; }
+
+          mkdir -p parts; : > uploaded.txt
+          # Ανεβάζει κάθε ολοκληρωμένο κομμάτι (όλα εκτός από αυτό που γράφεται τώρα).
+          uploader() {
+            while :; do
+              shopt -s nullglob; files=(parts/*.mp3); n=${#files[@]}
+              for ((i=0; i<n; i++)); do
+                f=${files[i]}
+                if [ -f done.flag ] || [ "$i" -lt $((n-1)) ]; then
+                  grep -qxF "$f" uploaded.txt || { gh release upload "$TAG" "$f" --clobber && echo "$f" >> uploaded.txt; }
+                fi
+              done
+              [ -f done.flag ] && break
+              sleep 30
+            done
+          }
+          uploader & UP=$!
+
           # Αν κοπεί η ροή, ξαναξεκινά μέχρι να συμπληρωθεί ο χρόνος.
-          while [ "$(date +%s)" -lt "$end" ]; do
-            left=$(( end - $(date +%s) ))
-            [ "$left" -lt 5 ] && break
-            n=$((n+1))
+          while :; do
+            left=$(( END - $(date +%s) )); [ "$left" -lt 10 ] && break
             ffmpeg -nostdin -hide_banner -loglevel warning \
               -reconnect 1 -reconnect_streamed 1 -reconnect_at_eof 1 -reconnect_delay_max 30 \
               -rw_timeout 30000000 -i "$URL" -t "$left" -vn \
-              -c:a libmp3lame -b:a 96k -ac 2 -ar 44100 \
-              "parts/part_$(printf %03d $n).mp3" || true
-            [ "$(date +%s)" -lt "$end" ] && sleep 5
+              -c:a libmp3lame -b:a 96k -ac 1 -ar 44100 \
+              -f segment -segment_time 600 -reset_timestamps 1 -strftime 1 \
+              "parts/peiraiki_%Y-%m-%d_%H-%M-%S.mp3" || true
+            [ "$(( END - $(date +%s) ))" -ge 10 ] && sleep 5
           done
-          ls -la parts
+          touch done.flag; wait "$UP"
+
+          # Ένωση σε ένα αρχείο και αφαίρεση των κομματιών από το Release.
+          FULL="peiraiki_${DAY}_olokliro.mp3"
           for f in parts/*.mp3; do echo "file '$PWD/$f'"; done > list.txt
-          ffmpeg -nostdin -hide_banner -loglevel warning -f concat -safe 0 -i list.txt -c copy \
-            "out/peiraiki-ekklisia_${start_tag}.mp3"
-          ls -la out
-
-      - name: Αποθήκευση mp3
-        uses: actions/upload-artifact@v4
-        with:
-          name: peiraiki-ekklisia-${{ env.START_TAG }}
-          path: out/*.mp3
-          retention-days: 30
-          compression-level: 0
-
-      # Αν κάτι πάει στραβά, κρατάμε ό,τι ηχογραφήθηκε.
-      - name: Αποθήκευση τμημάτων (σε αποτυχία)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: peiraiki-ekklisia-parts-${{ github.run_id }}
-          path: parts/*.mp3
-          if-no-files-found: ignore
-          retention-days: 30
-          compression-level: 0
+          ffmpeg -nostdin -hide_banner -loglevel warning -f concat -safe 0 -i list.txt -c copy "$FULL"
+          gh release upload "$TAG" "$FULL" --clobber
+          while IFS= read -r f; do gh release delete-asset "$TAG" "$(basename "$f")" -y || true; done < uploaded.txt
+          ls -la "$FULL"
