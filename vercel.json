@@ -7,6 +7,16 @@
       "source": "/",
       "destination": "/main.html",
       "permanent": false
+    },
+    {
+      "source": "/simeioma.html",
+      "destination": "/main.html",
+      "permanent": false
+    },
+    {
+      "source": "/prayer.html",
+      "destination": "/main.html",
+      "permanent": false
     }
   ],
   "headers": [

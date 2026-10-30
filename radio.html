@@ -24,7 +24,11 @@
     .p-title { font-family: var(--font-display); font-size: 22px; line-height: 1.25; color: var(--ink); }
     .p-clock { color: var(--ink-soft); font-size: 14.5px; margin-top: 2px; min-height: 1.5em; }
     .p-clock b { color: var(--cinnabar); font-weight: 600; font-variant-numeric: tabular-nums; }
-    .seek { margin: 14px 0 2px; }
+    .p-show { margin-top: 8px; font-size: 15.5px; color: var(--ink); min-height: 1.5em; }
+    .p-show small { display: block; color: var(--ink-faint); font-size: 13.5px; }
+    .seek { margin: 14px 0 2px; position: relative; }
+    .ticks { position: absolute; left: 0; right: 0; top: 0; height: 28px; pointer-events: none; }
+    .ticks i { position: absolute; top: 3px; width: 2px; height: 22px; margin-left: -1px; background: var(--gold); opacity: .75; border-radius: 1px; }
     .seek input { width: 100%; height: 28px; margin: 0; accent-color: var(--cinnabar); cursor: pointer; touch-action: none; }
     .times { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
     .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 8px 0 6px; }
@@ -51,6 +55,15 @@
       .controls { gap: 8px; }
     }
 
+    /* ── Εκπομπές της βραδιάς ─────────────────────────────────────── */
+    .shows { list-style: none; margin: 12px 0 0; padding: 0; text-align: left; border-top: 1px solid var(--rule-soft); max-height: 260px; overflow-y: auto; }
+    .shows li { display: flex; gap: 10px; align-items: baseline; padding: 7px 4px; border-bottom: 1px solid var(--rule-soft); cursor: pointer; }
+    .shows li:hover { color: var(--cinnabar); }
+    .shows li.on { color: var(--cinnabar); font-weight: 600; }
+    .shows time { flex: none; width: 3.2em; font-variant-numeric: tabular-nums; color: var(--ink-soft); font-weight: 400; }
+    .shows .sh-t { flex: 1; min-width: 0; }
+    .shows small { display: block; font-weight: 400; color: var(--ink-faint); font-size: 13px; }
+
     /* ── Λίστα βραδιών ──────────────────────────────────────────────── */
     .nights { display: grid; gap: 8px; }
     .night { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline;
@@ -61,6 +74,7 @@
     .n-date { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
     .n-dur { color: var(--ink-soft); font-size: 14.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .n-meta { grid-column: 1 / -1; color: var(--ink-faint); font-size: 14px; }
+    .n-shows { grid-column: 1 / -1; color: var(--ink-soft); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .msg { text-align: center; color: var(--ink-soft); }
   </style>
 </head>
@@ -74,7 +88,9 @@
         <section class="panel player" id="player" hidden aria-label="Αναπαραγωγή">
           <div class="p-title" id="p-title"></div>
           <div class="p-clock" id="p-clock"></div>
+          <div class="p-show" id="p-show"></div>
           <div class="seek">
+            <div class="ticks" id="ticks" aria-hidden="true"></div>
             <input type="range" id="seek" min="0" max="1" step="1" value="0" aria-label="Θέση στην ηχογράφηση">
             <div class="times"><span id="t-cur">0:00</span><span id="t-total">0:00</span></div>
           </div>
@@ -91,6 +107,7 @@
             <form id="jump-pos"><label for="jp">Θέση</label><input type="text" id="jp" inputmode="numeric" placeholder="1:20:00" required><button class="btn" type="submit">Πήγαινε</button></form>
           </div>
           <p class="p-msg" id="p-msg" role="status"></p>
+          <ol class="shows" id="shows" hidden aria-label="Εκπομπές"></ol>
         </section>
 
         <h2 class="section-heading">Ηχογραφήσεις</h2>
@@ -182,6 +199,26 @@
       function clockAt(t) {
         const [i, off] = locate(t), s = N.segments[i];
         return s.start ? s.start + off * 1000 : null;
+      }
+      // Θέση στην ηχογράφηση για μια ώρα εκπομπής (epoch ms)· σε κενό ανάμεσα σε κομμάτια, η αρχή του επόμενου.
+      function posAt(ms) {
+        const segs = N.segments;
+        if (!segs[0].start || ms <= segs[0].start) return 0;
+        const i = segs.findIndex(x => ms < x.start + x.dur * 1000);
+        if (i < 0) return N.total;
+        return segs[i].off + Math.max(0, (ms - segs[i].start) / 1000);
+      }
+      // Εκπομπές από το πρόγραμμα του σταθμού· στη λίστα όχι τα σύντομα (καιρός, ύμνος κ.λπ.)
+      function showsOf(n) {
+        const list = n.shows || [];
+        return list.map((s, i) => Object.assign({}, s, { end: i + 1 < list.length ? list[i + 1].start : Infinity }));
+      }
+      const listed = n => showsOf(n).filter(s => s.end - s.start >= 3 * 60e3);
+      function showAt(ms) {
+        if (!N || ms == null) return null;
+        let cur = null;
+        for (const s of N.shows || []) if (s.start <= ms) cur = s;
+        return cur;
       }
 
       // ── Αναπαραγωγή ─────────────────────────────────────────────────
@@ -308,6 +345,7 @@
         $('player').hidden = false;
         $('p-title').textContent = nightTitle(N);
         msg('');
+        renderShows();
         if ('mediaSession' in navigator && window.MediaMetadata) {
           navigator.mediaSession.metadata = new MediaMetadata({ title: 'Πειραϊκή Εκκλησία 91.2', artist: nightTitle(N), album: 'Ορθόδοξο Σημειωματάριο',
             artwork: [{ src: '/assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' }] });
@@ -329,6 +367,15 @@
         $('t-total').textContent = fmt(N.total);
         const c = clockAt(t);
         $('p-clock').innerHTML = c ? 'Ώρα εκπομπής <b>' + clockFmt.format(c) + '</b>' : '';
+        if (ticksTotal !== Math.round(N.total)) renderShows();
+        const show = showAt(c);
+        if (show !== shownShow) {
+          shownShow = show;
+          $('p-show').innerHTML = show ? '<b></b><small></small>' : '';
+          if (show) { $('p-show').firstChild.textContent = show.title; $('p-show').lastChild.textContent = show.desc; }
+          $('shows').querySelectorAll('li').forEach(li => li.classList.toggle('on', show != null && Number(li.dataset.start) === show.start));
+          if ('mediaSession' in navigator && navigator.mediaSession.metadata) navigator.mediaSession.metadata.title = show ? show.title : 'Πειραϊκή Εκκλησία 91.2';
+        }
         const busy = wantPlay && (switching || audio.readyState < 3 || waitingLive);
         const p = $('play');
         p.innerHTML = wantPlay ? ICON_PAUSE : ICON_PLAY;
@@ -340,6 +387,33 @@
           try { navigator.mediaSession.setPositionState({ duration: N.total, position: Math.min(t, N.total), playbackRate: rate }); } catch (e) { /* */ }
         }
       }
+      // Η λίστα εκπομπών της βραδιάς και τα σημάδια τους πάνω στη μπάρα
+      let shownShow, ticksTotal = -1;
+      function renderShows() {
+        ticksTotal = Math.round(N.total);
+        const items = listed(N), box = $('shows'), ticks = $('ticks');
+        box.innerHTML = ''; ticks.innerHTML = '';
+        box.hidden = !items.length;
+        for (const s of items) {
+          const at = posAt(s.start);
+          const li = document.createElement('li');
+          li.dataset.start = s.start;
+          li.innerHTML = '<time></time><span class="sh-t"></span>';
+          li.firstChild.textContent = hmFmt.format(s.start);
+          li.lastChild.textContent = s.title;
+          if (s.desc) { const sm = document.createElement('small'); sm.textContent = s.desc; li.lastChild.appendChild(sm); }
+          li.addEventListener('click', () => { seek(at); if (!wantPlay) play(); });
+          box.appendChild(li);
+          if (at > 1 && at < N.total - 1) {
+            const i = document.createElement('i');
+            i.style.left = 'calc(8px + (100% - 16px) * ' + (at / N.total).toFixed(5) + ')';
+            i.title = s.title;
+            ticks.appendChild(i);
+          }
+        }
+        shownShow = undefined;
+      }
+
       function renderNights() {
         const box = $('nights');
         box.innerHTML = '';
@@ -352,7 +426,9 @@
           const range = first.start ? hmFmt.format(first.start) + ' – ' + hmFmt.format(last.start + last.dur * 1000) : '';
           const saved = Number(store.get('pos:' + n.tag)) || 0;
           const parts = [range, saved > 5 && saved < n.total - 5 ? 'Συνέχεια από ' + fmt(saved) : ''].filter(Boolean);
-          b.innerHTML = '<span class="n-date"></span><span class="n-dur"></span>' + (parts.length ? '<span class="n-meta"></span>' : '');
+          const titles = [...new Set(listed(n).map(s => s.title))];
+          b.innerHTML = '<span class="n-date"></span><span class="n-dur"></span>' + (parts.length ? '<span class="n-meta"></span>' : '') + (titles.length ? '<span class="n-shows"></span>' : '');
+          if (titles.length) b.querySelector('.n-shows').textContent = titles.join(' · ');
           b.querySelector('.n-date').textContent = nightTitle(n);
           b.querySelector('.n-dur').textContent = fmtDur(n.total);
           if (parts.length) b.querySelector('.n-meta').textContent = parts.join(' · ');
@@ -386,6 +462,7 @@
           if (!fresh) { audio.pause(); audio.removeAttribute('src'); N = null; wantPlay = false; $('player').hidden = true; renderNights(); return; }
           const curId = seg() && seg().id, t = lastKnown;
           N = fresh;
+          ticksTotal = -1;
           const ni = N.segments.findIndex(s => s.id === curId);
           if (ni >= 0) {
             idx = ni;

@@ -21,8 +21,7 @@
     { "name": "Νηστειοδρόμιο", "url": "/main.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Εορτολόγιο", "url": "/synaxarion.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Αναγνώσματα", "url": "/anagnosmata.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Προσευχητάριο", "url": "/proseuxitario.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Νοερά προσευχή", "url": "/prayer.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Προσευχητάριο", "url": "/proseuxitario.html", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] }
   ],
   "categories": ["lifestyle", "books"]
 }

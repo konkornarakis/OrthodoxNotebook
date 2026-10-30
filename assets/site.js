@@ -47,26 +47,12 @@
     '</svg>';
   const SMALL_CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">' + CROSS_SHAPES + '</g></svg>';
 
-  // ── Σημείωμα προς όποιον μπαίνει ──────────────────────────────────────
   const EMAIL = 'konkornarakis@gmail.com';
-  const LETTER = [
-    'Αυτή δεν είναι σελίδα της Εκκλησίας. Τη φτιάχνει ένας απλός πιστός και μπορεί να έχει λάθη.',
-    'Για τη νηστεία, την προσευχή και τον κανόνα σου ρώτα τον πνευματικό σου.',
-    'Μη μένεις εδώ περισσότερο απ’ όσο χρειάζεσαι.',
-    'Λάθη και παρατηρήσεις: <a href="mailto:' + EMAIL + '">' + EMAIL + '</a>',
-  ];
-  const NOTICE_SHORT = 'Βοήθημα μόνο· οδηγός είναι ο πνευματικός σου. <a href="simeioma.html">Σημείωμα</a>';
-  const NOTICE_EVERY_DAYS = 7;
-  function letterHtml() {
-    return LETTER.map(p => '<p>' + p + '</p>').join('');
-  }
-
   const PAGES = [
     { id: 'calendar',   href: 'main.html',       label: 'Νηστειοδρόμιο' },
     { id: 'synaxarion', href: 'synaxarion.html', label: 'Εορτολόγιο' },
     { id: 'readings',   href: 'anagnosmata.html', label: 'Αναγνώσματα' },
     { id: 'prayerbook', href: 'proseuxitario.html', label: 'Προσευχητάριο' },
-    { id: 'prayer',     href: 'prayer.html',     label: 'Νοερά προσευχή' },
     { id: 'fasting',    href: 'fasting.html',    label: 'Περί νηστείας' },
     { id: 'sermons',    href: 'sermons.html',    label: 'Ομιλίες' },
     { id: 'radio',      href: 'radio.html',      label: 'Ραδιόφωνο' },
@@ -89,8 +75,7 @@
         '<h1 class="site-title">' + title + '</h1>' +
         (subtitle ? '<p class="site-subtitle">' + subtitle + '</p>' : '') +
         '<div class="orn-divider">' + SMALL_CROSS + '</div>' +
-        '<nav class="site-nav" aria-label="Κύρια πλοήγηση">' + nav + '</nav>' +
-        (page === 'note' ? '' : '<p class="site-notice">' + NOTICE_SHORT + '</p>');
+        '<nav class="site-nav" aria-label="Κύρια πλοήγηση">' + nav + '</nav>';
       document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
       const current = header.querySelector('.site-nav [aria-current="page"]');
       if (current) { const nav = current.parentElement; nav.scrollLeft = current.offsetLeft - (nav.clientWidth - current.offsetWidth) / 2; }
@@ -105,7 +90,7 @@
         '<div class="orn-divider">' + SMALL_CROSS + '</div>' +
         '<p class="footer-text">Η νηστεία κατά την κοινή πράξη της Εκκλησίας της Ελλάδος (νέο ημερολόγιο).</p>' +
         (extra ? '<p class="footer-text">' + extra + '</p>' : '') +
-        '<p class="footer-text"><a href="simeioma.html">Σημείωμα</a> · <a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
+        '<p class="footer-text"><a href="efarmogi.html">Εφαρμογή και υπενθυμίσεις</a> · <a href="mailto:' + EMAIL + '">' + EMAIL + '</a></p>';
     }
 
     if (!document.querySelector('.orn-band')) {
@@ -114,73 +99,6 @@
       band.setAttribute('aria-hidden', 'true');
       document.body.insertBefore(band, document.body.firstChild);
     }
-  }
-
-  // ── Το σημείωμα: πρώτα σε όποιον μπαίνει, και ξανά κάθε λίγες ημέρες ────
-  function noticeAcked() {
-    try {
-      const t = Number(localStorage.getItem('noticeAck')) || 0;
-      return t && Date.now() - t < NOTICE_EVERY_DAYS * 86400000;
-    } catch (e) { return false; }
-  }
-  function ackNotice() { try { localStorage.setItem('noticeAck', String(Date.now())); } catch (e) { /* ιδιωτική περιήγηση */ } }
-
-  function showNotice() {
-    const root = document.querySelector('.ort-root');
-    const ov = document.createElement('div');
-    ov.className = 'notice-overlay';
-    ov.innerHTML =
-      '<div class="notice-card" role="dialog" aria-modal="true" aria-labelledby="notice-title" tabindex="-1">' +
-        '<h2 class="notice-title" id="notice-title">Αδελφέ,</h2>' +
-        '<div class="letter">' + letterHtml() + '</div>' +
-        '<div class="notice-actions"><button type="button" class="btn btn-accent" id="notice-ok">Εντάξει</button></div>' +
-      '</div>';
-    document.body.appendChild(ov);
-    document.documentElement.dataset.notice = 'open';
-    document.body.classList.add('no-scroll');
-    if (root) { root.inert = true; root.setAttribute('aria-hidden', 'true'); }
-    const card = ov.querySelector('.notice-card');
-    card.focus({ preventScroll: true });
-    ov.querySelector('#notice-ok').addEventListener('click', () => {
-      ackNotice();
-      ov.remove();
-      delete document.documentElement.dataset.notice;
-      document.body.classList.remove('no-scroll');
-      if (root) { root.inert = false; root.removeAttribute('aria-hidden'); }
-    });
-  }
-
-  // ── Ήπια υπενθύμιση χρόνου: όχι την ώρα της προσευχής ────────────────────
-  const TIME_STEP = 20 * 60;   // κάθε 20 λεπτά οθόνης την ημέρα
-  function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function readTime() {
-    try {
-      const o = JSON.parse(localStorage.getItem('screenTime') || '{}');
-      if (o.d === today()) return o;
-    } catch (e) { /* χωρίς αποθήκευση */ }
-    return { d: today(), s: 0, shown: 0 };
-  }
-  function showTimeCard(minutes) {
-    if (document.querySelector('.time-card')) return;
-    const card = document.createElement('div');
-    card.className = 'time-card';
-    card.setAttribute('role', 'status');
-    card.innerHTML = '<p>Σήμερα είσαι εδώ πάνω από ' + minutes + ' λεπτά. Μήπως ήρθε η ώρα να αφήσεις την οθόνη;</p>' +
-      '<button type="button" class="btn">Εντάξει</button>';
-    card.querySelector('button').addEventListener('click', () => card.remove());
-    document.body.appendChild(card);
-  }
-  function tickTime() {
-    if (document.visibilityState !== 'visible') return;
-    const html = document.documentElement;
-    if (html.dataset.praying || html.dataset.notice === 'open') return;   // την ώρα της προσευχής δεν μετράμε ούτε διακόπτουμε
-    const t = readTime();
-    t.s += 10;
-    if (t.s >= (t.shown + 1) * TIME_STEP) {
-      t.shown = Math.floor(t.s / TIME_STEP);
-      showTimeCard(t.shown * TIME_STEP / 60);
-    }
-    try { localStorage.setItem('screenTime', JSON.stringify(t)); } catch (e) { /* χωρίς αποθήκευση */ }
   }
 
   // ── Εφαρμογή: λειτουργία χωρίς σύνδεση και εγκατάσταση ───────────────
@@ -215,12 +133,6 @@
     renderChrome();
     if (document.readyState === 'complete') registerServiceWorker();
     else window.addEventListener('load', registerServiceWorker);
-    const isNotePage = !!document.querySelector('header[data-page="note"]');
-    if (document.querySelector('header[data-page="admin"]')) return;   // η σελίδα διαχείρισης: χωρίς σημείωμα
-    document.querySelectorAll('[data-letter]').forEach(el => { el.innerHTML = letterHtml(); });
-    if (isNotePage) ackNotice();
-    else if (!noticeAcked()) showNotice();
-    setInterval(tickTime, 10000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

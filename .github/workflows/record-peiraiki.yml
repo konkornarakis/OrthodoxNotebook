@@ -19,18 +19,34 @@ on:
       stream_url:
         description: "URL ροής (κενό = αυτόματος εντοπισμός)"
         default: ""
+      program_tag:
+        description: "Μόνο ενημέρωση προγράμματος για το release (π.χ. rec-2026-10-30), χωρίς ηχογράφηση"
+        default: ""
 
 permissions:
   contents: write
 
-concurrency:
-  group: peiraiki-live
-  cancel-in-progress: false
-
 jobs:
+  # Ενημέρωση του προγράμματος μιας βραδιάς που υπάρχει ήδη (χειροκίνητα, από το Actions).
+  program:
+    if: github.event.inputs.program_tag != ''
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.event.inputs.program_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: radio }
+      - run: radio/update-program.sh "$TAG" "${TAG#rec-}"
+
   record:
+    if: github.event.inputs.program_tag == '' || github.event.inputs.program_tag == null
     runs-on: ubuntu-latest
     timeout-minutes: 355
+    concurrency:
+      group: peiraiki-live
+      cancel-in-progress: false
     env:
       TZ: Europe/Athens
       GH_TOKEN: ${{ github.token }}
@@ -81,6 +97,10 @@ jobs:
           { echo "start=$start"; echo "end=$end"; echo "day=$day"; } >> "$GITHUB_OUTPUT"
           echo "Ηχογράφηση $(date -d @$start '+%d/%m %H:%M') – $(date -d @$end '+%d/%m %H:%M') → rec-$day"
 
+      - uses: actions/checkout@v4
+        if: steps.when.outputs.skip != '1'
+        with: { sparse-checkout: radio }
+
       - name: Εγκατάσταση ffmpeg
         if: steps.when.outputs.skip != '1'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
@@ -118,6 +138,8 @@ jobs:
           TAG="rec-$DAY"; echo "TAG=$TAG" >> "$GITHUB_ENV"
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
             --title "Πειραϊκή Εκκλησία — $(date -d "$DAY" +%d/%m/%Y)" --notes "Ηχογράφηση από τη ροή $URL"
+          # Το πρόγραμμα του σταθμού αλλάζει· διαβάζεται σε κάθε ηχογράφηση.
+          radio/update-program.sh "$TAG" "$DAY"
           # Η κατάσταση γράφεται ως σχόλιο στο κείμενο του release· τη διαβάζει η διαχείριση.
           status() {
             local notes; notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
@@ -180,6 +202,7 @@ jobs:
           notes=$(gh release view "$TAG" --json body --jq .body | sed '/^<!--status:/d')
           printf '%s\n<!--status:{"recording":false,"updated":%s,"run":"%s"}-->\n' "$notes" "$(date +%s)" "$RUN_URL" > notes.md
           gh release edit "$TAG" --notes-file notes.md >/dev/null || true
+          radio/update-program.sh "$TAG" "${TAG#rec-}"
           # Κρατά ενεργό το πρόγραμμα: το GitHub σταματά τα schedules μετά από 60 μέρες χωρίς commits.
           if [ "$(date +%d)" = 01 ]; then
             sha=$(gh api "repos/$GH_REPO/contents/radio/heartbeat.txt" --jq .sha 2>/dev/null || true)
