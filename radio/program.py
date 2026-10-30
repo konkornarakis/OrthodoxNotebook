@@ -35,6 +35,8 @@ def parse_table(table):
         if not title:
             title, desc = desc, ''
         title = re.sub(r'’(?=[Α-ΩΆ-Ώ])', ' ', title).rstrip(' .')
+        if re.search(r'Έναρξη\s+Νυχτερινού\s+Ραδιοφώνου', title):
+            title = 'Νυχτερινό ραδιόφωνο'
         desc = desc.lstrip(' .,;·')
         if not m:                         # γραμμή χωρίς ώρα: συνέχεια της προηγούμενης
             if rows and (title or desc):
