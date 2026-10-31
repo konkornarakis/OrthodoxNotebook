@@ -73,6 +73,10 @@
     .pi.now { background: color-mix(in srgb, var(--cinnabar) 7%, transparent); border-left: 3px solid var(--cinnabar); }
     .pi.now .p-t { font-weight: 600; }
     .pi .p-now { font-size: 11.5px; letter-spacing: .07em; color: var(--cinnabar); font-weight: 600; text-transform: uppercase; }
+    .chooser { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 8px; padding: 10px; border: 2px solid var(--cinnabar); border-radius: 8px; background: var(--vellum); }
+    .chooser .opt { background: var(--parchment); }
+    .preview { margin-top: 6px; }
+    .skips { margin-top: 4px; font-size: 13.5px; color: var(--ink-soft); }
     .bulk { position: sticky; top: 52px; z-index: 5; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 10px; margin: 6px 0; border: 2px solid var(--cinnabar); border-radius: 8px; background: var(--vellum); }
 
     /* ηχογράφηση τώρα */
@@ -241,11 +245,13 @@
           <section class="panel" id="s-schedule">
             <h2 class="section-heading">Πρόγραμμα ηχογράφησης</h2>
             <label class="row big"><input type="checkbox" id="cfg-enabled"> Αυτόματες ηχογραφήσεις σύμφωνα με τους κανόνες</label>
-            <p class="faint">Όλες οι ώρες είναι ώρα Ελλάδας. Αν η λήξη είναι πριν την έναρξη (π.χ. 22:00–03:00), η ηχογράφηση περνά τα μεσάνυχτα. Κανόνες που επικαλύπτονται ενώνονται σε μία ηχογράφηση.</p>
+            <p class="faint">Τρία είδη κανόνων: <b>κάθε φορά που μεταδίδεται</b> μια εκπομπή (ώρα, διάρκεια και ημέρα από το πρόγραμμα του σταθμού, που διαβάζεται σε κάθε έλεγχο), <b>σταθερή ώρα</b> κάποιες ημέρες, ή <b>μία φορά</b>. Όλες οι ώρες είναι ώρα Ελλάδας· αν η λήξη είναι πριν την έναρξη (π.χ. 22:00–03:00), περνά τα μεσάνυχτα. Κανόνες που επικαλύπτονται γίνονται μία ηχογράφηση.</p>
             <div id="rules"></div>
+            <datalist id="show-titles"></datalist>
             <div class="row">
               <button class="btn" type="button" id="add-weekly">+ Επαναλαμβανόμενη</button>
               <button class="btn" type="button" id="add-once">+ Μία φορά</button>
+              <button class="btn" type="button" id="add-show">+ Κάθε φορά που μεταδίδεται εκπομπή</button>
               <a class="btn" href="#s-station">+ Από το πρόγραμμα του σταθμού</a>
             </div>
             <h3 class="muted" style="margin:1.1rem 0 .2rem">Οι επόμενες 7 ημέρες</h3>
@@ -330,6 +336,7 @@
       const DAY_NAME = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
       const DAY_ACC = ['κάθε Δευτέρα', 'κάθε Τρίτη', 'κάθε Τετάρτη', 'κάθε Πέμπτη', 'κάθε Παρασκευή', 'κάθε Σάββατο', 'κάθε Κυριακή'];
       let stationError = '';
+      const wk = () => (station ? station.week : null);
       let pw = '', D = null, cfg = null, saved = '', station = null, stationDay = null, recLimit = 20, openNight = null, nightCache = {};
       try { pw = sessionStorage.getItem('adminPw') || ''; } catch (e) { /* */ }
 
@@ -380,6 +387,7 @@
           D = await call({ action: 'radio-get' });
         } catch (e) { msg('top-msg', esc(e.message), 'err'); return; }
         msg('top-msg', '');
+        if (D.station && !station) station = D.station;
         const fresh = !cfg || !dirty();
         if (fresh) { cfg = JSON.parse(JSON.stringify(D.config)); saved = JSON.stringify(cfg); }
         $('updated').textContent = 'Ενημέρωση ' + new Date().toLocaleTimeString('el-GR', { hourCycle: 'h23' });
@@ -412,6 +420,7 @@
         return i < 0 ? null : { prev: items[i - 1], cur: items[i], next: items.slice(i + 1, i + 5) };
       }
       const left = ms => { const m = Math.max(0, Math.round(ms / 60e3)); return m >= 60 ? Math.floor(m / 60) + ' ώρ. ' + (m % 60) + '′' : m + '′'; };
+      const DAY_SHORT3 = ['Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ', 'Σάβ', 'Κυρ'];
       const DAY_EVERY = ['κάθε Δευτέρα', 'κάθε Τρίτη', 'κάθε Τετάρτη', 'κάθε Πέμπτη', 'κάθε Παρασκευή', 'κάθε Σάββατο', 'κάθε Κυριακή'];
       // Η ηχογράφηση που τρέχει ή μόλις ζητήθηκε: [αρχή, τέλος]
       function activeSpan() {
@@ -426,10 +435,24 @@
         for (const n of D.nights) for (const [x, y] of n.cover || []) got += Math.max(0, Math.min(b, y) - Math.max(a, x));
         return b > a ? got / (b - a) : 0;
       }
-      // Κανόνας που αντιστοιχεί ακριβώς σε αυτή την εκπομπή (για «Ακύρωση»)
-      function exactRule(sh) {
-        const st = t(sh.start), en = t(sh.end), wd = RS.weekday(sh.date);
-        return D.config.rules.find(r => r.enabled && r.start === st && r.end === en && (r.date ? r.date === sh.date : r.days.includes(wd)));
+      // Οι κανόνες που καλύπτουν μια εκπομπή (με την ημερομηνία της εμφάνισης, για «παράλειψη μόνο αυτή τη φορά»)
+      function coveringRules(conf, sh) {
+        const ws = RS.ruleWindows(conf, sh.start - 1, sh.end + 1, wk()).filter(w => w.start <= sh.start + 60e3 && w.end >= sh.end - 60e3);
+        return ws.map(w => ({ rule: conf.rules.find(r => r.id === w.rule), date: w.date })).filter(x => x.rule);
+      }
+      // Κανόνες που θα κάλυπταν την εκπομπή αλλά την παραλείπουν αυτή τη φορά
+      function skippedRules(sh) {
+        const out = [];
+        for (const r of D.config.rules.filter(r => r.enabled && r.skip && r.skip.length)) {
+          const open = Object.assign({}, D.config, { rules: [Object.assign({}, r, { skip: [] })] });
+          for (const c of coveringRules(open, sh)) if (r.skip.includes(c.date)) out.push({ rule: r, date: c.date });
+        }
+        return out;
+      }
+      function ruleText(r) {
+        if (r.show) return (r.match === 'contains' ? 'κάθε εκπομπή με «' + r.show + '»' : 'κάθε φορά που μεταδίδεται') + (r.days.length < 7 ? ' (' + r.days.map(d => DAY_SHORT3[d]).join(', ') + ')' : '');
+        if (r.date) return 'μία φορά';
+        return (r.days.length === 7 ? 'κάθε μέρα ' : r.days.map(d => DAY_SHORT3[d]).join(', ') + ' ') + r.start + '–' + r.end;
       }
       function showState(sh) {
         const now = Date.now(), span = activeSpan();
@@ -440,12 +463,14 @@
           if (f > 0.02) return { k: 'done', html: '<span class="badge">μερικώς ηχογραφήθηκε</span>' };
           if (sh.end <= now) return { k: 'past', html: '' };
         }
-        const ws = RS.windows(D.config, sh.start, sh.end);
-        if (ws.some(w => w.start <= sh.start + 60e3 && w.end >= sh.end - 60e3)) return { k: 'sched', rule: exactRule(sh), html: '<span class="badge ok">✓ προγραμματισμένη</span>' };
-        if (ws.length) return { k: 'part', html: '<span class="badge">μερικώς προγραμματισμένη</span>' };
+        const cov = coveringRules(D.config, sh);
+        if (cov.length) return { k: 'sched', cov, html: '<span class="badge ok">✓ ' + esc(ruleText(cov[0].rule)) + '</span>' };
+        const sk = skippedRules(sh);
+        if (sk.length) return { k: 'skipped', sk, html: '<span class="badge">παραλείπεται αυτή τη φορά</span>' };
+        if (RS.windows(D.config, sh.start, sh.end, wk()).length) return { k: 'part', html: '<span class="badge">μερικώς προγραμματισμένη</span>' };
         return { k: 'free', html: '' };
       }
-      let progDay = null, progScrolled = false;
+      let progDay = null, progScrolled = false, chooserFor = null;
       const picked = new Set();
       function renderProgram() {
         const box = $('plist'), today = RS.athensDate(Date.now()), now = Date.now();
@@ -463,18 +488,27 @@
           const canPick = !past && !isNow && (st.k === 'free' || st.k === 'part');
           let x = st.html;
           if (isNow) x += '<span class="muted">μένουν ' + left(sh.end - now) + '</span>' + (st.k !== 'rec' ? '<button class="btn small btn-accent" type="button" data-now="' + sh.start + '">● Ηχογράφησε τώρα (έως ' + esc(t(sh.end)) + ')</button>' : '');
-          else if (canPick) x += '<button class="btn small" type="button" data-once="' + sh.start + '">Μία φορά</button><button class="btn small" type="button" data-weekly="' + sh.start + '">' + esc(wdEvery.replace(/^κ/, 'Κ')) + '</button>';
-          if (st.k === 'sched' && st.rule) x += '<button class="btn small danger" type="button" data-cancel="' + sh.start + '">' + (st.rule.date ? 'Ακύρωση' : 'Σταμάτα το «' + esc(wdEvery) + '»') + '</button>';
+          if (!past && st.k !== 'rec' && st.k !== 'sched') x += '<button class="btn small" type="button" data-choose="' + sh.start + '">Ηχογράφησε…</button>';
+          if (st.k === 'sched') {
+            const c = st.cov[0];
+            x += c.rule.date ? '<button class="btn small danger" type="button" data-cancel="' + sh.start + '">Ακύρωση</button>'
+              : '<button class="btn small" type="button" data-skip="' + sh.start + '">Όχι αυτή τη φορά</button><button class="btn small danger" type="button" data-delrule="' + esc(c.rule.id) + '">Διαγραφή κανόνα</button>';
+          }
+          if (st.k === 'skipped') x += '<button class="btn small" type="button" data-unskip="' + sh.start + '">Αναίρεση παράλειψης</button>';
           return '<li class="pi' + (isNow ? ' now' : past ? ' past' : '') + '" data-start="' + sh.start + '">' +
             (canPick ? '<input type="checkbox" data-pick="' + sh.start + '"' + (picked.has(sh.start) ? ' checked' : '') + ' aria-label="Επιλογή">' : '<span></span>') +
             '<time>' + esc(t(sh.start)) + '</time><div>' + (isNow ? '<div class="p-now">Τώρα</div>' : '') + '<div class="p-t">' + esc(sh.title) + '</div>' + (sh.desc ? '<div class="p-d">' + esc(sh.desc) + '</div>' : '') + '</div>' +
-            (x ? '<div class="p-x">' + x + '</div>' : '') + '</li>';
+            (x ? '<div class="p-x">' + x + '</div>' : '') + (chooserFor === sh.start ? chooserHtml(sh) : '') + '</li>';
         }).join('') || '<li class="muted" style="padding:10px 0">Δεν υπάρχει πρόγραμμα για αυτή την ημέρα.</li>';
         const find = v => items.find(it => String(it.start) === String(v));
         box.querySelectorAll('[data-now]').forEach(b => b.addEventListener('click', () => recordNow(find(b.dataset.now))));
-        box.querySelectorAll('[data-once]').forEach(b => b.addEventListener('click', () => scheduleShows([find(b.dataset.once)], false)));
-        box.querySelectorAll('[data-weekly]').forEach(b => b.addEventListener('click', () => scheduleShows([find(b.dataset.weekly)], true)));
+        box.querySelectorAll('[data-choose]').forEach(b => b.addEventListener('click', () => { chooserFor = chooserFor === Number(b.dataset.choose) ? null : Number(b.dataset.choose); renderProgram(); }));
         box.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => cancelShow(find(b.dataset.cancel))));
+        box.querySelectorAll('[data-skip]').forEach(b => b.addEventListener('click', () => skipShow(find(b.dataset.skip), true)));
+        box.querySelectorAll('[data-unskip]').forEach(b => b.addEventListener('click', () => skipShow(find(b.dataset.unskip), false)));
+        box.querySelectorAll('[data-delrule]').forEach(b => b.addEventListener('click', () => deleteRule(b.dataset.delrule)));
+        const ch = box.querySelector('.chooser');
+        if (ch) bindChooser(ch, find(chooserFor));
         box.querySelectorAll('[data-pick]').forEach(c => c.addEventListener('change', () => { const v = Number(c.dataset.pick); c.checked ? picked.add(v) : picked.delete(v); renderBulk(items); }));
         renderBulk(items);
         if (!progScrolled && progDay === today) {
@@ -499,10 +533,10 @@
         if (!sel.length) { b.innerHTML = ''; return; }
         const g = groupShows(sel);
         b.innerHTML = '<span><b>' + sel.length + ' επιλεγμένες</b> · ' + esc(g.map(x => t(x.start) + '–' + t(x.end)).join(', ')) + '</span>' +
-          '<button class="btn small btn-accent" type="button" id="bulk-once">Μία φορά</button><button class="btn small" type="button" id="bulk-weekly">' + esc(DAY_EVERY[RS.weekday(progDay)].replace(/^κ/, 'Κ')) + '</button>' +
+          '<button class="btn small btn-accent" type="button" id="bulk-once">Μία φορά</button><button class="btn small" type="button" id="bulk-weekly">Κάθε φορά που μεταδίδονται</button>' +
           '<button class="btn small" type="button" id="bulk-clear">Καθαρισμός</button>';
-        $('bulk-once').onclick = () => scheduleShows(sel, false);
-        $('bulk-weekly').onclick = () => scheduleShows(sel, true);
+        $('bulk-once').onclick = () => scheduleOnce(sel, 0, 0);
+        $('bulk-weekly').onclick = () => scheduleEvery(sel, [0, 1, 2, 3, 4, 5, 6], 'exact', 1, 2);
         $('bulk-clear').onclick = () => { picked.clear(); renderProgram(); };
       }
       // Αποθήκευση ρυθμίσεων με αλλαγή κανόνων (αν υπάρχουν άλλες αλλαγές που δεν έχουν αποθηκευτεί, μπαίνει στις αλλαγές)
@@ -517,23 +551,79 @@
           await load(); renderRules();
         } catch (e) { msg('top-msg', esc(e.message), 'err'); }
       }
-      function scheduleShows(list, weekly) {
+      // «Ηχογράφησε…»: οι επιλογές για μια εκπομπή
+      function chooserHtml(sh) {
+        const wd = RS.weekday(sh.date);
+        return '<div class="chooser">' +
+          '<label class="opt"><input type="radio" name="ch" value="every" checked><span class="o-t">Κάθε φορά που μεταδίδεται<small>Ακολουθεί το πρόγραμμα του σταθμού: αν αλλάξει ώρα, διάρκεια ή ημέρα, η ηχογράφηση ακολουθεί.</small></span></label>' +
+          '<label class="opt"><input type="radio" name="ch" value="days"><span class="o-t">Κάθε φορά που μεταδίδεται, μόνο τις ημέρες<small><span class="chips">' + DAY_SHORT.map((d, k) => '<button type="button" class="chip" data-chday="' + k + '" aria-pressed="' + (k === wd) + '" title="' + DAY_NAME[k] + '">' + d + '</button>').join('') + '</span></small></span></label>' +
+          '<label class="opt"><input type="radio" name="ch" value="contains"><span class="o-t">Κάθε εκπομπή που ο τίτλος της περιέχει<small><input type="text" class="ch-contains" value="' + esc(sh.title.split(/[.:«»]/)[0].trim()) + '" style="width:100%"></small></span></label>' +
+          '<label class="opt"><input type="radio" name="ch" value="once"><span class="o-t">Μόνο αυτή τη φορά<small>' + esc(fmtD.format(sh.start)) + ', ' + esc(t(sh.start)) + '–' + esc(t(sh.end)) + '</small></span></label>' +
+          '<label class="opt"><input type="radio" name="ch" value="fixed"><span class="o-t">Σταθερά ' + esc(DAY_EVERY[wd]) + ' ' + esc(t(sh.start)) + '–' + esc(t(sh.end)) + '<small>Ίδια ώρα κάθε εβδομάδα, ανεξάρτητα από το πρόγραμμα του σταθμού.</small></span></label>' +
+          '<div class="row" style="margin-top:6px">Περιθώριο <label><input type="number" class="ch-before" value="1" min="0" max="60" style="width:4.5em"> λεπτά πριν</label><label><input type="number" class="ch-after" value="2" min="0" max="60" style="width:4.5em"> μετά</label></div>' +
+          '<p class="faint" style="margin:4px 0">Για καθυστερήσεις του σταθμού. Αν ακολουθεί κι άλλη εκπομπή που ηχογραφείς, γίνονται μία ηχογράφηση.</p>' +
+          '<div class="row"><button class="btn btn-accent" type="button" data-chsave>Αποθήκευση</button><button class="btn" type="button" data-chcancel>Άκυρο</button></div></div>';
+      }
+      function bindChooser(el, sh) {
+        if (!sh) return;
+        el.querySelectorAll('[data-chday]').forEach(c => c.addEventListener('click', e => { e.preventDefault(); c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); el.querySelector('[name="ch"][value="days"]').checked = true; }));
+        el.querySelector('.ch-contains').addEventListener('input', () => { el.querySelector('[name="ch"][value="contains"]').checked = true; });
+        el.querySelector('[data-chcancel]').addEventListener('click', () => { chooserFor = null; renderProgram(); });
+        el.querySelector('[data-chsave]').addEventListener('click', () => {
+          const mode = el.querySelector('[name="ch"]:checked').value, pb = Number(el.querySelector('.ch-before').value) || 0, pa = Number(el.querySelector('.ch-after').value) || 0;
+          if (mode === 'once') return scheduleOnce([sh], pb, pa);
+          if (mode === 'fixed') return scheduleFixed(sh, pb, pa);
+          if (mode === 'contains') { const q = el.querySelector('.ch-contains').value.trim(); if (!q) return; return scheduleEvery([Object.assign({}, sh, { title: q })], [0, 1, 2, 3, 4, 5, 6], 'contains', pb, pa); }
+          const days = mode === 'days' ? [...el.querySelectorAll('[data-chday]')].filter(c => c.getAttribute('aria-pressed') === 'true').map(c => Number(c.dataset.chday)) : [0, 1, 2, 3, 4, 5, 6];
+          if (!days.length) { alert('Διάλεξε τουλάχιστον μία ημέρα.'); return; }
+          scheduleEvery([sh], days, 'exact', pb, pa);
+        });
+      }
+      const hmAdd = (ms, min) => t(ms + min * 60e3);
+      function scheduleOnce(list, pb, pa) {
         list = list.filter(Boolean);
         if (!list.length) return;
-        const groups = groupShows(list), wd = RS.weekday(list[0].date);
-        const rules = groups.map(g => Object.assign({ id: newId(), label: g.titles.join(' · ').slice(0, 80), start: t(g.start), end: t(g.end), enabled: true }, weekly ? { days: [RS.weekday(g.date)] } : { date: g.date }));
-        const desc = groups.map(g => '«' + g.titles.join('», «') + '» ' + t(g.start) + '–' + t(g.end)).join('\n');
-        applyRules(c => c.rules.push(...rules),
-          (weekly ? 'Να ηχογραφείται ' + DAY_EVERY[wd] + ':' : 'Να ηχογραφηθεί ' + fmtD.format(list[0].start) + ':') + '\n' + desc + ';',
-          'Προγραμματίστηκε' + (weekly ? ' ' + DAY_EVERY[wd] : '') + ': ' + groups.map(g => g.titles[0] + (g.titles.length > 1 ? ' +' + (g.titles.length - 1) : '') + ' ' + t(g.start) + '–' + t(g.end)).join(', ') + '.');
+        const groups = groupShows(list);
+        const rules = groups.map(g => ({ id: newId(), label: g.titles.join(' · ').slice(0, 80), date: RS.athensDate(g.start - pb * 60e3), start: hmAdd(g.start, -pb), end: hmAdd(g.end, pa), enabled: true }));
+        applyRules(c => c.rules.push(...rules), 'Να ηχογραφηθεί ' + fmtD.format(list[0].start) + ':\n' + rules.map(r => '«' + r.label + '» ' + r.start + '–' + r.end).join('\n') + ';',
+          'Προγραμματίστηκε μία φορά: ' + rules.map(r => r.label + ' ' + r.start + '–' + r.end).join(', ') + '.');
+      }
+      function scheduleEvery(list, days, match, pb, pa) {
+        list = list.filter(Boolean);
+        const titles = [...new Set(list.map(sh => sh.title))];
+        if (!titles.length) return;
+        const rules = titles.map(ti => ({ id: newId(), label: ti.slice(0, 80), show: ti, match, days, padBefore: pb, padAfter: pa, skip: [], enabled: true }));
+        const when = days.length === 7 ? '' : ' (' + days.map(d => DAY_SHORT3[d]).join(', ') + ')';
+        const preview = rules.map(r => { const n = RS.ruleWindows(Object.assign({}, D.config, { rules: [r] }), Date.now(), Date.now() + 8 * 86400e3, wk()).slice(0, 4); return '«' + r.show + '»: ' + (n.length ? n.map(w => fmtDT.format(w.start)).join(', ') + (n.length === 4 ? '…' : '') : 'δεν μεταδίδεται τις επόμενες 8 ημέρες'); }).join('\n');
+        applyRules(c => c.rules.push(...rules), (match === 'contains' ? 'Να ηχογραφείται κάθε εκπομπή που περιέχει:' : 'Να ηχογραφείται κάθε φορά που μεταδίδεται' + when + ':') + '\n' + preview + ';',
+          'Θα ηχογραφείται κάθε φορά που μεταδίδεται' + when + ': ' + titles.join(', ') + '.');
+      }
+      function scheduleFixed(sh, pb, pa) {
+        const wd = RS.weekday(sh.date), r = { id: newId(), label: sh.title.slice(0, 80), days: [wd], start: hmAdd(sh.start, -pb), end: hmAdd(sh.end, pa), skip: [], enabled: true };
+        applyRules(c => c.rules.push(r), 'Να ηχογραφείται σταθερά ' + DAY_EVERY[wd] + ' ' + r.start + '–' + r.end + ';', 'Προγραμματίστηκε ' + DAY_EVERY[wd] + ' ' + r.start + '–' + r.end + '.');
       }
       function cancelShow(sh) {
-        const r = sh && exactRule(sh);
+        const st = sh && showState(sh), c = st && st.cov && st.cov.find(x => x.rule.date);
+        if (!c) return;
+        applyRules(conf => { conf.rules = conf.rules.filter(x => x.id !== c.rule.id); }, 'Να ακυρωθεί η ηχογράφηση «' + sh.title + '» ' + fmtD.format(sh.start) + ';', 'Ακυρώθηκε: «' + sh.title + '».');
+      }
+      // «Όχι αυτή τη φορά» / «Αναίρεση παράλειψης» σε επαναλαμβανόμενους κανόνες
+      function skipShow(sh, on) {
+        const st = sh && showState(sh), list = on ? (st.cov || []).filter(x => !x.rule.date) : (st.sk || []);
+        if (!list.length) return;
+        applyRules(conf => {
+          for (const x of list) {
+            const r = conf.rules.find(y => y.id === x.rule.id);
+            if (!r) continue;
+            r.skip = on ? [...new Set([...(r.skip || []), x.date])] : (r.skip || []).filter(d => d !== x.date);
+          }
+        }, on ? 'Να ΜΗΝ ηχογραφηθεί η «' + sh.title + '» ' + fmtD.format(sh.start) + ' (ο κανόνας μένει για τις υπόλοιπες φορές);' : 'Να ηχογραφηθεί κανονικά η «' + sh.title + '» ' + fmtD.format(sh.start) + ';',
+          on ? 'Δεν θα ηχογραφηθεί αυτή τη φορά: «' + sh.title + '».' : 'Θα ηχογραφηθεί κανονικά: «' + sh.title + '».');
+      }
+      function deleteRule(id) {
+        const r = D.config.rules.find(x => x.id === id);
         if (!r) return;
-        const wd = RS.weekday(sh.date);
-        if (r.date) applyRules(c => { c.rules = c.rules.filter(x => x.id !== r.id); }, 'Να ακυρωθεί η ηχογράφηση «' + sh.title + '» ' + fmtD.format(sh.start) + ' ' + t(sh.start) + '–' + t(sh.end) + ';', 'Ακυρώθηκε: «' + sh.title + '».');
-        else applyRules(c => { const x = c.rules.find(y => y.id === r.id); x.days = x.days.filter(d => d !== wd); if (!x.days.length) c.rules = c.rules.filter(y => y.id !== r.id); },
-          'Να σταματήσει η επαναλαμβανόμενη ηχογράφηση ' + t(sh.start) + '–' + t(sh.end) + ' ' + DAY_EVERY[wd] + (r.days.length > 1 ? ' (οι άλλες ημέρες του κανόνα μένουν)' : '') + ';', 'Σταμάτησε ' + DAY_EVERY[wd] + ': ' + t(sh.start) + '–' + t(sh.end) + '.');
+        applyRules(conf => { conf.rules = conf.rules.filter(x => x.id !== id); }, 'Να διαγραφεί ο κανόνας «' + (r.label || r.show || '') + '» (' + ruleText(r) + ');', 'Διαγράφηκε ο κανόνας «' + (r.label || r.show || '') + '».');
       }
       async function recordNow(sh) {
         if (!sh) return;
@@ -559,7 +649,7 @@
         } else if (ctl.cmd === 'start' && ctl.until * 1000 > now && now - ctl.at * 1000 < 10 * 60e3) {
           h += '<div class="rec-live"><p class="big" style="margin:0">Ξεκινά… <span class="muted">έως ' + esc(t(ctl.until * 1000)) + '</span></p><p class="faint" style="margin:.3rem 0 0">Χρειάζεται 1–2 λεπτά για να ξεκινήσει. Το πρώτο κομμάτι εμφανίζεται 10 λεπτά μετά.</p></div>';
         } else {
-          const nx = D.upcoming[0];
+          const nx = RS.windows(D.config, now - 6 * 3600e3, now + 8 * 86400e3, wk()).find(w => w.end > now);
           h += '<p class="big" style="margin:0">Δεν ηχογραφεί τώρα.</p>';
           const lab = nx && nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '';
           h += '<p class="muted" style="margin:.2rem 0 0">' + (!D.config.enabled ? '<b>Οι αυτόματες ηχογραφήσεις είναι ανενεργές.</b>'
@@ -645,7 +735,7 @@
         catch (e) { msg('top-msg', esc(e.message), 'err'); }
       }
       function renderUpcoming() {
-        const now = Date.now(), ws = RS.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3).filter(w => w.end > now).slice(0, 6);
+        const now = Date.now(), ws = RS.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3, wk()).filter(w => w.end > now).slice(0, 6);
         $('upcoming').innerHTML = ws.length ? ws.map(w => '<li class="item"><div class="item-h"><b>' + esc(fmtD.format(w.start)) + '</b><span>' + esc(range(w.start, w.end)) + ' · ' + hours((w.end - w.start) / 1000) + '</span></div>' +
             (w.labels.length ? '<div class="item-m">' + esc(w.labels.join(', ')) + '</div>' : '') + '</li>').join('') + (dirty() ? '<li class="faint">Με τις αλλαγές που δεν έχουν αποθηκευτεί.</li>' : '')
           : '<li class="muted">Καμία ηχογράφηση τις επόμενες 8 ημέρες.</li>';
@@ -657,50 +747,65 @@
       function renderRules() {
         $('cfg-enabled').checked = cfg.enabled;
         const box = $('rules');
-        box.innerHTML = cfg.rules.length ? '' : '<p class="muted">Κανένας κανόνας. Πρόσθεσε έναν παρακάτω.</p>';
+        // τίτλοι εκπομπών του σταθμού για αυτόματη συμπλήρωση
+        $('show-titles').innerHTML = station ? [...new Set(Object.values(station.week).flat().map(r => r[1]))].sort((a, b) => a.localeCompare(b, 'el')).map(ti => '<option value="' + esc(ti) + '">').join('') : '';
+        box.innerHTML = cfg.rules.length ? '' : '<p class="muted">Κανένας κανόνας. Πρόσθεσε έναν παρακάτω ή από το «Πρόγραμμα σταθμού».</p>';
         cfg.rules.forEach((r, i) => {
           const el = document.createElement('div');
           el.className = 'rule' + (r.enabled ? '' : ' off');
-          const once = !!r.date;
+          const kind = r.show != null ? 'show' : r.date ? 'once' : 'fixed';
+          const chips = '<span class="chips">' + DAY_SHORT.map((d, k) => '<button type="button" class="chip" data-day="' + k + '" title="' + DAY_NAME[k] + '" aria-pressed="' + (r.days || []).includes(k) + '">' + d + '</button>').join('') + '</span><button type="button" class="btn small" data-all>Όλες</button>';
           el.innerHTML =
             '<div class="row"><label class="row"><input type="checkbox" data-k="enabled"' + (r.enabled ? ' checked' : '') + '> ενεργός</label>' +
-            '<input type="text" data-k="label" placeholder="Όνομα (π.χ. Νυχτερινό)" maxlength="80" value="' + esc(r.label) + '">' +
+            '<input type="text" data-k="label" placeholder="Όνομα (προαιρετικό)" maxlength="80" value="' + esc(r.label) + '">' +
             '<button class="btn small danger" type="button" data-del>Διαγραφή</button></div>' +
-            '<div class="row">' + (once
-              ? '<span>Μία φορά, στις</span><input type="date" data-k="date" value="' + esc(r.date) + '">'
-              : '<span class="chips">' + DAY_SHORT.map((d, k) => '<button type="button" class="chip" data-day="' + k + '" title="' + DAY_NAME[k] + '" aria-pressed="' + r.days.includes(k) + '">' + d + '</button>').join('') + '</span>' +
-                '<button type="button" class="btn small" data-all>Όλες</button>') +
-            '<span>από</span><input type="time" data-k="start" value="' + esc(r.start) + '"><span>έως</span><input type="time" data-k="end" value="' + esc(r.end) + '">' +
-            '<span class="faint dur"></span></div><div class="overlap"></div>';
-          const dur = () => { el.querySelector('.dur').textContent = hours(ruleDur(r)) + (r.end <= r.start ? ' · περνά τα μεσάνυχτα' : ''); };
-          dur();
+            (kind === 'show'
+              ? '<div class="row"><span class="badge ok">κάθε φορά που μεταδίδεται</span></div>' +
+                '<div class="row"><input type="text" data-k="show" list="show-titles" placeholder="Τίτλος εκπομπής" value="' + esc(r.show) + '" style="flex:1 1 100%">' +
+                '<select data-k="match"><option value="exact"' + (r.match !== 'contains' ? ' selected' : '') + '>ακριβώς αυτός ο τίτλος</option><option value="contains"' + (r.match === 'contains' ? ' selected' : '') + '>ο τίτλος περιέχει</option></select></div>' +
+                '<div class="row">' + chips + '</div>' +
+                '<div class="row">Περιθώριο <label><input type="number" data-k="padBefore" min="0" max="60" value="' + (r.padBefore || 0) + '" style="width:4.5em"> λεπτά πριν</label><label><input type="number" data-k="padAfter" min="0" max="60" value="' + (r.padAfter || 0) + '" style="width:4.5em"> μετά</label></div>'
+              : '<div class="row">' + (kind === 'once' ? '<span>Μία φορά, στις</span><input type="date" data-k="date" value="' + esc(r.date) + '">' : chips) +
+                '<span>από</span><input type="time" data-k="start" value="' + esc(r.start) + '"><span>έως</span><input type="time" data-k="end" value="' + esc(r.end) + '"></div>') +
+            '<div class="faint preview"></div><div class="skips"></div><div class="overlap"></div>';
+          const preview = () => {
+            const now = Date.now(), ws = RS.ruleWindows({ enabled: true, quality: cfg.quality, rules: [Object.assign({}, r, { enabled: true })] }, now, now + 8 * 86400e3, wk()).filter(w => w.end > now).slice(0, 5);
+            const pv = el.querySelector('.preview');
+            if (kind === 'show' && !station) pv.textContent = 'Φόρτωση προγράμματος σταθμού…';
+            else pv.innerHTML = ws.length ? 'Επόμενες: ' + ws.map(w => esc(fmtDT.format(w.start)) + '–' + esc(t(w.end))).join(', ') + (ws.length === 5 ? '…' : '')
+              : kind === 'show' ? '<span class="danger">Δεν μεταδίδεται τις επόμενες 8 ημέρες (έλεγξε τον τίτλο).</span>' : 'Καμία τις επόμενες 8 ημέρες.';
+            const sk = (r.skip || []).filter(d => d >= RS.athensDate(now));
+            el.querySelector('.skips').innerHTML = sk.length ? 'Παραλείπονται: ' + sk.map(d => '<button type="button" class="btn small" data-unskip="' + d + '" title="Αναίρεση">' + esc(dateLabel(d).replace(/\s\d{4}$/, '')) + ' ✕</button>').join(' ') : '';
+            el.querySelectorAll('[data-unskip]').forEach(b => b.addEventListener('click', () => { r.skip = r.skip.filter(d => d !== b.dataset.unskip); preview(); changed(); }));
+          };
+          preview();
           el.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener('change', () => {
             const k = inp.dataset.k;
             if ((k === 'start' || k === 'end') && !inp.value) return;
-            r[k] = inp.type === 'checkbox' ? inp.checked : (k === 'start' || k === 'end') ? inp.value.slice(0, 5) : inp.value;
-            el.classList.toggle('off', !r.enabled); dur();
+            r[k] = inp.type === 'checkbox' ? inp.checked : inp.type === 'number' ? Math.max(0, Math.min(60, Number(inp.value) || 0)) : (k === 'start' || k === 'end') ? inp.value.slice(0, 5) : inp.value;
+            el.classList.toggle('off', !r.enabled); preview();
             changed();
           }));
           el.querySelectorAll('[data-day]').forEach(c => c.addEventListener('click', () => {
             const k = Number(c.dataset.day);
             r.days = r.days.includes(k) ? r.days.filter(x => x !== k) : [...r.days, k].sort();
-            c.setAttribute('aria-pressed', String(r.days.includes(k)));
+            c.setAttribute('aria-pressed', String(r.days.includes(k))); preview();
             changed();
           }));
           const all = el.querySelector('[data-all]');
           if (all) all.addEventListener('click', () => {
             r.days = r.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6];
-            el.querySelectorAll('[data-day]').forEach(c => c.setAttribute('aria-pressed', String(r.days.includes(Number(c.dataset.day)))));
+            el.querySelectorAll('[data-day]').forEach(c => c.setAttribute('aria-pressed', String(r.days.includes(Number(c.dataset.day))))); preview();
             changed();
           });
-          el.querySelector('[data-del]').addEventListener('click', () => { if (confirm('Διαγραφή του κανόνα' + (r.label ? ' «' + r.label + '»' : '') + ';')) { cfg.rules.splice(i, 1); changed(true); } });
+          el.querySelector('[data-del]').addEventListener('click', () => { if (confirm('Διαγραφή του κανόνα' + (r.label || r.show ? ' «' + (r.label || r.show) + '»' : '') + ';')) { cfg.rules.splice(i, 1); changed(true); } });
           box.appendChild(el);
         });
         updateOverlaps();
       }
       // Κανόνες που πέφτουν πάνω σε άλλους (τις επόμενες 14 ημέρες): δεν γίνονται δύο ηχογραφήσεις, ενώνονται σε μία
       function updateOverlaps() {
-        const now = Date.now(), win = x => RS.windows({ enabled: true, quality: cfg.quality, rules: [Object.assign({}, x, { enabled: true })] }, now, now + 14 * 86400e3);
+        const now = Date.now(), win = x => RS.windows({ enabled: true, quality: cfg.quality, rules: [Object.assign({}, x, { enabled: true })] }, now, now + 14 * 86400e3, wk());
         const all = cfg.rules.map(r => (r.enabled ? win(r) : []));
         [...$('rules').querySelectorAll('.rule')].forEach((el, i) => {
           const r = cfg.rules[i], box = el.querySelector('.overlap');
@@ -715,7 +820,7 @@
         let longest = 0;
         for (let i = 0; i < 7; i++) {
           const d = RS.addDays(today, i), from = RS.at(d, '00:00'), to = RS.at(RS.addDays(d, 1), '00:00'), span = to - from;
-          const ws = RS.windows(cfg, from, to);
+          const ws = RS.windows(cfg, from, to, wk());
           for (const w of ws) longest = Math.max(longest, w.end - w.start);
           const blocks = ws.map(w => { const a = Math.max(w.start, from), b = Math.min(w.end, to); return '<i style="left:' + ((a - from) / span * 100).toFixed(2) + '%;width:' + ((b - a) / span * 100).toFixed(2) + '%" title="' + esc(range(w.start, w.end) + ' ' + w.labels.join(', ')) + '"></i>'; }).join('');
           const mark = i === 0 ? '<u style="left:' + ((now - from) / span * 100).toFixed(2) + '%" title="τώρα"></u>' : '';
@@ -769,7 +874,7 @@
 
       // ── 5. Εκτιμήσεις ──────────────────────────────────────────────
       function renderEstimates() {
-        const e = RS.estimate(cfg), bph = mbPerHour(cfg.quality.bitrate);
+        const e = RS.estimate(cfg, Date.now(), wk()), bph = mbPerHour(cfg.quality.bitrate);
         $('est-stats').innerHTML = stat(num(e.hoursPerWeek, 1) + ' ώρ.', 'ηχογράφηση την εβδομάδα') + stat(bytes(e.perDay), 'ανά ημέρα (μέσος όρος)') +
           stat(bytes(e.perMonth), 'ανά μήνα') + stat(bytes(e.perYear), 'ανά έτος') + (e.steady != null ? stat(bytes(e.steady), 'σταθερός χώρος με διαγραφή στις ' + cfg.retentionDays + ' ημ.') : '');
         let note = '';
@@ -902,6 +1007,7 @@
       // ── Χειριστήρια ────────────────────────────────────────────────
       $('cfg-enabled').addEventListener('change', e => { cfg.enabled = e.target.checked; changed(); });
       $('add-weekly').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', days: [0, 1, 2, 3, 4, 5, 6], start: '22:00', end: '03:00', enabled: true }); changed(true); });
+      $('add-show').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', show: '', match: 'exact', days: [0, 1, 2, 3, 4, 5, 6], padBefore: 1, padAfter: 2, skip: [], enabled: true }); changed(true); });
       $('add-once').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', date: RS.athensDate(Date.now()), start: '20:00', end: '21:00', enabled: true }); changed(true); });
       $('c-retention').addEventListener('change', e => { cfg.retentionDays = Math.max(0, Math.floor(Number(e.target.value) || 0)); changed(); });
       $('c-maxgb').addEventListener('change', e => { cfg.maxGB = Math.max(0, Number(e.target.value) || 0); changed(); });

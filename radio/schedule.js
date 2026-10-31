@@ -8,10 +8,16 @@
 //     "maxGB": 0,                                        // ανώτατος χώρος· σβήνονται οι παλαιότερες (0 = χωρίς όριο)
 //     "rules": [
 //       { "id": "night", "label": "Νυχτερινό", "days": [0,1,2,3,4,5,6], "start": "22:00", "end": "03:00", "enabled": true },
-//       { "id": "x1", "label": "Ομιλία", "date": "2026-11-05", "start": "18:00", "end": "19:30", "enabled": true }
+//       { "id": "x1", "label": "Ομιλία", "date": "2026-11-05", "start": "18:00", "end": "19:30", "enabled": true },
+//       { "id": "s1", "label": "Απόδειπνο", "show": "Η Ακολουθία του Αποδείπνου", "match": "exact", "days": [0,1,2,3,4,5,6],
+//         "padBefore": 1, "padAfter": 2, "skip": ["2026-11-07"], "enabled": true }
 //     ]
 //   }
 // days: 0 = Δευτέρα … 6 = Κυριακή. Αν η λήξη είναι πριν την έναρξη, η ηχογράφηση περνά τα μεσάνυχτα.
+// Κανόνας «show»: κάθε φορά που μεταδίδεται η εκπομπή (τίτλος ακριβώς ή «περιέχει»), με ώρα και διάρκεια από το
+// πρόγραμμα του σταθμού (week = { ΔΕΥΤΕΡΑ: [["ΩΩ:ΛΛ", "Τίτλος", "…"], …], … }, βλ. radio/program.js)· ακολουθεί
+// έτσι αλλαγές ώρας, διάρκειας και ημέρας. Χωρίς πρόγραμμα σταθμού οι κανόνες «show» δεν δίνουν παράθυρα.
+// skip: ημερομηνίες που παραλείπονται («μόνο αυτή τη φορά όχι») σε επαναλαμβανόμενους κανόνες.
 // Όλες οι ώρες είναι ώρα Ελλάδας.
 //
 // Από το workflow:  node radio/schedule.js decide <config.json> <control.json>   (env EVENT, HOURS, NOW)
@@ -27,6 +33,9 @@ const MERGE_GAP_MS = 60e3;          // παράθυρα που απέχουν έ
 const BITRATES = [32, 48, 64, 96, 128, 160, 192];
 const HM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const WEEK_DAYS = ['ΔΕΥΤΕΡΑ', 'ΤΡΙΤΗ', 'ΤΕΤΑΡΤΗ', 'ΠΕΜΠΤΗ', 'ΠΑΡΑΣΚΕΥΗ', 'ΣΑΒΒΑΤΟ', 'ΚΥΡΙΑΚΗ'];   // όπως στο radio/program.js
+// Τίτλος για σύγκριση: χωρίς τόνους/πνεύματα, σημεία στίξης και κεφαλαία
+const titleKey = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 const fmtParts = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hourCycle: 'h23', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const WD = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
@@ -60,18 +69,22 @@ function normalize(cfg) {
   let rules = Array.isArray(cfg.rules) ? cfg.rules : null;
   if (!rules) rules = [{ id: 'daily', label: 'Καθημερινή', days: [0, 1, 2, 3, 4, 5, 6], start: HM.test(cfg.start) ? cfg.start : '22:00', end: HM.test(cfg.end) ? cfg.end : '03:00', enabled: true }];
   const q = cfg.quality || {};
+  const dayList = d => [...new Set((Array.isArray(d) ? d : []).map(Number).filter(n => n >= 0 && n <= 6))].sort();
+  const mins = v => Math.min(60, Math.max(0, Math.round(Number(v) || 0)));
+  const skip = r => [...new Set((Array.isArray(r.skip) ? r.skip : []).filter(x => DATE.test(x)))].sort().slice(-200);
   return {
     enabled: cfg.enabled !== false,
     quality: { bitrate: BITRATES.includes(Number(q.bitrate)) ? Number(q.bitrate) : 96, channels: Number(q.channels) === 2 ? 2 : 1 },
     retentionDays: Math.max(0, Math.floor(Number(cfg.retentionDays) || 0)),
     maxGB: Math.max(0, Number(cfg.maxGB) || 0),
-    rules: rules.filter(r => r && HM.test(r.start) && HM.test(r.end) && r.start !== r.end && (DATE.test(r.date || '') || (Array.isArray(r.days) && r.days.length)))
-      .map((r, i) => ({
-        id: String(r.id || 'r' + (i + 1)).slice(0, 40),
-        label: String(r.label || '').slice(0, 80),
-        ...(DATE.test(r.date || '') ? { date: r.date } : { days: [...new Set(r.days.map(Number).filter(n => n >= 0 && n <= 6))].sort() }),
-        start: r.start, end: r.end, enabled: r.enabled !== false,
-      })),
+    rules: rules.filter(r => r && (typeof r.show === 'string' ? !!titleKey(r.show)
+        : HM.test(r.start) && HM.test(r.end) && r.start !== r.end && (DATE.test(r.date || '') || dayList(r.days).length)))
+      .map((r, i) => {
+        const base = { id: String(r.id || 'r' + (i + 1)).slice(0, 40), label: String(r.label || '').slice(0, 80), enabled: r.enabled !== false };
+        if (typeof r.show === 'string') return { ...base, show: r.show.slice(0, 160), match: r.match === 'contains' ? 'contains' : 'exact', days: dayList(r.days).length ? dayList(r.days) : [0, 1, 2, 3, 4, 5, 6], padBefore: mins(r.padBefore), padAfter: mins(r.padAfter), skip: skip(r) };
+        if (DATE.test(r.date || '')) return { ...base, date: r.date, start: r.start, end: r.end };
+        return { ...base, days: dayList(r.days), start: r.start, end: r.end, skip: skip(r) };
+      }),
   };
 }
 
@@ -81,6 +94,7 @@ function validate(cfg) {
   if (!cfg || typeof cfg !== 'object') return ['Μη έγκυρες ρυθμίσεις.'];
   for (const [i, r] of (cfg.rules || []).entries()) {
     const n = 'Κανόνας ' + (i + 1) + (r && r.label ? ' («' + r.label + '»)' : '');
+    if (r && typeof r.show === 'string') { if (!titleKey(r.show)) errs.push(n + ': γράψε τον τίτλο της εκπομπής.'); if (Array.isArray(r.days) && !r.days.length) errs.push(n + ': διάλεξε τουλάχιστον μία ημέρα.'); continue; }
     if (!r || !HM.test(r.start) || !HM.test(r.end)) errs.push(n + ': μη έγκυρη ώρα.');
     else if (r.start === r.end) errs.push(n + ': η έναρξη και η λήξη είναι ίδιες.');
     if (r && !DATE.test(r.date || '') && !(Array.isArray(r.days) && r.days.length)) errs.push(n + ': διάλεξε ημέρες ή ημερομηνία.');
@@ -92,8 +106,25 @@ function validate(cfg) {
   return errs;
 }
 
-// Τα παράθυρα ηχογράφησης που αγγίζουν το [from, to), ενωμένα όπου επικαλύπτονται
-function windows(cfg, from, to) {
+// Οι εκπομπές του σταθμού που ταιριάζουν σε κανόνα «show» μια ημέρα: [{ start, end, title }]
+function showMatches(r, week, d) {
+  if (!week) return [];
+  const rows = week[WEEK_DAYS[weekday(d)]] || [], key = titleKey(r.show), out = [];
+  rows.forEach((row, i) => {
+    const t = titleKey(row[1]);
+    if (!(r.match === 'contains' ? t.includes(key) : t === key)) return;
+    const s = at(d, row[0]);
+    let e;
+    if (rows[i + 1]) e = at(d, rows[i + 1][0]);
+    else { const nx = (week[WEEK_DAYS[weekday(addDays(d, 1))]] || [])[0]; e = nx ? at(addDays(d, 1), nx[0]) : s + 3600e3; }
+    if (e <= s) e = s + 3600e3;
+    out.push({ start: s, end: e, title: row[1] });
+  });
+  return out;
+}
+
+// Τα παράθυρα ηχογράφησης κάθε κανόνα που αγγίζουν το [from, to) (χωρίς ένωση)
+function ruleWindows(cfg, from, to, week) {
   cfg = normalize(cfg);
   const out = [];
   if (!cfg.enabled) return out;
@@ -101,27 +132,40 @@ function windows(cfg, from, to) {
   for (let d = first; d <= last; d = addDays(d, 1)) {
     const wd = weekday(d);
     for (const r of cfg.rules) {
-      if (!r.enabled || (r.date ? r.date !== d : !r.days.includes(wd))) continue;
+      if (!r.enabled || (r.skip && r.skip.includes(d))) continue;
+      if (r.show) {
+        if (!r.days.includes(wd)) continue;
+        for (const m of showMatches(r, week, d)) {
+          const s = m.start - r.padBefore * 60e3, e = m.end + r.padAfter * 60e3;
+          if (e > from && s < to) out.push({ start: s, end: e, labels: [r.label || m.title], rule: r.id, date: d });
+        }
+        continue;
+      }
+      if (r.date ? r.date !== d : !r.days.includes(wd)) continue;
       const s = at(d, r.start);
       let e = at(d, r.end);
       if (e <= s) e = at(addDays(d, 1), r.end);
-      if (e > from && s < to) out.push({ start: s, end: e, labels: [r.label || ''] });
+      if (e > from && s < to) out.push({ start: s, end: e, labels: [r.label || ''], rule: r.id, date: d });
     }
   }
-  out.sort((a, b) => a.start - b.start);
+  return out.sort((a, b) => a.start - b.start);
+}
+
+// Τα παράθυρα ηχογράφησης που αγγίζουν το [from, to), ενωμένα όπου επικαλύπτονται
+function windows(cfg, from, to, week) {
   const merged = [];
-  for (const w of out) {
+  for (const w of ruleWindows(cfg, from, to, week)) {
     const m = merged[merged.length - 1];
-    if (m && w.start <= m.end + MERGE_GAP_MS) { m.end = Math.max(m.end, w.end); m.labels.push(...w.labels); }
-    else merged.push({ start: w.start, end: w.end, labels: w.labels.slice() });
+    if (m && w.start <= m.end + MERGE_GAP_MS) { m.end = Math.max(m.end, w.end); m.labels.push(...w.labels); m.rules.push(w.rule); }
+    else merged.push({ start: w.start, end: w.end, labels: w.labels.slice(), rules: [w.rule] });
   }
-  for (const m of merged) m.labels = [...new Set(m.labels.filter(Boolean))];
+  for (const m of merged) { m.labels = [...new Set(m.labels.filter(Boolean))]; m.rules = [...new Set(m.rules)]; }
   return merged;
 }
 
 // Τι κάνει τώρα ένα τρέξιμο του workflow
 //   event: schedule | push (εντολή από τη διαχείριση) | workflow_dispatch
-function decide({ config, control, now, event, hours }) {
+function decide({ config, control, now, event, hours, week }) {
   const cfg = normalize(config);
   const ctl = control || {};
   let start = null, end = null, why = '';
@@ -132,7 +176,7 @@ function decide({ config, control, now, event, hours }) {
     else return { skip: 'Καμία εντολή έναρξης.' };
   } else {
     if (!cfg.enabled) return { skip: 'Οι αυτόματες ηχογραφήσεις είναι ανενεργές.' };
-    const w = windows(cfg, now - 24 * 3600e3, now + 24 * 3600e3).find(x => now >= x.start - LEAD_MS && now < x.end - 120e3);
+    const w = windows(cfg, now - 24 * 3600e3, now + 24 * 3600e3, week).find(x => now >= x.start - LEAD_MS && now < x.end - 120e3);
     if (!w) return { skip: 'Εκτός προγράμματος.' };
     if (ctl.cmd === 'stop' && ctl.at * 1000 >= w.start - LEAD_MS) return { skip: 'Διακόπηκε από τη διαχείριση για αυτό το παράθυρο.' };
     start = Math.max(now, w.start); end = w.end; why = w.labels.join(', ') || 'πρόγραμμα';
@@ -142,14 +186,14 @@ function decide({ config, control, now, event, hours }) {
 }
 
 // Εκτίμηση χώρου για το πρόγραμμα και την ποιότητα
-function estimate(cfg, now = Date.now()) {
+function estimate(cfg, now = Date.now(), week = null) {
   cfg = normalize(cfg);
   const bytesPerHour = cfg.quality.bitrate * 1000 / 8 * 3600;
   // εβδομαδιαίες ώρες από τους επαναλαμβανόμενους κανόνες (οι μοναδικές ημερομηνίες μετρώνται χωριστά)
   const weekly = normalize({ ...cfg, rules: cfg.rules.filter(r => !r.date) });
   const monday = (() => { const d = athensDate(now); return addDays(d, -weekday(d) + 7); })();   // μια ολόκληρη επόμενη εβδομάδα
   const wFrom = at(monday, '00:00'), wTo = at(addDays(monday, 7), '00:00');
-  const hoursPerWeek = cfg.enabled ? windows(weekly, wFrom, wTo).reduce((a, w) => a + (Math.min(w.end, wTo) - Math.max(w.start, wFrom)) / 3600e3, 0) : 0;
+  const hoursPerWeek = cfg.enabled ? windows(weekly, wFrom, wTo, week).reduce((a, w) => a + (Math.min(w.end, wTo) - Math.max(w.start, wFrom)) / 3600e3, 0) : 0;
   const oneOff = cfg.enabled ? windows(normalize({ ...cfg, rules: cfg.rules.filter(r => r.date) }), now, now + 400 * 86400e3).reduce((a, w) => a + (w.end - Math.max(w.start, now)) / 3600e3, 0) : 0;
   const perDay = hoursPerWeek / 7 * bytesPerHour;
   return {
@@ -181,14 +225,15 @@ function cleanupPlan(recs, config, now = Date.now()) {
   return recs.filter(r => del.has(r.tag));
 }
 
-const api = { TZ, BITRATES, LEAD_MS, JOB_CAP_MS, athensParts, athensToEpoch, athensDate, addDays, weekday, at, normalize, validate, windows, decide, estimate, cleanupPlan };
+const api = { TZ, BITRATES, LEAD_MS, JOB_CAP_MS, WEEK_DAYS, titleKey, athensParts, athensToEpoch, athensDate, addDays, weekday, at, normalize, validate, showMatches, ruleWindows, windows, decide, estimate, cleanupPlan };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else window.RadioSchedule = api;
 
 if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module && process.argv[2] === 'decide') {
   const fs = require('fs');
   const read = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return {}; } };
   const now = process.env.NOW ? Number(process.env.NOW) * 1000 : Date.now();
-  const r = decide({ config: read(process.argv[3]), control: read(process.argv[4]), now, event: process.env.EVENT || 'schedule', hours: process.env.HOURS });
+  const week = read(process.argv[5]);
+  const r = decide({ config: read(process.argv[3]), control: read(process.argv[4]), now, event: process.env.EVENT || 'schedule', hours: process.env.HOURS, week: week && week.ΔΕΥΤΕΡΑ ? week : null });
   if (r.skip) { console.log('skip=1'); console.log('why=' + r.skip); }
   else for (const k of ['start', 'end']) console.log(k + '=' + Math.round(r[k] / 1000));
   if (!r.skip) for (const k of ['day', 'why', 'bitrate', 'channels']) console.log(k + '=' + r[k]);

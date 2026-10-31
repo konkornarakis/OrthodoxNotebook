@@ -3,7 +3,7 @@
 // Η σελίδα (SRC) έχει καρτέλες ΔΕΥΤΕΡΑ…ΚΥΡΙΑΚΗ και έναν πίνακα ανά ημέρα: ώρα | τίτλος σε <strong> + περιγραφή.
 // Το πρόγραμμα αλλάζει, γι' αυτό το workflow το διαβάζει σε κάθε ηχογράφηση και η διαχείριση όποτε ανοίγει.
 //
-//   node radio/program.js <σελίδα.html> <ΕΕΕΕ-ΜΜ-ΗΗ>
+//   node radio/program.js <σελίδα.html> <ΕΕΕΕ-ΜΜ-ΗΗ>      (ή --week για όλη την εβδομάδα)
 // τυπώνει σε μία γραμμή { src, fetched, days: { "<ημέρα>": [["ΩΩ:ΛΛ", "Τίτλος", "Περιγραφή"], …], "<επόμενη>": […] } }
 // (μια βραδιά περνά τα μεσάνυχτα, γι' αυτό και η επόμενη ημέρα).
 
@@ -81,7 +81,9 @@ module.exports = { SRC, DAYS, parse, forNight, fetchWeek };
 
 if (require.main === module) {
   try {
+    // node radio/program.js <σελίδα.html> --week  → όλη η εβδομάδα (για τους κανόνες «κάθε φορά που μεταδίδεται»)
     const page = require('fs').readFileSync(process.argv[2], 'utf8');
-    process.stdout.write(JSON.stringify(forNight(parse(page), process.argv[3])) + '\n');
+    const week = parse(page);
+    process.stdout.write(JSON.stringify(process.argv[3] === '--week' ? week : forNight(week, process.argv[3])) + '\n');
   } catch (e) { console.error(e.message); process.exit(1); }
 }
