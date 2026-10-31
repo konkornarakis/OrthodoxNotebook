@@ -56,6 +56,25 @@
     .prog { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--rule) 40%, transparent); overflow: hidden; margin-top: 8px; }
     .prog i { display: block; height: 100%; background: var(--cinnabar); }
 
+    /* πρόγραμμα σταθμού */
+    .daytabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
+    .daytabs::-webkit-scrollbar { display: none; }
+    .daytabs button { flex: none; }
+    .daytabs button[aria-pressed="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .plist { list-style: none; margin: 0; padding: 0; max-height: 70vh; overflow-y: auto; border-top: 1px solid var(--rule-soft); }
+    .pi { display: grid; grid-template-columns: 26px 3.4em minmax(0, 1fr); gap: 2px 10px; padding: 10px 4px; border-bottom: 1px solid var(--rule-soft); align-items: start; }
+    .pi input[type="checkbox"] { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--cinnabar); }
+    .pi time { font-variant-numeric: tabular-nums; color: var(--ink-soft); padding-top: 1px; }
+    .pi .p-t { color: var(--ink); overflow-wrap: anywhere; }
+    .pi .p-d { color: var(--ink-faint); font-size: 13px; overflow-wrap: anywhere; }
+    .pi .p-x .btn, .bulk .btn { white-space: normal; text-align: left; height: auto; }
+    .pi .p-x { grid-column: 3; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+    .pi.past { opacity: .6; }
+    .pi.now { background: color-mix(in srgb, var(--cinnabar) 7%, transparent); border-left: 3px solid var(--cinnabar); }
+    .pi.now .p-t { font-weight: 600; }
+    .pi .p-now { font-size: 11.5px; letter-spacing: .07em; color: var(--cinnabar); font-weight: 600; text-transform: uppercase; }
+    .bulk { position: sticky; top: 52px; z-index: 5; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 10px; margin: 6px 0; border: 2px solid var(--cinnabar); border-radius: 8px; background: var(--vellum); }
+
     /* ηχογράφηση τώρα */
     .opts { display: grid; gap: 6px; margin: .4rem 0; }
     .opt { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); cursor: pointer; }
@@ -63,6 +82,12 @@
     .opt input[type="radio"] { width: 20px; height: 20px; margin: 0; accent-color: var(--cinnabar); flex: none; }
     .opt .o-t { flex: 1; min-width: 12em; }
     .opt .o-t small { display: block; color: var(--ink-faint); font-size: 13px; }
+    .seg button[aria-pressed="true"] { background: var(--cinnabar); border-color: var(--cinnabar); color: #fff8ef; }
+    .overlap { font-size: 13px; color: var(--gold-deep); }
+    .showchips { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
+    .showchips a { font-size: 13.5px; padding: 3px 9px; border: 1px solid var(--rule); border-radius: 14px; text-decoration: none; color: var(--ink); background: var(--parchment); }
+    .showchips a:hover { border-color: var(--cinnabar); color: var(--cinnabar); }
+    .showchips time { color: var(--ink-faint); margin-right: 4px; font-variant-numeric: tabular-nums; }
     .summary { padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--rule); margin: .6rem 0; font-size: 15px; }
     .rec-live { border: 2px solid var(--cinnabar); border-radius: 8px; padding: 10px 12px; background: var(--vellum); }
 
@@ -169,14 +194,17 @@
           <div id="top-msg"></div>
 
           <nav class="secnav" aria-label="Ενότητες">
-            <a href="#s-station">Στον σταθμό</a><a href="#s-rec">Ηχογράφηση</a><a href="#s-schedule">Πρόγραμμα</a><a href="#s-quality">Ποιότητα</a>
+            <a href="#s-station">Πρόγραμμα σταθμού</a><a href="#s-rec">Ηχογράφηση</a><a href="#s-schedule">Πρόγραμμα</a><a href="#s-quality">Ποιότητα</a>
             <a href="#s-storage">Χώρος</a><a href="#s-est">Εκτιμήσεις</a><a href="#s-usage">Κατανάλωση</a><a href="#s-log">Ιστορικό</a><a href="#s-recs">Ηχογραφήσεις</a>
           </nav>
 
-          <!-- 1. Στον σταθμό -->
+          <!-- 1. Πρόγραμμα σταθμού -->
           <section class="panel" id="s-station">
-            <h2 class="section-heading">Στον σταθμό τώρα</h2>
-            <div class="onair" id="onair"><p class="muted">Φόρτωση προγράμματος σταθμού…</p></div>
+            <h2 class="section-heading">Πρόγραμμα σταθμού</h2>
+            <div class="daytabs" id="daytabs" role="tablist" aria-label="Ημέρα"></div>
+            <div class="bulk" id="bulk" hidden></div>
+            <ul class="plist" id="plist"><li class="muted" style="padding:10px 0">Φόρτωση προγράμματος σταθμού…</li></ul>
+            <p class="faint">Από το <a href="https://www.peradio.com/evdomadiaio-programma/" target="_blank" rel="noopener">εβδομαδιαίο πρόγραμμα του σταθμού</a>. Τσέκαρε πολλές εκπομπές για να τις προγραμματίσεις μαζί (οι συνεχόμενες γίνονται μία ηχογράφηση). Μετά τις 22:30 ο σταθμός δεν δημοσιεύει αναλυτικό πρόγραμμα.</p>
           </section>
 
           <!-- 2. Ηχογράφηση -->
@@ -184,7 +212,18 @@
             <h2 class="section-heading">Ηχογράφηση</h2>
             <div id="rec-status">Φόρτωση…</div>
             <div id="start-box">
-              <h3 class="sub">Ηχογράφηση τώρα: διάλεξε μέχρι πότε</h3>
+              <h3 class="sub">Νέα ηχογράφηση</h3>
+              <div class="row seg" role="group" aria-label="Πότε ξεκινά">
+                <span>Ξεκινά</span>
+                <button class="btn small" type="button" data-when="now" aria-pressed="true">Τώρα</button>
+                <button class="btn small" type="button" data-when="later" aria-pressed="false">Αργότερα</button>
+                <span class="faint" id="when-note"></span>
+              </div>
+              <div class="row" id="later-box" hidden style="margin-top:8px">
+                <label>Ημερομηνία <input type="date" id="later-date"></label>
+                <label>ώρα <input type="time" id="later-time"></label>
+              </div>
+              <div class="muted" style="margin-top:10px">Μέχρι</div>
               <div class="opts">
                 <label class="opt" id="opt-show"><input type="radio" name="sm" value="show"><span class="o-t" id="opt-show-l"></span></label>
                 <label class="opt" id="opt-show2"><input type="radio" name="sm" value="show2"><span class="o-t" id="opt-show2-l"></span></label>
@@ -207,9 +246,8 @@
             <div class="row">
               <button class="btn" type="button" id="add-weekly">+ Επαναλαμβανόμενη</button>
               <button class="btn" type="button" id="add-once">+ Μία φορά</button>
-              <button class="btn" type="button" id="station-btn">+ Από το πρόγραμμα του σταθμού</button>
+              <a class="btn" href="#s-station">+ Από το πρόγραμμα του σταθμού</a>
             </div>
-            <div id="station" class="station" hidden></div>
             <h3 class="muted" style="margin:1.1rem 0 .2rem">Οι επόμενες 7 ημέρες</h3>
             <div class="week" id="week"></div>
             <div id="long-note"></div>
@@ -332,7 +370,7 @@
           $('login').hidden = true; $('app').hidden = false;
           await load();
           setInterval(() => { if (!document.hidden) load(); }, 30000);
-          loadStation(false);
+          loadStation();
         } catch (e) { pw = ''; $('login').hidden = false; $('app').hidden = true; msg('login-msg', esc(e.message), 'err'); }
       }
       function logout() { pw = ''; try { sessionStorage.removeItem('adminPw'); } catch (e) { /* */ } $('app').hidden = true; $('login').hidden = false; }
@@ -356,70 +394,155 @@
         return D && D.nights.find(n => n.growing && n.status && n.status.recording && Date.now() - n.status.updated * 1000 < 25 * 60e3);
       }
       function showAt(shows, ms) { let cur = null, next = null; for (const s of shows || []) { if (s.start <= ms) cur = s; else if (!next) next = s; } return { cur, next }; }
-      // Το πρόγραμμα του σταθμού γύρω από μια στιγμή: προηγούμενη, τρέχουσα, επόμενες εκπομπές
-      function stationTimeline(now) {
-        if (!station) return null;
-        const today = RS.athensDate(now), items = [];
-        for (const d of [RS.addDays(today, -1), today, RS.addDays(today, 1)]) {
-          for (const r of station.week[station.days[RS.weekday(d)]] || []) items.push({ start: RS.at(d, r[0]), title: r[1], desc: r[2] });
+      // ── Πρόγραμμα σταθμού ─────────────────────────────────────────
+      // Οι εκπομπές του σταθμού για τις ημέρες [from-1, from+days] με αρχή/τέλος (τέλος = αρχή της επόμενης)
+      function stationItems(from, days) {
+        if (!station) return [];
+        const items = [];
+        for (let i = -1; i <= days; i++) {
+          const d = RS.addDays(from, i);
+          for (const r of station.week[station.days[RS.weekday(d)]] || []) items.push({ date: d, start: RS.at(d, r[0]), title: r[1], desc: r[2] });
         }
         items.sort((a, b) => a.start - b.start);
         items.forEach((it, i) => { it.end = items[i + 1] ? items[i + 1].start : it.start + 3600e3; });
-        const i = items.findIndex(it => it.start <= now && now < it.end);
-        if (i < 0) return null;
-        return { prev: items[i - 1], cur: items[i], next: items.slice(i + 1, i + 5) };
+        return items;
       }
-      // Αν ένα διάστημα θα ηχογραφηθεί από το πρόγραμμα (αποθηκευμένο) ή ηχογραφείται τώρα
-      function covered(a, b) {
-        const live = liveNight(), ctl = D.control || {}, now = Date.now();
-        // ζωντανή ηχογράφηση ή εντολή έναρξης που μόλις δόθηκε
-        let span = live ? [live.status.since * 1000, live.status.until * 1000] : null;
-        if (!span && ctl.cmd === 'start' && ctl.until * 1000 > now && now - ctl.at * 1000 < 10 * 60e3) span = [ctl.at * 1000, ctl.until * 1000];
-        if (span && b > span[0] && a < span[1]) return 'now';
-        return RS.windows(D.config, a, b).some(w => w.start <= a + 60e3 && w.end >= b - 60e3) ? 'scheduled' : '';
+      function stationTimeline(now) {
+        const items = stationItems(RS.athensDate(now), 1), i = items.findIndex(it => it.start <= now && now < it.end);
+        return i < 0 ? null : { prev: items[i - 1], cur: items[i], next: items.slice(i + 1, i + 5) };
       }
       const left = ms => { const m = Math.max(0, Math.round(ms / 60e3)); return m >= 60 ? Math.floor(m / 60) + ' ώρ. ' + (m % 60) + '′' : m + '′'; };
-      function renderOnAir() {
-        const box = $('onair');
-        if (!station) { box.innerHTML = stationError ? '<p class="danger">Το πρόγραμμα του σταθμού δεν φορτώθηκε: ' + esc(stationError) + '</p>' : '<p class="muted">Φόρτωση προγράμματος σταθμού…</p>'; return; }
-        const now = Date.now(), tl = stationTimeline(now);
-        if (!tl) { box.innerHTML = '<p class="muted">Δεν βρέθηκε εκπομπή για αυτή την ώρα στο πρόγραμμα του σταθμού.</p>'; return; }
-        const row = (s, cls, label) => {
-          const cov = covered(s.start, s.end);
-          let x = '';
-          if (cls === 'now') {
-            x = '<div class="prog"><i style="width:' + Math.min(100, (now - s.start) / (s.end - s.start) * 100).toFixed(1) + '%"></i></div>' +
-              '<div class="oa-x"><span class="muted">μένουν ' + left(s.end - now) + ' (έως ' + esc(t(s.end)) + ')</span>' + (cov === 'now' ? '<span class="badge run">● ηχογραφείται</span>' : '<span class="badge">δεν ηχογραφείται</span>') + '</div>';
-          } else if (cls === 'next') {
-            x = '<div class="oa-x">' + (cov === 'now' ? '<span class="badge run">θα ηχογραφηθεί</span>' : cov === 'scheduled' ? '<span class="badge ok">✓ προγραμματισμένη</span>'
-              : '<button class="btn small" type="button" data-sched="' + s.start + '">Προγραμμάτισε ηχογράφηση</button>') + '</div>';
-          }
-          return '<div class="oa ' + cls + '"><time>' + esc(t(s.start)) + '</time><div><div class="oa-k">' + label + '</div><div class="oa-t">' + esc(s.title) + '</div>' + (s.desc ? '<div class="oa-d">' + esc(s.desc) + '</div>' : '') + '</div>' + x + '</div>';
-        };
-        box.innerHTML = (tl.prev ? row(tl.prev, 'prev', 'Πριν') : '') + row(tl.cur, 'now', 'Τώρα') + tl.next.map((s, i) => row(s, 'next', i ? 'Στη συνέχεια' : 'Μετά')).join('') +
-          '<p class="faint">Από το <a href="' + esc(station.src) + '" target="_blank" rel="noopener">εβδομαδιαίο πρόγραμμα του σταθμού</a>. Μετά τις 22:30 ο σταθμός δεν δημοσιεύει αναλυτικό πρόγραμμα.</p>';
-        box.querySelectorAll('[data-sched]').forEach(b => b.addEventListener('click', () => scheduleShow([tl.cur, ...tl.next].find(s => String(s.start) === b.dataset.sched))));
+      const DAY_EVERY = ['κάθε Δευτέρα', 'κάθε Τρίτη', 'κάθε Τετάρτη', 'κάθε Πέμπτη', 'κάθε Παρασκευή', 'κάθε Σάββατο', 'κάθε Κυριακή'];
+      // Η ηχογράφηση που τρέχει ή μόλις ζητήθηκε: [αρχή, τέλος]
+      function activeSpan() {
+        const live = liveNight(), ctl = D.control || {}, now = Date.now();
+        if (live) return [live.status.since * 1000, live.status.until * 1000];
+        if (ctl.cmd === 'start' && ctl.until * 1000 > now && now - ctl.at * 1000 < 10 * 60e3) return [ctl.at * 1000, ctl.until * 1000];
+        return null;
       }
-      // Μία ηχογράφηση για μια συγκεκριμένη εκπομπή (κανόνας «μία φορά»)
-      async function scheduleShow(s) {
-        if (!s) return;
-        const rule = { id: newId(), label: s.title.slice(0, 80), date: RS.athensDate(s.start), start: t(s.start), end: t(s.end), enabled: true };
-        if (dirty()) {
-          cfg.rules.push(rule); changed(true);
-          msg('top-msg', 'Προστέθηκε η «' + esc(rule.label) + '» (' + esc(rule.start + '–' + rule.end) + '). Πάτα «Αποθήκευση ρυθμίσεων» για να ισχύσει.', 'ok');
-          return;
+      // Πόσο από το [a, b) υπάρχει ήδη ηχογραφημένο
+      function recordedFrac(a, b) {
+        let got = 0;
+        for (const n of D.nights) for (const [x, y] of n.cover || []) got += Math.max(0, Math.min(b, y) - Math.max(a, x));
+        return b > a ? got / (b - a) : 0;
+      }
+      // Κανόνας που αντιστοιχεί ακριβώς σε αυτή την εκπομπή (για «Ακύρωση»)
+      function exactRule(sh) {
+        const st = t(sh.start), en = t(sh.end), wd = RS.weekday(sh.date);
+        return D.config.rules.find(r => r.enabled && r.start === st && r.end === en && (r.date ? r.date === sh.date : r.days.includes(wd)));
+      }
+      function showState(sh) {
+        const now = Date.now(), span = activeSpan();
+        if (span && sh.end > span[0] && sh.start < span[1] && sh.end > now) return { k: 'rec', html: '<span class="badge run">● ' + (sh.start <= now ? 'ηχογραφείται' : 'θα ηχογραφηθεί') + '</span>' };
+        if (sh.start < now) {
+          const f = recordedFrac(sh.start, Math.min(sh.end, now));
+          if (f > 0.9) return { k: 'done', html: '<span class="badge ok">✓ ηχογραφήθηκε</span>' };
+          if (f > 0.02) return { k: 'done', html: '<span class="badge">μερικώς ηχογραφήθηκε</span>' };
+          if (sh.end <= now) return { k: 'past', html: '' };
         }
-        if (!confirm('Να ηχογραφηθεί η «' + s.title + '», ' + fmtD.format(s.start) + ' ' + rule.start + '–' + rule.end + ';')) return;
-        const next = JSON.parse(saved); next.rules.push(rule);
+        const ws = RS.windows(D.config, sh.start, sh.end);
+        if (ws.some(w => w.start <= sh.start + 60e3 && w.end >= sh.end - 60e3)) return { k: 'sched', rule: exactRule(sh), html: '<span class="badge ok">✓ προγραμματισμένη</span>' };
+        if (ws.length) return { k: 'part', html: '<span class="badge">μερικώς προγραμματισμένη</span>' };
+        return { k: 'free', html: '' };
+      }
+      let progDay = null, progScrolled = false;
+      const picked = new Set();
+      function renderProgram() {
+        const box = $('plist'), today = RS.athensDate(Date.now()), now = Date.now();
+        if (!progDay) progDay = today;
+        $('daytabs').innerHTML = Array.from({ length: 7 }, (_, i) => {
+          const d = RS.addDays(today, i), lab = i === 0 ? 'Σήμερα' : i === 1 ? 'Αύριο' : dateLabel(d).replace(/\s\d{4}$/, '');
+          return '<button type="button" class="btn small" role="tab" data-day="' + d + '" aria-pressed="' + (d === progDay) + '">' + esc(lab) + '</button>';
+        }).join('');
+        $('daytabs').querySelectorAll('[data-day]').forEach(b => b.addEventListener('click', () => { progDay = b.dataset.day; picked.clear(); progScrolled = false; renderProgram(); }));
+        if (!station) { box.innerHTML = '<li class="' + (stationError ? 'danger' : 'muted') + '" style="padding:10px 0">' + (stationError ? 'Το πρόγραμμα του σταθμού δεν φορτώθηκε: ' + esc(stationError) : 'Φόρτωση προγράμματος σταθμού…') + '</li>'; renderBulk([]); return; }
+        const items = stationItems(progDay, 1).filter(it => it.date === progDay);
+        const wdEvery = DAY_EVERY[RS.weekday(progDay)];
+        box.innerHTML = items.map(sh => {
+          const st = showState(sh), isNow = sh.start <= now && now < sh.end, past = sh.end <= now;
+          const canPick = !past && !isNow && (st.k === 'free' || st.k === 'part');
+          let x = st.html;
+          if (isNow) x += '<span class="muted">μένουν ' + left(sh.end - now) + '</span>' + (st.k !== 'rec' ? '<button class="btn small btn-accent" type="button" data-now="' + sh.start + '">● Ηχογράφησε τώρα (έως ' + esc(t(sh.end)) + ')</button>' : '');
+          else if (canPick) x += '<button class="btn small" type="button" data-once="' + sh.start + '">Μία φορά</button><button class="btn small" type="button" data-weekly="' + sh.start + '">' + esc(wdEvery.replace(/^κ/, 'Κ')) + '</button>';
+          if (st.k === 'sched' && st.rule) x += '<button class="btn small danger" type="button" data-cancel="' + sh.start + '">' + (st.rule.date ? 'Ακύρωση' : 'Σταμάτα το «' + esc(wdEvery) + '»') + '</button>';
+          return '<li class="pi' + (isNow ? ' now' : past ? ' past' : '') + '" data-start="' + sh.start + '">' +
+            (canPick ? '<input type="checkbox" data-pick="' + sh.start + '"' + (picked.has(sh.start) ? ' checked' : '') + ' aria-label="Επιλογή">' : '<span></span>') +
+            '<time>' + esc(t(sh.start)) + '</time><div>' + (isNow ? '<div class="p-now">Τώρα</div>' : '') + '<div class="p-t">' + esc(sh.title) + '</div>' + (sh.desc ? '<div class="p-d">' + esc(sh.desc) + '</div>' : '') + '</div>' +
+            (x ? '<div class="p-x">' + x + '</div>' : '') + '</li>';
+        }).join('') || '<li class="muted" style="padding:10px 0">Δεν υπάρχει πρόγραμμα για αυτή την ημέρα.</li>';
+        const find = v => items.find(it => String(it.start) === String(v));
+        box.querySelectorAll('[data-now]').forEach(b => b.addEventListener('click', () => recordNow(find(b.dataset.now))));
+        box.querySelectorAll('[data-once]').forEach(b => b.addEventListener('click', () => scheduleShows([find(b.dataset.once)], false)));
+        box.querySelectorAll('[data-weekly]').forEach(b => b.addEventListener('click', () => scheduleShows([find(b.dataset.weekly)], true)));
+        box.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => cancelShow(find(b.dataset.cancel))));
+        box.querySelectorAll('[data-pick]').forEach(c => c.addEventListener('change', () => { const v = Number(c.dataset.pick); c.checked ? picked.add(v) : picked.delete(v); renderBulk(items); }));
+        renderBulk(items);
+        if (!progScrolled && progDay === today) {
+          progScrolled = true;
+          const cur = box.querySelector('.pi.now');
+          if (cur) box.scrollTop = Math.max(0, cur.offsetTop - box.offsetTop - 60);
+        }
+      }
+      // Συνεχόμενες εκπομπές → ένα διάστημα
+      function groupShows(list) {
+        const g = [];
+        for (const sh of list.slice().sort((a, b) => a.start - b.start)) {
+          const last = g[g.length - 1];
+          if (last && sh.start <= last.end + 60e3) { last.end = Math.max(last.end, sh.end); last.titles.push(sh.title); }
+          else g.push({ date: sh.date, start: sh.start, end: sh.end, titles: [sh.title] });
+        }
+        return g;
+      }
+      function renderBulk(items) {
+        const sel = items.filter(it => picked.has(it.start)), b = $('bulk');
+        b.hidden = !sel.length;
+        if (!sel.length) { b.innerHTML = ''; return; }
+        const g = groupShows(sel);
+        b.innerHTML = '<span><b>' + sel.length + ' επιλεγμένες</b> · ' + esc(g.map(x => t(x.start) + '–' + t(x.end)).join(', ')) + '</span>' +
+          '<button class="btn small btn-accent" type="button" id="bulk-once">Μία φορά</button><button class="btn small" type="button" id="bulk-weekly">' + esc(DAY_EVERY[RS.weekday(progDay)].replace(/^κ/, 'Κ')) + '</button>' +
+          '<button class="btn small" type="button" id="bulk-clear">Καθαρισμός</button>';
+        $('bulk-once').onclick = () => scheduleShows(sel, false);
+        $('bulk-weekly').onclick = () => scheduleShows(sel, true);
+        $('bulk-clear').onclick = () => { picked.clear(); renderProgram(); };
+      }
+      // Αποθήκευση ρυθμίσεων με αλλαγή κανόνων (αν υπάρχουν άλλες αλλαγές που δεν έχουν αποθηκευτεί, μπαίνει στις αλλαγές)
+      async function applyRules(mutate, question, okText) {
+        if (dirty()) { mutate(cfg); changed(true); msg('top-msg', esc(okText) + ' Πάτα «Αποθήκευση ρυθμίσεων» για να ισχύσει.', 'ok'); return; }
+        if (!confirm(question)) return;
+        const next = JSON.parse(saved); mutate(next);
         try {
           const r = await call({ action: 'radio-config', config: next });
-          cfg = r.config; saved = JSON.stringify(cfg);
-          msg('top-msg', 'Προγραμματίστηκε: «' + esc(rule.label) + '» ' + esc(rule.start + '–' + rule.end) + '. Θα ξεκινήσει αυτόματα.', 'ok');
+          cfg = r.config; saved = JSON.stringify(cfg); picked.clear();
+          msg('top-msg', esc(okText), 'ok');
           await load(); renderRules();
         } catch (e) { msg('top-msg', esc(e.message), 'err'); }
       }
+      function scheduleShows(list, weekly) {
+        list = list.filter(Boolean);
+        if (!list.length) return;
+        const groups = groupShows(list), wd = RS.weekday(list[0].date);
+        const rules = groups.map(g => Object.assign({ id: newId(), label: g.titles.join(' · ').slice(0, 80), start: t(g.start), end: t(g.end), enabled: true }, weekly ? { days: [RS.weekday(g.date)] } : { date: g.date }));
+        const desc = groups.map(g => '«' + g.titles.join('», «') + '» ' + t(g.start) + '–' + t(g.end)).join('\n');
+        applyRules(c => c.rules.push(...rules),
+          (weekly ? 'Να ηχογραφείται ' + DAY_EVERY[wd] + ':' : 'Να ηχογραφηθεί ' + fmtD.format(list[0].start) + ':') + '\n' + desc + ';',
+          'Προγραμματίστηκε' + (weekly ? ' ' + DAY_EVERY[wd] : '') + ': ' + groups.map(g => g.titles[0] + (g.titles.length > 1 ? ' +' + (g.titles.length - 1) : '') + ' ' + t(g.start) + '–' + t(g.end)).join(', ') + '.');
+      }
+      function cancelShow(sh) {
+        const r = sh && exactRule(sh);
+        if (!r) return;
+        const wd = RS.weekday(sh.date);
+        if (r.date) applyRules(c => { c.rules = c.rules.filter(x => x.id !== r.id); }, 'Να ακυρωθεί η ηχογράφηση «' + sh.title + '» ' + fmtD.format(sh.start) + ' ' + t(sh.start) + '–' + t(sh.end) + ';', 'Ακυρώθηκε: «' + sh.title + '».');
+        else applyRules(c => { const x = c.rules.find(y => y.id === r.id); x.days = x.days.filter(d => d !== wd); if (!x.days.length) c.rules = c.rules.filter(y => y.id !== r.id); },
+          'Να σταματήσει η επαναλαμβανόμενη ηχογράφηση ' + t(sh.start) + '–' + t(sh.end) + ' ' + DAY_EVERY[wd] + (r.days.length > 1 ? ' (οι άλλες ημέρες του κανόνα μένουν)' : '') + ';', 'Σταμάτησε ' + DAY_EVERY[wd] + ': ' + t(sh.start) + '–' + t(sh.end) + '.');
+      }
+      async function recordNow(sh) {
+        if (!sh) return;
+        if (!confirm('Να ξεκινήσει τώρα ηχογράφηση της «' + sh.title + '», έως τις ' + t(sh.end) + ' (' + left(sh.end - Date.now()) + ');')) return;
+        try { await call({ action: 'radio-start', until: t(sh.end) }); msg('top-msg', 'Η ηχογράφηση της «' + esc(sh.title) + '» ξεκινά σε 1–2 λεπτά.', 'ok'); setTimeout(load, 2000); }
+        catch (e) { msg('top-msg', esc(e.message), 'err'); }
+      }
 
-      function renderNow() { renderOnAir(); renderRecStatus(); renderStart(); }
+      function renderNow() { renderProgram(); renderRecStatus(); renderStart(); }
       function renderRecStatus() {
         const now = Date.now(), live = liveNight(), ctl = D.control || {}, last = (D.log || []).find(e => e.type === 'record');
         let h = '';
@@ -438,13 +561,15 @@
         } else {
           const nx = D.upcoming[0];
           h += '<p class="big" style="margin:0">Δεν ηχογραφεί τώρα.</p>';
-          h += '<p class="muted" style="margin:.2rem 0 0">' + (!D.config.enabled ? '<b>Οι αυτόματες ηχογραφήσεις είναι ανενεργές.</b>' : nx ? 'Επόμενη: ' + esc(fmtDT.format(nx.start)) + '–' + esc(t(nx.end)) + (nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '') : 'Δεν υπάρχει προγραμματισμένη ηχογράφηση.') + '</p>';
+          const lab = nx && nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '';
+          h += '<p class="muted" style="margin:.2rem 0 0">' + (!D.config.enabled ? '<b>Οι αυτόματες ηχογραφήσεις είναι ανενεργές.</b>'
+            : nx && nx.start <= now ? '<span class="danger">Κατά το πρόγραμμα έπρεπε να ηχογραφεί τώρα (' + esc(t(nx.start)) + '–' + esc(t(nx.end)) + ')' + lab + '.</span> Συνήθως ξεκινά μέσα σε λίγα λεπτά· αν όχι, δες το ιστορικό.'
+            : nx ? 'Επόμενη: ' + esc(fmtDT.format(nx.start)) + '–' + esc(t(nx.end)) + lab : 'Δεν υπάρχει προγραμματισμένη ηχογράφηση.') + '</p>';
         }
         if (last) h += '<p class="faint">Τελευταία εκτέλεση: ' + esc(fmtDT.format(last.at * 1000)) + ' — ' + stateOf(last).html + (last.error ? ' · <span class="danger">' + esc(last.error) + '</span>' : '') + '</p>';
         $('rec-status').innerHTML = h;
         const sb = $('stop-btn');
         if (sb) sb.onclick = stop;
-        $('start-box').hidden = !!live || (ctl.cmd === 'start' && ctl.until * 1000 > now && now - ctl.at * 1000 < 10 * 60e3);
       }
       function sourceText(s) {
         return [s.codec && s.codec.toUpperCase(), s.kbps ? s.kbps + ' kbps' : '', s.channels ? (s.channels === 2 ? 'stereo' : 'mono') : '', s.rate ? num(s.rate / 1000, 1) + ' kHz' : ''].filter(Boolean).join(', ');
@@ -454,41 +579,62 @@
         for (const n of D.nights) if (n.status && n.status.source) return n.status.source;
         return null;
       }
-      // Η φόρμα «Ηχογράφηση τώρα»: οι επιλογές της εκπομπής βγαίνουν από το πρόγραμμα του σταθμού
-      let startChoice = null;
+      // Η φόρμα «Νέα ηχογράφηση»: τώρα (εντολή έναρξης) ή αργότερα (κανόνας «μία φορά»)
+      let startChoice = null, startWhen = 'now';
       function startPlan() {
-        const now = Date.now(), tl = stationTimeline(now), mode = (document.querySelector('[name="sm"]:checked') || {}).value;
-        if (mode === 'show' && tl) return { until: tl.cur.end, label: 'την εκπομπή «' + tl.cur.title + '»' };
-        if (mode === 'show2' && tl && tl.next[0]) return { until: tl.next[0].end, label: 'την «' + tl.cur.title + '» και την «' + tl.next[0].title + '»' };
-        if (mode === 'hours') { const h = Number($('start-hours').value); return h >= 0.25 && h <= 24 ? { until: now + h * 3600e3, label: hours(h * 3600) } : { error: 'Η διάρκεια πρέπει να είναι από 0,25 έως 24 ώρες.' }; }
-        if (mode === 'until') {
-          const v = $('start-until').value;
-          if (!v) return { error: 'Διάλεξε ώρα λήξης.' };
-          const today = RS.athensDate(now);
-          let u = RS.at(today, v.slice(0, 5)); if (u <= now + 60e3) u = RS.at(RS.addDays(today, 1), v.slice(0, 5));
-          return { until: u, label: 'έως τις ' + v.slice(0, 5) };
+        const now = Date.now(), busy = !!activeSpan(), when = busy ? 'later' : startWhen;
+        let start = now;
+        if (when === 'later') {
+          const d = $('later-date').value, tm = $('later-time').value;
+          if (!d || !tm) return { error: 'Διάλεξε ημερομηνία και ώρα έναρξης.', when };
+          start = RS.at(d, tm.slice(0, 5));
+          if (start <= now + 60e3) return { error: 'Η ώρα έναρξης έχει περάσει.', when };
         }
-        return { error: 'Διάλεξε μέχρι πότε.' };
+        const tl = when === 'now' ? stationTimeline(now) : null, mode = (document.querySelector('[name="sm"]:checked') || {}).value;
+        let until;
+        if (mode === 'show' && tl) until = tl.cur.end;
+        else if (mode === 'show2' && tl && tl.next[0]) until = tl.next[0].end;
+        else if (mode === 'hours') { const h = Number($('start-hours').value); if (!(h >= 0.25 && h <= 24)) return { error: 'Η διάρκεια πρέπει να είναι από 0,25 έως 24 ώρες.', when }; until = start + h * 3600e3; }
+        else if (mode === 'until') {
+          const v = $('start-until').value;
+          if (!v) return { error: 'Διάλεξε ώρα λήξης.', when };
+          const d0 = RS.athensDate(start);
+          until = RS.at(d0, v.slice(0, 5)); if (until <= start + 60e3) until = RS.at(RS.addDays(d0, 1), v.slice(0, 5));
+        } else return { error: 'Διάλεξε μέχρι πότε.', when };
+        if (until - start > 24 * 3600e3) return { error: 'Έως 24 ώρες τη φορά. Για περισσότερο, βάλε κανόνα στο πρόγραμμα.', when };
+        const shows = stationItems(RS.athensDate(start), 1).filter(it => it.end > start && it.start < until).map(it => it.title);
+        return { start, until, when, shows };
       }
       function renderStart() {
-        const now = Date.now(), tl = stationTimeline(now);
-        const showOk = tl && tl.cur.end - now > 2 * 60e3, show2Ok = tl && tl.next[0];
+        const now = Date.now(), busy = !!activeSpan(), when = busy ? 'later' : startWhen, tl = stationTimeline(now);
+        document.querySelectorAll('[data-when]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.when === when)); b.disabled = busy && b.dataset.when === 'now'; });
+        $('when-note').textContent = busy ? 'Ηχογραφεί ήδη· μπορείς να προγραμματίσεις για αργότερα.' : '';
+        $('later-box').hidden = when !== 'later';
+        if (!$('later-date').value) { const n = new Date(now + 3600e3); $('later-date').value = RS.athensDate(n.getTime()); $('later-time').value = t(n.getTime()).slice(0, 2) + ':00'; }
+        const showOk = when === 'now' && tl && tl.cur.end - now > 2 * 60e3, show2Ok = when === 'now' && tl && tl.next[0];
         $('opt-show').hidden = !showOk; $('opt-show2').hidden = !show2Ok;
-        if (showOk) $('opt-show-l').innerHTML = 'Μόνο την τρέχουσα εκπομπή<small>«' + esc(tl.cur.title) + '» — έως ' + esc(t(tl.cur.end)) + ' (μένουν ' + left(tl.cur.end - now) + ')</small>';
-        if (show2Ok) $('opt-show2-l').innerHTML = 'Την τρέχουσα και την επόμενη<small>«' + esc(tl.cur.title) + '» και «' + esc(tl.next[0].title) + '» — έως ' + esc(t(tl.next[0].end)) + '</small>';
-        // μέχρι να διαλέξει ο χρήστης, προτείνεται η τρέχουσα εκπομπή (αν το πρόγραμμα έχει φορτωθεί)
+        if (showOk) $('opt-show-l').innerHTML = 'Το τέλος της τρέχουσας εκπομπής<small>«' + esc(tl.cur.title) + '» — ' + esc(t(tl.cur.end)) + ' (μένουν ' + left(tl.cur.end - now) + ')</small>';
+        if (show2Ok) $('opt-show2-l').innerHTML = 'Το τέλος της επόμενης εκπομπής<small>«' + esc(tl.next[0].title) + '» — ' + esc(t(tl.next[0].end)) + '</small>';
+        // μέχρι να διαλέξει ο χρήστης, προτείνεται η τρέχουσα εκπομπή (τώρα) ή 1 ώρα (αργότερα)
         let choice = startChoice;
         if (!choice || (choice === 'show' && !showOk) || (choice === 'show2' && !show2Ok)) choice = showOk ? 'show' : 'hours';
         const r = document.querySelector('[name="sm"][value="' + choice + '"]'); if (r) r.checked = true;
-        const p = startPlan();
+        const p = startPlan(), q = D.config.quality;
         $('start-summary').innerHTML = p.error ? '<span class="danger">' + esc(p.error) + '</span>'
-          : 'Θα ηχογραφηθεί <b>από τώρα (' + esc(t(now)) + ') έως ' + esc(t(p.until)) + '</b> · ' + left(p.until - now) + ' · περίπου ' + bytes((p.until - now) / 3600e3 * mbPerHour(D.config.quality.bitrate)) +
-            ' <span class="faint">(' + D.config.quality.bitrate + ' kbps ' + (D.config.quality.channels === 2 ? 'stereo' : 'mono') + ')</span>';
+          : (p.when === 'now' ? 'Θα ηχογραφηθεί <b>από τώρα (' + esc(t(now)) + ') έως ' + esc(t(p.until)) + '</b>' : 'Θα προγραμματιστεί <b>' + esc(fmtD.format(p.start)) + ', ' + esc(t(p.start)) + '–' + esc(t(p.until)) + '</b>') +
+            ' · ' + left(p.until - p.start) + ' · περίπου ' + bytes((p.until - p.start) / 3600e3 * mbPerHour(q.bitrate)) + ' <span class="faint">(' + q.bitrate + ' kbps ' + (q.channels === 2 ? 'stereo' : 'mono') + ')</span>' +
+            (p.shows.length ? '<br><span class="faint">Εκπομπές: ' + esc(p.shows.join(' · ')) + '</span>' : '');
+        $('start-btn').textContent = p.when === 'now' ? 'Ξεκίνα ηχογράφηση' : 'Προγραμμάτισε';
         $('start-btn').disabled = !!p.error;
       }
       async function startNow() {
         const p = startPlan();
         if (p.error) { renderStart(); return; }
+        if (p.when === 'later') {
+          const rule = { id: newId(), label: (p.shows.join(' · ') || 'Ηχογράφηση').slice(0, 80), date: RS.athensDate(p.start), start: t(p.start), end: t(p.until), enabled: true };
+          applyRules(c => c.rules.push(rule), 'Να ηχογραφηθεί ' + fmtD.format(p.start) + ', ' + rule.start + '–' + rule.end + ';', 'Προγραμματίστηκε: ' + fmtD.format(p.start) + ', ' + rule.start + '–' + rule.end + '.');
+          return;
+        }
         if (!confirm('Να ξεκινήσει ηχογράφηση τώρα, έως τις ' + t(p.until) + ' (' + left(p.until - Date.now()) + ');')) return;
         try { const r = await call({ action: 'radio-start', until: t(p.until) }); msg('top-msg', 'Η ηχογράφηση ξεκινά σε 1–2 λεπτά και θα κρατήσει έως τις ' + esc(fmtDT.format(r.until)) + '.', 'ok'); setTimeout(load, 2000); }
         catch (e) { msg('top-msg', esc(e.message), 'err'); }
@@ -525,7 +671,7 @@
               : '<span class="chips">' + DAY_SHORT.map((d, k) => '<button type="button" class="chip" data-day="' + k + '" title="' + DAY_NAME[k] + '" aria-pressed="' + r.days.includes(k) + '">' + d + '</button>').join('') + '</span>' +
                 '<button type="button" class="btn small" data-all>Όλες</button>') +
             '<span>από</span><input type="time" data-k="start" value="' + esc(r.start) + '"><span>έως</span><input type="time" data-k="end" value="' + esc(r.end) + '">' +
-            '<span class="faint dur"></span></div>';
+            '<span class="faint dur"></span></div><div class="overlap"></div>';
           const dur = () => { el.querySelector('.dur').textContent = hours(ruleDur(r)) + (r.end <= r.start ? ' · περνά τα μεσάνυχτα' : ''); };
           dur();
           el.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener('change', () => {
@@ -550,6 +696,18 @@
           el.querySelector('[data-del]').addEventListener('click', () => { if (confirm('Διαγραφή του κανόνα' + (r.label ? ' «' + r.label + '»' : '') + ';')) { cfg.rules.splice(i, 1); changed(true); } });
           box.appendChild(el);
         });
+        updateOverlaps();
+      }
+      // Κανόνες που πέφτουν πάνω σε άλλους (τις επόμενες 14 ημέρες): δεν γίνονται δύο ηχογραφήσεις, ενώνονται σε μία
+      function updateOverlaps() {
+        const now = Date.now(), win = x => RS.windows({ enabled: true, quality: cfg.quality, rules: [Object.assign({}, x, { enabled: true })] }, now, now + 14 * 86400e3);
+        const all = cfg.rules.map(r => (r.enabled ? win(r) : []));
+        [...$('rules').querySelectorAll('.rule')].forEach((el, i) => {
+          const r = cfg.rules[i], box = el.querySelector('.overlap');
+          if (!r || !box) return;
+          const hits = cfg.rules.filter((o, j) => j !== i && all[j].some(w => all[i].some(m => w.start < m.end && m.start < w.end))).map(o => '«' + (o.label || 'χωρίς όνομα') + '»');
+          box.textContent = hits.length ? '⚠ Επικαλύπτεται με ' + hits.join(', ') + ': γίνεται μία συνεχής ηχογράφηση, όχι δύο.' : '';
+        });
       }
       function renderWeek() {
         const today = RS.athensDate(Date.now()), now = Date.now();
@@ -566,39 +724,11 @@
         $('week').innerHTML = h;
         $('long-note').innerHTML = longest > RS.JOB_CAP_MS ? '<p class="faint">Ηχογραφήσεις πάνω από 5 ώρες και 40 λεπτά συνεχίζονται αυτόματα από νέα εκτέλεση, με κενό περίπου ενός λεπτού κάθε 5 ώρες και 40 λεπτά.</p>' : '';
       }
-      async function loadStation(show) {
-        if (!station) {
-          if (show) $('station').innerHTML = '<p class="muted">Φόρτωση προγράμματος από το peradio.com…</p>';
-          try { station = await call({ action: 'radio-station' }); stationError = ''; }
-          catch (e) { stationError = e.message; if (D) renderNow(); if (show) $('station').innerHTML = '<p class="danger">Το πρόγραμμα του σταθμού δεν φορτώθηκε: ' + esc(e.message) + '</p>'; return; }
-          if (D) renderNow();
-        }
-        if (show) renderStation();
-      }
-      function renderStation() {
-        const today = RS.athensDate(Date.now());
-        if (stationDay == null) stationDay = RS.weekday(today);
-        const rows = station.week[station.days[stationDay]] || [];
-        // η επόμενη ημερομηνία αυτής της ημέρας της εβδομάδας (σήμερα, αν είναι η ίδια)
-        const date = RS.addDays(today, (stationDay - RS.weekday(today) + 7) % 7);
-        let h = '<p class="faint">Από το <a href="' + esc(station.src) + '" target="_blank" rel="noopener">εβδομαδιαίο πρόγραμμα του σταθμού</a>. Η λήξη είναι η ώρα έναρξης της επόμενης εκπομπής. Μετά τις 22:30 ο σταθμός δεν δημοσιεύει αναλυτικό πρόγραμμα.</p>';
-        h += '<div class="station-tabs">' + DAY_NAME.map((d, k) => '<button type="button" class="btn small" data-sd="' + k + '" aria-pressed="' + (k === stationDay) + '">' + d + '</button>').join('') + '</div><ul>';
-        rows.forEach((r, i) => {
-          const end = rows[i + 1] ? rows[i + 1][0] : '23:59';
-          h += '<li><time>' + esc(r[0] + '–' + end) + '</time><span class="s-t">' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</span>' +
-            '<span class="s-b"><button type="button" class="btn small" data-add="w" data-i="' + i + '">+ ' + DAY_ACC[stationDay] + '</button>' +
-            '<button type="button" class="btn small" data-add="o" data-i="' + i + '">+ μόνο ' + esc(dateLabel(date).replace(/\s\d{4}$/, '')) + '</button></span></li>';
-        });
-        h += '</ul>';
-        $('station').innerHTML = h;
-        $('station').querySelectorAll('[data-sd]').forEach(b => b.addEventListener('click', () => { stationDay = Number(b.dataset.sd); renderStation(); }));
-        $('station').querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => {
-          const i = Number(b.dataset.i), r = rows[i], end = rows[i + 1] ? rows[i + 1][0] : '23:59';
-          const rule = { id: newId(), label: r[1].slice(0, 80), start: r[0], end, enabled: true };
-          if (b.dataset.add === 'w') rule.days = [stationDay]; else rule.date = date;
-          cfg.rules.push(rule); changed(true);
-          msg('top-msg', 'Προστέθηκε: «' + esc(rule.label) + '» ' + esc(rule.start + '–' + rule.end) + (rule.date ? ' στις ' + esc(dateLabel(rule.date)) : ' ' + DAY_ACC[stationDay]) + '. Πάτα «Αποθήκευση ρυθμίσεων».', 'ok');
-        }));
+      async function loadStation() {
+        if (station) return;
+        try { station = await call({ action: 'radio-station' }); stationError = ''; }
+        catch (e) { stationError = e.message; }
+        if (D) renderNow();
       }
 
       // ── 3. Ποιότητα ────────────────────────────────────────────────
@@ -682,7 +812,7 @@
         $('log').innerHTML = '<ul class="items">' + log.slice(0, 50).map(e => {
           let det = '';
           if (e.type === 'cleanup') det = 'Αυτόματη διαγραφή: ' + esc((e.deleted || []).map(d => dateLabel(d.tag.slice(4))).join(', ')) + ' (' + bytes((e.deleted || []).reduce((a, d) => a + d.bytes, 0)) + ')';
-          else det = [e.since ? esc(range(e.since * 1000, e.until * 1000)) : '', e.why ? esc(e.why) : '', e.event === 'push' ? 'από τη διαχείριση' : '',
+          else det = [e.since ? esc(range(e.since * 1000, e.until * 1000)) : '', e.why ? esc(e.why) : '', e.event === 'push' && e.why !== 'από τη διαχείριση' ? 'από τη διαχείριση' : '',
             e.segments ? e.segments + ' κομμάτια · ' + bytes(e.bytes || 0) : '', e.quality && e.quality.bitrate ? e.quality.bitrate + 'k ' + (e.quality.channels === 2 ? 'stereo' : 'mono') : ''].filter(Boolean).join(' · ');
           return '<li class="item"><div class="item-h"><b>' + esc(fmtDT.format(e.at * 1000)) + '</b>' + stateOf(e).html + '</div><div class="item-m">' + det +
             (e.error ? '<br><span class="danger">' + esc(e.error) + '</span>' : '') + ' <a class="faint" href="' + esc(e.url) + '" target="_blank" rel="noopener">λεπτομέρειες ↗</a></div></li>';
@@ -696,7 +826,7 @@
         $('recs').innerHTML = '<ul class="items">' + list.map(n =>
           '<li class="item"><div class="item-h"><b>' + esc(dateLabel(n.date)) + (n.growing ? ' <span class="badge run">γράφει</span>' : '') + '</b>' +
           '<span>' + (n.first ? esc(t(n.first)) + '–' + esc(t(n.first + n.dur * 1000)) + ' · ' : '') + hours(n.dur) + ' · ' + bytes(n.size) + '</span></div>' +
-          (n.titles.length ? '<div class="item-m">' + esc(n.titles.slice(0, 6).join(' · ')) + '</div>' : '') +
+          ((n.shows || []).length ? '<div class="showchips">' + n.shows.map(sh => '<a href="radio.html?night=' + esc(n.tag) + '&amp;at=' + Math.max(sh.start, n.first || 0) + '"><time>' + esc(t(Math.max(sh.start, n.first || 0))) + '</time>' + esc(sh.title) + '</a>').join('') + '</div>' : '') +
           '<div class="item-m faint">' + n.segments + ' κομμάτια · ' + esc(n.kbps.map(k => k + ' kbps').join(', ')) + '</div>' +
           '<div class="item-a"><a class="btn small" href="radio.html?night=' + esc(n.tag) + '">Άκουσε</a><button class="btn small" type="button" data-parts="' + esc(n.tag) + '">' + (openNight === n.tag ? 'Κλείσιμο κομματιών' : 'Κομμάτια') + '</button>' +
           '<button class="btn small danger" type="button" data-delnight="' + esc(n.tag) + '">Διαγραφή ημέρας</button></div>' +
@@ -742,7 +872,7 @@
       // ── Αποθήκευση ─────────────────────────────────────────────────
       // Οι κανόνες ξαναστήνονται μόνο όταν αλλάζει η λίστα (προσθήκη/διαγραφή) ή φορτώνονται νέες ρυθμίσεις,
       // ώστε να μη χάνεται η εστίαση την ώρα που γράφεις· τα υπόλοιπα ενημερώνονται σε κάθε αλλαγή.
-      function changed(structural) { if (structural) renderRules(); renderDerived(); }
+      function changed(structural) { if (structural) renderRules(); else updateOverlaps(); renderDerived(); }
       function renderDerived() {
         renderNow(); renderUpcoming(); renderWeek(); renderQuality(); renderStorage(); renderEstimates();
         $('savebar').hidden = !dirty();
@@ -773,7 +903,6 @@
       $('cfg-enabled').addEventListener('change', e => { cfg.enabled = e.target.checked; changed(); });
       $('add-weekly').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', days: [0, 1, 2, 3, 4, 5, 6], start: '22:00', end: '03:00', enabled: true }); changed(true); });
       $('add-once').addEventListener('click', () => { cfg.rules.push({ id: newId(), label: '', date: RS.athensDate(Date.now()), start: '20:00', end: '21:00', enabled: true }); changed(true); });
-      $('station-btn').addEventListener('click', () => { const s = $('station'); s.hidden = !s.hidden; if (!s.hidden) loadStation(true); });
       $('c-retention').addEventListener('change', e => { cfg.retentionDays = Math.max(0, Math.floor(Number(e.target.value) || 0)); changed(); });
       $('c-maxgb').addEventListener('change', e => { cfg.maxGB = Math.max(0, Number(e.target.value) || 0); changed(); });
       document.querySelectorAll('[name="sm"]').forEach(r => r.addEventListener('change', () => { startChoice = r.value; renderStart(); }));
@@ -781,6 +910,8 @@
       $('start-hours').addEventListener('input', () => { startChoice = 'hours'; renderStart(); });
       $('start-until').addEventListener('input', () => { startChoice = 'until'; renderStart(); });
       $('start-btn').addEventListener('click', startNow);
+      document.querySelectorAll('[data-when]').forEach(b => b.addEventListener('click', () => { startWhen = b.dataset.when; renderStart(); }));
+      ['later-date', 'later-time'].forEach(id => $(id).addEventListener('input', renderStart));
       $('reload').addEventListener('click', load);
       $('login-form').addEventListener('submit', e => { e.preventDefault(); login($('pw').value); });
 

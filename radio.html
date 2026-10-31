@@ -546,10 +546,12 @@
       }
       window.addEventListener('pagehide', () => save(true));
 
-      refresh().then(() => {
+      refresh().then(async () => {
         if (!nights.length) return;
-        const want = new URLSearchParams(location.search).get('night'), last = store.get('night');
-        select(nights.some(n => n.tag === want) ? want : nights.some(n => n.tag === last) ? last : nights[0].tag, false);
+        const q = new URLSearchParams(location.search), want = q.get('night'), at = Number(q.get('at')), last = store.get('night');
+        await select(nights.some(n => n.tag === want) ? want : nights.some(n => n.tag === last) ? last : nights[0].tag, false);
+        // ?night=…&at=<epoch ms>: άνοιγμα σε συγκεκριμένη στιγμή (π.χ. αρχή εκπομπής από τη διαχείριση)
+        if (at && N && N.tag === want) seek(posAt(at));
       });
       setInterval(refresh, 60000);
     })();
