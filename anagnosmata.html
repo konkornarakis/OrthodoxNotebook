@@ -45,6 +45,11 @@
     .reading sup { font-family: var(--font-body); font-size: .55em; color: var(--gold-deep); margin: 0 .15em 0 .3em; vertical-align: .55em; }
     .no-nums .reading sup { display: none; }
     .note-box { padding: 1rem 1.2rem; border: 1px solid var(--rule); border-left: 3px solid var(--gold); border-radius: 6px; background: var(--vellum); color: var(--ink-soft); }
+    .day-cal { margin: .8rem auto 0; max-width: 640px; font-size: 15.5px; line-height: 1.5; color: var(--ink-soft); }
+    .reading .note { text-align: center; color: var(--gold-deep); font-size: 14px; margin: -.6rem 0 .8rem; }
+    .reading .more { margin: 1rem 0 0; text-align: center; font-size: 14.5px; }
+    .order { text-align: center; margin: 1rem 0 0; font-size: 13.5px; color: var(--ink-faint); }
+    .order b { color: var(--ink-soft); font-weight: 600; }
     .sources { margin-top: 2rem; font-size: 13.5px; color: var(--ink-faint); line-height: 1.6; }
     .sources a { color: var(--ink-soft); }
     @media (max-width: 560px) { .reading .text { text-align: left; } }
@@ -75,10 +80,11 @@
         <div id="readings" aria-live="polite"></div>
 
         <p class="sources">
-          Τα αναγνώσματα υπολογίζονται κατά την τάξη του Οικουμενικού Πατριαρχείου, όπως την τηρεί η Ελληνική Ορθόδοξη Αρχιεπισκοπή Αμερικής·
-          σε δοκιμή με όλο το 2026 συμφώνησαν με εκείνη σε 352 από τις 365 ημέρες. Οι διαφορές είναι κυρίως στη Μεγάλη Εβδομάδα, σε Σάββατα της Τεσσαρακοστής
-          και σε ημέρες με δύο μνήμες. Στην Εκκλησία της Ελλάδος ορισμένες ημέρες (π.χ. τοπικοί άγιοι) μπορεί να διαφέρουν· σε κάθε περίπτωση ισχύει ό,τι διαβάζεται στον ναό σας.
-          <br>Κείμενο: η Πατριαρχική έκδοση της Καινής Διαθήκης (1904), από την ηλεκτρονική μορφή του M. A. Robinson, με τονισμό από το Βυζαντινό κείμενο Robinson–Pierpont.
+          Τα αναγνώσματα είναι κατά το Ημερολόγιο της Εκκλησίας της Ελλάδος, όπως τα δημοσιεύει ο Ορθόδοξος Συναξαριστής <a href="https://www.saint.gr" target="_blank" rel="noopener">saint.gr</a>
+          (ενημερώνονται κάθε μέρα για τις επόμενες 15 ημέρες και κρατιούνται). Για ημέρες πιο μακριά στο μέλλον υπολογίζονται κατά την τάξη του Οικουμενικού Πατριαρχείου,
+          με ένδειξη. Σε κάθε περίπτωση ισχύει ό,τι διαβάζεται στον ναό σας.
+          Οι ερμηνευτικές αποδόσεις στα νέα ελληνικά (Π. Τρεμπέλα, Ι. Κολιτσάρα) έχουν πνευματικά δικαιώματα, γι' αυτό δεν αναδημοσιεύονται εδώ· ο σύνδεσμος κάτω από κάθε ανάγνωσμα ανοίγει τη σελίδα της ημέρας στο saint.gr, όπου υπάρχουν.
+          <br>Κείμενο (για τις υπολογισμένες ημέρες): η Πατριαρχική έκδοση της Καινής Διαθήκης (1904), από την ηλεκτρονική μορφή του M. A. Robinson, με τονισμό από το Βυζαντινό κείμενο Robinson–Pierpont.
           Η τάξη των αναγνωσμάτων βασίζεται στα δεδομένα του <a href="https://github.com/brianglass/orthocal-python" target="_blank" rel="noopener">orthocal</a>.
           Στην αρχή κάθε περικοπής σημειώνεται με κόκκινο το «Ἀδελφοί» ή το «Τῷ καιρῷ ἐκείνῳ», όπως διαβάζεται στον ναό· η υπόλοιπη περικοπή δίνεται όπως είναι στο κείμενο.
         </p>
@@ -145,6 +151,28 @@
           return;
         }
         box.innerHTML = '<p class="muted" style="text-align:center;margin-top:1.4rem">Φόρτωση…</p>';
+        // 1) Η τάξη της Εκκλησίας της Ελλάδος (readings-gr, από το saint.gr, έως ~15 ημέρες μπροστά)
+        const key = pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        const gr = await json(`readings-gr/${d.getFullYear()}.json`).catch(() => null);
+        if (my !== req) return;
+        const gday = gr && gr[key];
+        if (gday) {
+          if (gday.h) $('day-head').insertAdjacentHTML('beforeend', `<p class="day-cal">${esc(gday.h)}</p>`);
+          const thisYear = d.getFullYear() === now.getFullYear();
+          const saintUrl = `https://www.saint.gr/${key.replace('-', '/')}/index.aspx`;
+          const title = r => r.k === 'A' ? 'Ὁ Ἀπόστολος' : r.k === 'E' ? 'Τὸ Εὐαγγέλιον' : r.k === 'H' ? 'Τὸ Ἑωθινὸν Εὐαγγέλιον' : r.t;
+          box.innerHTML = (gday.r.length ? gday.r.map(r => `<section class="reading panel">
+              <h2>${esc(title(r))}</h2>
+              <p class="ref">${esc(r.b)} · ${esc(r.ref)}</p>
+              ${r.n ? `<p class="note">${esc(r.n)}</p>` : ''}
+              <p class="text" lang="grc">${textOf(r)}</p>
+              ${thisYear ? `<p class="more"><a href="${saintUrl}" target="_blank" rel="noopener">Νεοελληνική ερμηνευτική απόδοση (Π. Τρεμπέλα · Ι. Κολιτσάρα) στο saint.gr ↗</a></p>` : ''}
+            </section>`).join('')
+            : `<div class="note-box" style="margin-top:1.4rem">Σήμερα δεν ορίζεται Απόστολος και Ευαγγέλιο Θείας Λειτουργίας.</div>`) +
+            `<p class="order">Κατά το <b>Ημερολόγιο της Εκκλησίας της Ελλάδος</b> (από το <a href="${saintUrl}" target="_blank" rel="noopener">saint.gr</a>).</p>`;
+          return;
+        }
+        // 2) Αλλιώς υπολογισμός κατά την τάξη του Οικουμενικού Πατριαρχείου (για ημέρες που δεν έχουν δημοσιευτεί ακόμη)
         try {
           const year = await json(`readings/${d.getFullYear()}.json`);
           const list = year[pad(d.getMonth() + 1) + '-' + pad(d.getDate())] || [];
@@ -156,7 +184,8 @@
           }
           const texts = await Promise.all(list.map(([pid]) => json(`readings/t/${pid % 16}.json`).then(c => c[pid])));
           if (my !== req) return;
-          box.innerHTML = list.map(([, kind], i) => {
+          box.innerHTML = `<div class="note-box" style="margin-top:1.4rem">Η επίσημη τάξη της Εκκλησίας της Ελλάδος για αυτή την ημέρα δεν έχει δημοσιευτεί ακόμη (δημοσιεύεται έως 15 ημέρες νωρίτερα).
+            Παρακάτω τα αναγνώσματα όπως <b>υπολογίζονται</b> κατά την τάξη του Οικουμενικού Πατριαρχείου· σε λίγες ημέρες του έτους μπορεί να διαφέρουν.</div>` + list.map(([, kind], i) => {
             const t = texts[i];
             if (!t) return '';
             return `<section class="reading panel">
