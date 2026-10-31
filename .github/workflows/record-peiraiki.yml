@@ -67,7 +67,21 @@ jobs:
           echo "t0=$(date +%s)" >> "$GITHUB_OUTPUT"
           get() { gh api "repos/$GH_REPO/contents/radio/$1?ref=main" --jq .content 2>/dev/null | base64 -d > "$2" 2>/dev/null || echo '{}' > "$2"; }
           get config.json cfg.json; get control.json ctl.json
-          node radio/schedule.js decide cfg.json ctl.json | tee -a "$GITHUB_OUTPUT"
+          # Το πρόγραμμα του σταθμού (για τους κανόνες «κάθε φορά που μεταδίδεται»). Κρατιέται αντίγραφο στο release
+          # radio-log, ώστε αν ο σταθμός δεν απαντά να χρησιμοποιηθεί το τελευταίο γνωστό.
+          if curl -sSL --max-time 25 -A "Mozilla/5.0" "https://www.peradio.com/evdomadiaio-programma/" -o page.html \
+             && node radio/program.js page.html --week > week.json 2>/dev/null; then
+            if [ "$EVENT" = schedule ]; then
+              gh release view radio-log >/dev/null 2>&1 || gh release create radio-log --latest=false \
+                --title "Ραδιόφωνο — ημερολόγιο" --notes "Ημερολόγιο εκτελέσεων της ηχογράφησης (το διαβάζει η διαχείριση)." >/dev/null 2>&1 || true
+              gh release download radio-log -p program-week.json -O old-week.json 2>/dev/null || true
+              if ! cmp -s week.json old-week.json; then cp week.json program-week.json; gh release upload radio-log program-week.json --clobber >/dev/null 2>&1 || true; fi
+            fi
+          else
+            echo "::warning::Το πρόγραμμα του σταθμού δεν διαβάστηκε· χρησιμοποιείται το τελευταίο γνωστό."
+            gh release download radio-log -p program-week.json -O week.json 2>/dev/null || echo '{}' > week.json
+          fi
+          node radio/schedule.js decide cfg.json ctl.json week.json | tee -a "$GITHUB_OUTPUT"
 
       # Αυτόματη διαγραφή με βάση τη διατήρηση και το όριο χώρου (σε κάθε προγραμματισμένο τρέξιμο).
       - name: Διατήρηση χώρου

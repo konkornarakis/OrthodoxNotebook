@@ -148,16 +148,28 @@ function cover(segs) {
   return out;
 }
 
+// Το πρόγραμμα του σταθμού (για τους κανόνες «κάθε φορά που μεταδίδεται»), με μνήμη μισής ώρας
+let weekCache = null;
+async function stationWeek() {
+  if (weekCache && Date.now() - weekCache.at < 30 * 60e3) return weekCache.week;
+  try {
+    const week = await Promise.race([program.fetchWeek(), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 8000))]);
+    weekCache = { at: Date.now(), week };
+    return week;
+  } catch { return weekCache ? weekCache.week : null; }
+}
+
 async function radio(b) {
   if (b.action === 'radio-get') {
-    const [config, control, nights, log] = await Promise.all([
-      readJson('radio/config.json', {}), readJson('radio/control.json', {}), recordings.nights(), readLog(),
+    const [config, control, nights, log, week] = await Promise.all([
+      readJson('radio/config.json', {}), readJson('radio/control.json', {}), recordings.nights(), readLog(), stationWeek(),
     ]);
     const cfg = schedule.normalize(config), now = Date.now();
-    const upcoming = schedule.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3).filter(w => w.end > now).slice(0, 8);
+    const upcoming = schedule.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3, week).filter(w => w.end > now).slice(0, 8);
     const recs = nights.map(n => ({ id: n.id, tag: n.tag, date: n.date, bytes: n.size }));
     return {
-      now, config: cfg, control, log, upcoming, estimate: schedule.estimate(cfg, now),
+      now, config: cfg, control, log, upcoming, estimate: schedule.estimate(cfg, now, week),
+      station: week ? { week, days: program.DAYS, src: program.SRC } : null,
       nights: nights.map(summary),
       storage: { bytes: nights.reduce((a, n) => a + n.size, 0), seconds: nights.reduce((a, n) => a + n.dur, 0), count: nights.length },
       wouldDelete: cleanupPlan(recs, cfg, now).map(r => ({ tag: r.tag, bytes: r.bytes })),
@@ -215,7 +227,9 @@ async function radio(b) {
     return {};
   }
   if (b.action === 'radio-station') {
-    return { week: await program.fetchWeek(), days: program.DAYS, src: program.SRC };
+    const week = await stationWeek();
+    if (!week) throw new Error('Το πρόγραμμα του σταθμού δεν διαβάστηκε.');
+    return { week, days: program.DAYS, src: program.SRC };
   }
   return null;
 }
