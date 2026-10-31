@@ -1,0 +1,39 @@
+name: Αναγνώσματα — τάξη της Εκκλησίας της Ελλάδος
+
+# Κατεβάζει από το saint.gr τα αναγνώσματα (Απόστολος, Ευαγγέλιο, Εωθινό) κατά το Ημερολόγιο της Εκκλησίας της
+# Ελλάδος στο readings-gr/<έτος>.json (tools/build-readings-gr.js). Το saint.gr τα δείχνει έως ~15 ημέρες μπροστά,
+# γι' αυτό τρέχει κάθε μέρα για τις επόμενες ημέρες· χειροκίνητα μπορεί να κατεβάσει όλο το έτος.
+on:
+  schedule:
+    - cron: "23 1 * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Όλες οι ημερομηνίες του έτους (αντί για τις επόμενες 16 ημέρες)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: readings-gr
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Λήψη αναγνωσμάτων
+        run: |
+          if [ "${{ github.event.inputs.full }}" = "true" ]; then node tools/build-readings-gr.js; else node tools/build-readings-gr.js --window 16; fi
+      - name: Αποθήκευση
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add readings-gr
+          if git diff --cached --quiet; then echo "Καμία αλλαγή."; exit 0; fi
+          git commit -m "Αναγνώσματα: τάξη της Εκκλησίας της Ελλάδος (saint.gr)"
+          git pull --rebase -q && git push

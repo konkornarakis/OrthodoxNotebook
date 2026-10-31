@@ -243,7 +243,8 @@
     .key-date-value { font-family: var(--font-display); font-size: 19px; }
     .key-date.great .key-date-value { color: var(--cinnabar); }
 
-    .to-feasts { margin: 0; padding: .8rem 1rem; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); }
+    .to-feasts { padding: 1rem 1.1rem; border: 1px solid var(--rule); border-left: 3px solid var(--gold); border-radius: 8px; background: var(--vellum); }
+    .to-feasts p { margin: 0 0 .6rem; }
     .day-more { margin-top: .5rem; font-size: 14.5px; }
     .ics-row { margin-top: 1.2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 14px; color: var(--ink-soft); }
 
@@ -321,7 +322,12 @@
         </section>
 
         <section class="section">
-          <p class="to-feasts">Οι εορτές (σταθερές και κινητές) και οι άγιοι κάθε ημέρας βρίσκονται στο <a href="synaxarion.html">Εορτολόγιο →</a></p>
+          <h2 class="section-heading" id="keydates-title">Κινητές εορτές</h2>
+          <div class="to-feasts">
+            <p>Οι κινητές εορτές (Τριώδιο, Πάσχα, Ανάληψη, Πεντηκοστή κ.ά.), οι σταθερές εορτές και οι άγιοι κάθε ημέρας είναι πλέον μαζί, στο <b>Εορτολόγιο</b>.</p>
+            <p id="next-feast"></p>
+            <a class="btn btn-accent" href="synaxarion.html#keydates-title">Οι κινητές εορτές στο Εορτολόγιο →</a>
+          </div>
           <div class="ics-row">
             <button class="btn" type="button" onclick="exportIcal(viewYear)">Λήψη νηστειοδρομίου (.ics)</button>
             <span id="ics-hint"></span>
@@ -588,6 +594,15 @@
 
     function renderIcsHint() {
       document.getElementById('ics-hint').textContent = 'Όλες οι ημέρες του ' + viewYear + ' για το ημερολόγιο του κινητού σας.';
+      document.getElementById('keydates-title').textContent = 'Κινητές εορτές του ' + viewYear;
+      // η επόμενη κινητή εορτή (από σήμερα), ως γεύση του τι υπάρχει στο Εορτολόγιο
+      const MOV = [[-70, 'Αρχή του Τριωδίου'], [-48, 'Καθαρά Δευτέρα'], [-7, 'Κυριακή των Βαΐων'], [0, 'Άγιο Πάσχα'], [39, 'Ανάληψη'], [49, 'Πεντηκοστή'], [50, 'Αγίου Πνεύματος']];
+      let next = null;
+      for (const y of [TODAY.getFullYear(), TODAY.getFullYear() + 1]) {
+        for (const [off, name] of MOV) { const d = C.addDays(C.easter(y), off); if (d >= TODAY && (!next || d < next.d)) next = { d, name }; }
+        if (next) break;
+      }
+      document.getElementById('next-feast').innerHTML = next ? 'Επόμενη: <b>' + next.name + '</b>, ' + C.formatShort(next.d) + (next.d.getFullYear() !== TODAY.getFullYear() ? ' ' + next.d.getFullYear() : '') + '.' : '';
     }
 
 
