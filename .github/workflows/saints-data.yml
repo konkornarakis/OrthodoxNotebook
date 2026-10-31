@@ -1,0 +1,28 @@
+name: Εορτολόγιο — άγιοι του έτους
+
+# Κατεβάζει όλους τους αγίους των 366 ημερών από το saint.gr στο data/saints.json (tools/build-saints.js),
+# ώστε το Εορτολόγιο να μην εξαρτάται από το saint.gr την ώρα της χρήσης. Τρέχει χειροκίνητα και μία φορά τον χρόνο.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 3 2 1 *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Λήψη αγίων
+        run: node tools/build-saints.js
+      - name: Αποθήκευση
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/saints.json
+          if git diff --cached --quiet; then echo "Καμία αλλαγή."; exit 0; fi
+          git commit -m "Εορτολόγιο: οι άγιοι του έτους από το saint.gr"
+          git push

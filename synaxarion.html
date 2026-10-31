@@ -60,6 +60,19 @@
     .error { padding: 1rem 1.2rem; border: 1px solid var(--rule); border-left: 3px solid var(--cinnabar); border-radius: 6px; background: var(--vellum); color: var(--ink-soft); font-size: 15px; }
     .source-note { margin-top: .8rem; font-size: 13px; color: var(--ink-faint); text-align: right; }
     .source-note a { color: var(--ink-soft); }
+    .syn-mem { text-align: center; margin: .9rem 0 0; font-family: var(--font-display); font-size: 19px; line-height: 1.4; color: var(--ink); }
+    .syn-mem small { display: block; font-family: var(--font-body); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 2px; }
+    .syn-mem a { color: inherit; text-decoration: none; }
+    .syn-mem a:hover { color: var(--cinnabar); }
+
+    /* κινητές εορτές του έτους */
+    .key-dates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .key-date { all: unset; box-sizing: border-box; cursor: pointer; padding: .6rem .8rem; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); }
+    .key-date:hover, .key-date:focus-visible { border-color: var(--cinnabar); }
+    .key-date.great .key-date-label { color: var(--cinnabar); }
+    .key-date[aria-current="true"] { border-color: var(--cinnabar); box-shadow: inset 3px 0 0 var(--cinnabar); }
+    .key-date-label { font-size: 14px; color: var(--ink-soft); }
+    .key-date-value { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
   </style>
 </head>
 
@@ -82,6 +95,11 @@
           <h2 class="section-heading">Οι άγιοι της ημέρας</h2>
           <div id="saints"><div class="loading">Φόρτωση…</div></div>
         </section>
+
+        <section class="section">
+          <h2 class="section-heading" id="keydates-title">Κινητές εορτές</h2>
+          <div id="keydates" class="key-dates"></div>
+        </section>
       </main>
 
       <footer data-site-footer>Ο κατάλογος των αγίων προέρχεται από τον Ορθόδοξο Συναξαριστή <a href="https://www.saint.gr" target="_blank" rel="noopener">saint.gr</a>.</footer>
@@ -93,6 +111,8 @@
     const CROSS = window.OrthoSite ? window.OrthoSite.SMALL_CROSS : '';
     const now = new Date();
     let viewDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // ?d=ΕΕΕΕ-ΜΜ-ΗΗ (π.χ. από το νηστειοδρόμιο)
+    { const q = /^(\d{4})-(\d{2})-(\d{2})$/.exec(new URLSearchParams(location.search).get('d') || ''); if (q) viewDate = new Date(+q[1], +q[2] - 1, +q[3]); }
     let requestId = 0;
 
     function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -111,6 +131,7 @@
           <div class="syn-date${red ? ' red' : ''}">${d.getDate()} ${C.MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}</div>
           <div class="syn-fast"><span class="seal lv-${f.level}"></span><a href="main.html" title="Άνοιγμα στο νηστειοδρόμιο">${esc(f.label)}${f.period ? ' · ' + esc(f.period) : ''}</a></div>
           ${feasts.length ? `<ul class="syn-feasts">${feasts.map(x => `<li class="${x.rank !== 'minor' ? 'red' : ''}">${esc(x.name)}</li>`).join('')}</ul>` : ''}
+          <p class="syn-mem" id="syn-mem"${feasts.length ? ' hidden' : ''}></p>
           ${names.length ? `<p class="syn-names"><b>Εορτάζουν:</b> ${esc(names.join(', '))}</p>` : ''}
         </div>
         <blockquote class="hymn">
@@ -169,8 +190,18 @@
       return out;
     }
 
+    // Όλοι οι άγιοι του έτους μέσα στο site (data/saints.json, από το workflow saints-data.yml)
+    let localSaints = null;
+    function loadLocal() {
+      if (!localSaints) localSaints = fetch('/data/saints.json').then(r => (r.ok ? r.json() : null)).catch(() => null);
+      return localSaints;
+    }
+
     async function loadSaints(m, d) {
       const key = 'saints-' + m + '-' + d;
+      const local = await loadLocal();
+      const day = local && local.days && local.days[String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0')];
+      if (day && day.length) return day;
       try { const c = sessionStorage.getItem(key); if (c) return JSON.parse(c); } catch (e) { /* χωρίς αποθήκευση */ }
 
       const errors = [];
@@ -198,9 +229,27 @@
       return saints;
     }
 
+    // Οι κινητές εορτές του έτους της ημέρας που βλέπουμε (κλικ = μετάβαση στην ημέρα)
+    function renderKeyDates(date) {
+      const y = date.getFullYear(), e = C.easter(y);
+      const items = [
+        ['Αρχή του Τριωδίου', C.addDays(e, -70)], ['Κυριακή της Απόκρεω', C.addDays(e, -56)], ['Καθαρά Δευτέρα', C.addDays(e, -48)],
+        ['Κυριακή της Ορθοδοξίας', C.addDays(e, -42)], ['Σάββατο του Λαζάρου', C.addDays(e, -8)], ['Κυριακή των Βαΐων', C.addDays(e, -7), true],
+        ['Μεγάλη Παρασκευή', C.addDays(e, -2)], ['Άγιο Πάσχα', e, true], ['Ζωοδόχος Πηγή', C.addDays(e, 5)], ['Κυριακή του Θωμά', C.addDays(e, 7)],
+        ['Μεσοπεντηκοστή', C.addDays(e, 24)], ['Ανάληψη', C.addDays(e, 39), true], ['Πεντηκοστή', C.addDays(e, 49), true],
+        ['Αγίου Πνεύματος', C.addDays(e, 50)], ['Αγίων Πάντων', C.addDays(e, 56)], ['Άγιος Γεώργιος', C.georgeDate(y)],
+      ];
+      document.getElementById('keydates-title').textContent = 'Κινητές εορτές του ' + y;
+      const box = document.getElementById('keydates');
+      box.innerHTML = items.map(([l, d, g], i) =>
+        `<button type="button" class="key-date${g ? ' great' : ''}" data-i="${i}"${toISO(d) === toISO(date) ? ' aria-current="true"' : ''}><div class="key-date-label">${l}</div><div class="key-date-value">${C.formatShort(d)}</div></button>`).join('');
+      box.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => { viewDate = items[+b.dataset.i][1]; render(viewDate); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+    }
+
     async function render(date) {
       document.getElementById('date-picker').value = toISO(date);
       renderHead(date);
+      renderKeyDates(date);
 
       const el = document.getElementById('saints');
       el.innerHTML = '<div class="loading">Φόρτωση του συναξαριστή…</div>';
@@ -221,6 +270,9 @@
       }
       if (myId !== requestId) return;
 
+      // Χωρίς μεγάλη εορτή, η κάρτα δείχνει τους κύριους αγίους της ημέρας
+      const mem = document.getElementById('syn-mem');
+      if (mem && !mem.hidden) mem.innerHTML = '<small>Τιμώνται σήμερα</small>' + saints.slice(0, 3).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`).join(' · ');
       el.innerHTML = `<ul class="saints">${saints.map(s =>
           `<li>${CROSS}<a href="${esc(s.url)}" target="_blank" rel="noopener" title="Ο βίος στο saint.gr">${esc(s.name)}</a></li>`).join('')}</ul>
          <div class="source-note">Πηγή: <a href="${esc(saintUrl)}" target="_blank" rel="noopener">saint.gr</a></div>`;
