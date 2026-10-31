@@ -104,3 +104,4 @@ module.exports = handler;
 module.exports.parseSaints = parseSaints;
 module.exports.decodeHtml = decodeHtml;
 module.exports.undouble = undouble;
+module.exports.fetchSaints = fetchSaints;

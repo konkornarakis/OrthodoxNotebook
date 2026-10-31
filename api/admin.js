@@ -185,6 +185,9 @@ async function radio(b) {
     const errs = schedule.validate(b.config);
     if (errs.length) throw new Error(errs.join(' '));
     const cfg = schedule.normalize(b.config);
+    // κανόνες «μία φορά» που έχουν περάσει (πριν από χθες) δεν χρειάζονται πια
+    const keepFrom = schedule.addDays(schedule.athensDate(Date.now()), -1);
+    cfg.rules = cfg.rules.filter(r => !r.date || r.date >= keepFrom);
     await commit('Ραδιόφωνο: ρυθμίσεις (' + cfg.rules.filter(r => r.enabled).length + ' κανόνες, ' + cfg.quality.bitrate + 'k ' + (cfg.quality.channels === 2 ? 'stereo' : 'mono') + ')',
       { 'radio/config.json': JSON.stringify(cfg, null, 2) + '\n' }, []);
     return { config: cfg };

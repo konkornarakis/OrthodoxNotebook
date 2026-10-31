@@ -91,6 +91,7 @@
     .showchips { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
     .showchips a { font-size: 13.5px; padding: 3px 9px; border: 1px solid var(--rule); border-radius: 14px; text-decoration: none; color: var(--ink); background: var(--parchment); }
     .showchips a:hover { border-color: var(--cinnabar); color: var(--cinnabar); }
+    .item-m time { font-variant-numeric: tabular-nums; color: var(--ink-faint); }
     .showchips time { color: var(--ink-faint); margin-right: 4px; font-variant-numeric: tabular-nums; }
     .summary { padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--rule); margin: .6rem 0; font-size: 15px; }
     .rec-live { border: 2px solid var(--cinnabar); border-radius: 8px; padding: 10px 12px; background: var(--vellum); }
@@ -415,6 +416,16 @@
         items.forEach((it, i) => { it.end = items[i + 1] ? items[i + 1].start : it.start + 3600e3; });
         return items;
       }
+      // Οι εκπομπές του σταθμού μέσα σε ένα διάστημα (τι θα ακουστεί σε μια ηχογράφηση)
+      function showsBetween(a, b) {
+        return stationItems(RS.athensDate(a), Math.max(1, Math.ceil((b - a) / 86400e3) + 1)).filter(it => it.end > a + 60e3 && it.start < b - 60e3);
+      }
+      function showsLine(a, b, max) {
+        const list = showsBetween(a, b);
+        if (!list.length) return '';
+        const shown = list.slice(0, max || 6).map(x => '<time>' + esc(t(Math.max(x.start, a))) + '</time> ' + esc(x.title)).join(' · ');
+        return shown + (list.length > (max || 6) ? ' · …' : '');
+      }
       function stationTimeline(now) {
         const items = stationItems(RS.athensDate(now), 1), i = items.findIndex(it => it.start <= now && now < it.end);
         return i < 0 ? null : { prev: items[i - 1], cur: items[i], next: items.slice(i + 1, i + 5) };
@@ -651,7 +662,7 @@
         } else {
           const nx = RS.windows(D.config, now - 6 * 3600e3, now + 8 * 86400e3, wk()).find(w => w.end > now);
           h += '<p class="big" style="margin:0">Δεν ηχογραφεί τώρα.</p>';
-          const lab = nx && nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '';
+          const lab = nx ? (station && showsBetween(nx.start, nx.end).length ? '<br><span class="faint">' + showsLine(nx.start, nx.end, 4) + '</span>' : nx.labels.length ? ' (' + esc(nx.labels.join(', ')) + ')' : '') : '';
           h += '<p class="muted" style="margin:.2rem 0 0">' + (!D.config.enabled ? '<b>Οι αυτόματες ηχογραφήσεις είναι ανενεργές.</b>'
             : nx && nx.start <= now ? '<span class="danger">Κατά το πρόγραμμα έπρεπε να ηχογραφεί τώρα (' + esc(t(nx.start)) + '–' + esc(t(nx.end)) + ')' + lab + '.</span> Συνήθως ξεκινά μέσα σε λίγα λεπτά· αν όχι, δες το ιστορικό.'
             : nx ? 'Επόμενη: ' + esc(fmtDT.format(nx.start)) + '–' + esc(t(nx.end)) + lab : 'Δεν υπάρχει προγραμματισμένη ηχογράφηση.') + '</p>';
@@ -670,7 +681,7 @@
         return null;
       }
       // Η φόρμα «Νέα ηχογράφηση»: τώρα (εντολή έναρξης) ή αργότερα (κανόνας «μία φορά»)
-      let startChoice = null, startWhen = 'now';
+      let startChoice = null, startWhen = 'now', laterTouched = false;
       function startPlan() {
         const now = Date.now(), busy = !!activeSpan(), when = busy ? 'later' : startWhen;
         let start = now;
@@ -700,7 +711,8 @@
         document.querySelectorAll('[data-when]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.when === when)); b.disabled = busy && b.dataset.when === 'now'; });
         $('when-note').textContent = busy ? 'Ηχογραφεί ήδη· μπορείς να προγραμματίσεις για αργότερα.' : '';
         $('later-box').hidden = when !== 'later';
-        if (!$('later-date').value) { const n = new Date(now + 3600e3); $('later-date').value = RS.athensDate(n.getTime()); $('later-time').value = t(n.getTime()).slice(0, 2) + ':00'; }
+        // προτεινόμενη ώρα «αργότερα»: η επόμενη ολόκληρη ώρα, που ανανεώνεται όσο δεν την έχει αλλάξει ο χρήστης
+        if (!laterTouched || !$('later-date').value) { const n = now + 3600e3; $('later-date').value = RS.athensDate(n); $('later-time').value = t(n).slice(0, 2) + ':00'; }
         const showOk = when === 'now' && tl && tl.cur.end - now > 2 * 60e3, show2Ok = when === 'now' && tl && tl.next[0];
         $('opt-show').hidden = !showOk; $('opt-show2').hidden = !show2Ok;
         if (showOk) $('opt-show-l').innerHTML = 'Το τέλος της τρέχουσας εκπομπής<small>«' + esc(tl.cur.title) + '» — ' + esc(t(tl.cur.end)) + ' (μένουν ' + left(tl.cur.end - now) + ')</small>';
@@ -736,8 +748,11 @@
       }
       function renderUpcoming() {
         const now = Date.now(), ws = RS.windows(cfg, now - 6 * 3600e3, now + 8 * 86400e3, wk()).filter(w => w.end > now).slice(0, 6);
-        $('upcoming').innerHTML = ws.length ? ws.map(w => '<li class="item"><div class="item-h"><b>' + esc(fmtD.format(w.start)) + '</b><span>' + esc(range(w.start, w.end)) + ' · ' + hours((w.end - w.start) / 1000) + '</span></div>' +
-            (w.labels.length ? '<div class="item-m">' + esc(w.labels.join(', ')) + '</div>' : '') + '</li>').join('') + (dirty() ? '<li class="faint">Με τις αλλαγές που δεν έχουν αποθηκευτεί.</li>' : '')
+        $('upcoming').innerHTML = ws.length ? ws.map(w => {
+            const sh = station ? showsLine(w.start, w.end) : '';
+            return '<li class="item"><div class="item-h"><b>' + esc(fmtD.format(w.start)) + '</b><span>' + esc(range(w.start, w.end)) + ' · ' + hours((w.end - w.start) / 1000) + '</span></div>' +
+              (sh ? '<div class="item-m">' + sh + '</div>' : '') + (w.labels.length ? '<div class="item-m faint">Κανόνες: ' + esc(w.labels.join(', ')) + '</div>' : '') + '</li>';
+          }).join('') + (dirty() ? '<li class="faint">Με τις αλλαγές που δεν έχουν αποθηκευτεί.</li>' : '')
           : '<li class="muted">Καμία ηχογράφηση τις επόμενες 8 ημέρες.</li>';
       }
 
@@ -1017,7 +1032,7 @@
       $('start-until').addEventListener('input', () => { startChoice = 'until'; renderStart(); });
       $('start-btn').addEventListener('click', startNow);
       document.querySelectorAll('[data-when]').forEach(b => b.addEventListener('click', () => { startWhen = b.dataset.when; renderStart(); }));
-      ['later-date', 'later-time'].forEach(id => $(id).addEventListener('input', renderStart));
+      ['later-date', 'later-time'].forEach(id => $(id).addEventListener('input', () => { laterTouched = true; renderStart(); }));
       $('reload').addEventListener('click', load);
       $('login-form').addEventListener('submit', e => { e.preventDefault(); login($('pw').value); });
 

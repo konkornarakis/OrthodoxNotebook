@@ -243,6 +243,8 @@
     .key-date-value { font-family: var(--font-display); font-size: 19px; }
     .key-date.great .key-date-value { color: var(--cinnabar); }
 
+    .to-feasts { margin: 0; padding: .8rem 1rem; border: 1px solid var(--rule-soft); border-radius: 8px; background: var(--vellum); }
+    .day-more { margin-top: .5rem; font-size: 14.5px; }
     .ics-row { margin-top: 1.2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 14px; color: var(--ink-soft); }
 
     @media (max-width: 620px) {
@@ -319,8 +321,7 @@
         </section>
 
         <section class="section">
-          <h2 class="section-heading" id="keydates-title">Κινητές εορτές</h2>
-          <div id="keydates" class="key-dates"></div>
+          <p class="to-feasts">Οι εορτές (σταθερές και κινητές) και οι άγιοι κάθε ημέρας βρίσκονται στο <a href="synaxarion.html">Εορτολόγιο →</a></p>
           <div class="ics-row">
             <button class="btn" type="button" onclick="exportIcal(viewYear)">Λήψη νηστειοδρομίου (.ics)</button>
             <span id="ics-hint"></span>
@@ -363,7 +364,6 @@
       const d = selected;
       const f = fastOf(d);
       const feasts = C.feastsOf(d);
-      const names = C.namedaysOf(d);
       const hymn = C.hymnOf(d);
       const isToday = same(d, TODAY);
       const el = document.getElementById('day');
@@ -380,8 +380,7 @@
           ${f.period ? `<div class="day-period">${esc(f.period)}</div>` : ''}
           <p class="day-desc">${esc(f.desc)}</p>
           ${f.note ? `<p class="day-note">${esc(f.note)}</p>` : ''}
-          ${feasts.length ? `<ul class="day-feasts">${feasts.map(x => `<li class="${x.rank !== 'minor' ? 'red' : ''}">${CROSS}<span>${esc(x.name)}</span></li>`).join('')}</ul>` : ''}
-          ${names.length ? `<p class="day-names"><b>Εορτάζουν:</b> ${esc(names.join(', '))}</p>` : ''}
+          <p class="day-more"><a href="synaxarion.html?d=${C.toISO ? C.toISO(d) : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')}">${feasts.length ? esc(feasts.map(x => x.name).join(' · ')) + ' — ' : ''}Εορτές, άγιοι και εορτάζοντες της ημέρας →</a></p>
           ${isToday ? '' : `<div class="day-back"><button class="link-btn" type="button" onclick="goToday()">Επιστροφή στη σημερινή ημέρα</button></div>`}
         </div>
         <blockquote class="hymn">
@@ -502,7 +501,7 @@
     function renderAllForView() {
       const prevYear = viewYear;
       renderCalendar();
-      if (prevYear !== viewYear || !document.getElementById('periods').innerHTML) { renderPeriods(); renderKeyDates(); }
+      if (prevYear !== viewYear || !document.getElementById('periods').innerHTML) { renderPeriods(); renderIcsHint(); }
     }
 
     function setView(v) {
@@ -587,30 +586,8 @@
       }).join('');
     }
 
-    function renderKeyDates() {
-      const y = viewYear;
-      const e = C.easter(y);
-      const at = n => C.formatShort(C.addDays(e, n));
-      const items = [
-        ['Αρχή του Τριωδίου', at(-70)],
-        ['Κυριακή της Απόκρεω', at(-56)],
-        ['Καθαρά Δευτέρα', at(-48)],
-        ['Σάββατο του Λαζάρου', at(-8)],
-        ['Κυριακή των Βαΐων', at(-7), true],
-        ['Μεγάλη Παρασκευή', at(-2)],
-        ['Άγιο Πάσχα', at(0), true],
-        ['Κυριακή του Θωμά', at(7)],
-        ['Μεσοπεντηκοστή', at(24)],
-        ['Ανάληψη', at(39), true],
-        ['Πεντηκοστή', at(49), true],
-        ['Αγίου Πνεύματος', at(50)],
-        ['Αγίων Πάντων', at(56)],
-        ['Άγιος Γεώργιος', C.formatShort(C.georgeDate(y))],
-      ];
-      document.getElementById('keydates-title').textContent = 'Κινητές εορτές του ' + y;
-      document.getElementById('keydates').innerHTML = items.map(([l, v, g]) =>
-        `<div class="key-date${g ? ' great' : ''}"><div class="key-date-label">${l}</div><div class="key-date-value">${v}</div></div>`).join('');
-      document.getElementById('ics-hint').textContent = 'Όλες οι ημέρες του ' + y + ' για το ημερολόγιο του κινητού σας.';
+    function renderIcsHint() {
+      document.getElementById('ics-hint').textContent = 'Όλες οι ημέρες του ' + viewYear + ' για το ημερολόγιο του κινητού σας.';
     }
 
 
