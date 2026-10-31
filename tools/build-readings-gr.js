@@ -47,10 +47,12 @@ function greekNum(s) {
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', nbsp: ' ', rsquo: '’', lsquo: '‘' };
 const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&(#\d+|[a-z]+);/gi, (m, e) => (e[0] === '#' ? String.fromCodePoint(+e.slice(1)) : ENT[e.toLowerCase()] ?? m)).replace(/\s+/g, ' ').trim();
 
-// Μία ενότητα (αρχαίο κείμενο μιας καρτέλας): τίτλοι «ΒΙΒΛΙΟ ΚΕΦ´ στίχοι» και στίχοι <sup>Ν</sup>
+// Μία ενότητα (αρχαίο κείμενο μιας καρτέλας): τίτλοι «ΒΙΒΛΙΟ ΚΕΦ´ στίχοι» και στίχοι <sup>Ν</sup>.
+// Μπορεί να συνθέτει περικοπές από περισσότερα βιβλία (π.χ. το Ευαγγέλιο της Μεγάλης Πέμπτης).
 function parseBlock(html) {
   const parts = html.split(/<div class="w3-center"><strong>([\s\S]*?)<\/strong><\/div>/);
-  let book = null, verses = [], refs = [], note = '';
+  let first = null, verses = [], refs = [], note = '', prevBook = null;
+  const books = [];
   for (let i = 1; i < parts.length; i += 2) {
     // ο τίτλος μπορεί να έχει πρώτα σημείωση σε άλλη γραμμή (π.χ. «Ἦχος βαρύς - Ἑωθινόν Ζ´<br />ΚΑΤΑ ΙΩΑΝΝΗΝ Κ´ 1 - 10»)
     const lines = parts[i].split(/<br\s*\/?>/i).map(text).filter(Boolean);
@@ -58,10 +60,11 @@ function parseBlock(html) {
     if (lines.length && !note) note = lines.join(' ');
     const m = /^(.*?)\s+([Α-ΩϚ]+)[´΄']\s*(\d+)\s*(?:-\s*(?:([Α-ΩϚ]+)[´΄']\s*)?(\d+))?/.exec(title);
     if (!m) continue;
-    const b = BOOKS.find(x => x[0].test(m[1]));
+    const bookTitle = m[1].replace(/^ΕΠΙΣΤΟΛΗ\s+/, '');   // «ΕΠΙΣΤΟΛΗ ΙΑΚΩΒΟΥ», «ΕΠΙΣΤΟΛΗ ΠΕΤΡΟΥ Β'»
+    const b = BOOKS.find(x => x[0].test(bookTitle));
     if (!b) return null;   // όχι Καινή Διαθήκη (π.χ. προφητείες): δεν το υποστηρίζουμε εδώ
-    if (book && book !== b) return null;
-    book = b;
+    if (!first) first = b;
+    if (!books.includes(b[1])) books.push(b[1]);
     let ch = greekNum(m[2]), last = 0;
     const startCh = ch, startV = +m[3];
     for (const v of parts[i + 1].split(/<sup><strong>(\d+)<\/strong><\/sup>/).slice(1).reduce((a, x, k, arr) => (k % 2 ? a : a.concat([[+x, arr[k + 1]]])), [])) {
@@ -70,10 +73,12 @@ function parseBlock(html) {
       const t = text(v[1]);
       if (t) verses.push([ch + ',' + v[0], t]);
     }
-    refs.push(startCh === ch ? startCh + ', ' + startV + (last !== startV ? '-' + last : '') : startCh + ', ' + startV + ' – ' + ch + ', ' + last);
+    const r = startCh === ch ? startCh + ', ' + startV + (last !== startV ? '-' + last : '') : startCh + ', ' + startV + ' – ' + ch + ', ' + last;
+    refs.push((b !== prevBook ? b[2] + ' ' : '') + r);
+    prevBook = b;
   }
-  if (!book || !verses.length) return null;
-  return Object.assign({ b: book[1], ref: book[2] + ' ' + refs.join('· '), i: book[3], v: verses }, note ? { n: note } : {});
+  if (!first || !verses.length) return null;
+  return Object.assign({ b: books.join(' · '), ref: refs.join('· '), i: first[3], v: verses }, note ? { n: note } : {});
 }
 
 function parsePage(html) {
