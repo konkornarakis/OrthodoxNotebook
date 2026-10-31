@@ -135,7 +135,18 @@ async function readLog() {
   try { return r.ok ? (await r.json()).slice(0, 100) : []; } catch { return []; }
 }
 const summary = n => ({ id: n.id, tag: n.tag, date: n.date, growing: n.growing, status: n.status, segments: n.segments.length, size: n.size, dur: n.dur,
-  kbps: [...new Set(n.segments.map(s => s.kbps))], first: n.segments[0] && n.segments[0].start, titles: [...new Set(n.shows.map(s => s.title))].slice(0, 12) });
+  kbps: [...new Set(n.segments.map(s => s.kbps))], first: n.segments[0] && n.segments[0].start, titles: [...new Set(n.shows.map(s => s.title))].slice(0, 12),
+  shows: n.shows.map(s => ({ start: s.start, title: s.title })), cover: cover(n.segments) });
+// Τα διαστήματα με ήχο μιας ημέρας (για το «ηχογραφήθηκε» στο πρόγραμμα του σταθμού)
+function cover(segs) {
+  const out = [];
+  for (const s of segs) {
+    if (!s.start) continue;
+    const e = s.start + s.dur * 1000, last = out[out.length - 1];
+    if (last && s.start <= last[1] + 60e3) last[1] = Math.max(last[1], e); else out.push([s.start, e]);
+  }
+  return out;
+}
 
 async function radio(b) {
   if (b.action === 'radio-get') {

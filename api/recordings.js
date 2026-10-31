@@ -94,9 +94,10 @@ function night(rel) {
   }
   const now = Date.now();
   const last = segments[segments.length - 1];
-  // «Μεγαλώνει» όσο το workflow δηλώνει ότι γράφει (με πρόσφατη ενημέρωση) ή αν το τελευταίο κομμάτι είναι πολύ πρόσφατο.
-  const growing = !!((status && status.recording && now - status.updated * 1000 < 25 * 60e3) ||
-    (last && last.start && now - last.start < 22 * 60e3));
+  // «Μεγαλώνει» όσο το workflow δηλώνει ότι γράφει (με πρόσφατη ενημέρωση). Χωρίς κατάσταση (παλιές ηχογραφήσεις),
+  // μόνο αν το τελευταίο κομμάτι είναι πολύ πρόσφατο· όταν η κατάσταση λέει ότι τελείωσε, δεν μεγαλώνει.
+  const growing = status ? !!(status.recording && now - status.updated * 1000 < 25 * 60e3)
+    : !!(last && last.start && now - last.start < 22 * 60e3);
   const shows = showsFor(parseMarker(rel.body, 'program'), coverage(segments));
   return {
     id: rel.id, tag: rel.tag_name, date: rel.tag_name.slice(4), title: rel.name || rel.tag_name, growing, status, segments, shows,

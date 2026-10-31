@@ -27,13 +27,27 @@
     .msg { margin: 12px 0; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--rule); background: var(--vellum); }
     .msg.ok { border-left: 3px solid var(--f-oil); }
     .msg.err { border-left: 3px solid var(--cinnabar); }
-    .list { list-style: none; margin: 0; padding: 0; }
-    .list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rule-soft); }
-    .list .t { font-family: var(--font-display); font-size: 17px; }
-    .list .s { color: var(--ink-soft); font-size: 14px; }
+    .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 12px 14px; border: 1px solid var(--rule-soft); border-radius: 10px; background: var(--vellum); }
+    .list li > div { flex: 1 1 220px; min-width: 0; }
+    .list .t { font-family: var(--font-display); font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+    .list .s { color: var(--ink-soft); font-size: 14px; margin-top: 2px; overflow-wrap: anywhere; }
     .danger { color: var(--cinnabar) !important; }
-    .radio-link { display: block; margin-bottom: 1.6rem; text-decoration: none; color: var(--ink); }
-    .radio-link:hover { border-color: var(--gold); color: var(--cinnabar); }
+    .btn { min-height: 40px; }
+    .btn.small { padding: 4px 12px; font-size: 14px; min-height: 34px; }
+
+    /* κεντρική σελίδα διαχείρισης */
+    .hub-top { justify-content: space-between; margin: 0 0 .8rem; color: var(--ink-soft); font-size: 14.5px; }
+    .hub { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.6rem; }
+    .hub-card { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border: 1px solid var(--rule); border-radius: 12px; background: var(--vellum); color: var(--ink); text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    a.hub-card:hover { border-color: var(--cinnabar); }
+    .hub-k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-deep); }
+    .hub-t { font-family: var(--font-display); font-size: 22px; line-height: 1.25; }
+    .hub-s { font-size: 15.5px; margin-top: 4px; }
+    .hub-s .live { color: var(--cinnabar); font-weight: 600; }
+    .hub-m { color: var(--ink-soft); font-size: 14px; }
+    .hub-go { margin-top: auto; padding-top: 10px; color: var(--cinnabar); font-size: 15px; }
+    .hub-card .btn { align-self: flex-start; margin-top: auto; }
   </style>
 </head>
 
@@ -54,13 +68,23 @@
 
         <!-- Λίστα -->
         <section id="list-sec" hidden>
-          <!-- Ραδιόφωνο: ξεχωριστή σελίδα -->
-          <a class="panel radio-link" href="radio-admin.html"><b>Ραδιόφωνο</b> — πρόγραμμα ηχογράφησης, κατάσταση, ποιότητα, χώρος και ηχογραφήσεις →</a>
-
-          <div class="row" style="justify-content:space-between;margin-bottom:.6rem">
-            <h2 class="section-heading" style="margin:0">Ομιλίες</h2>
-            <span class="row"><button class="btn btn-accent" type="button" id="new-btn">Νέα ομιλία</button><button class="btn" type="button" id="logout">Έξοδος</button></span>
+          <div class="row hub-top"><span>Είσαι συνδεδεμένος στη διαχείριση.</span><button class="btn small" type="button" id="logout">Έξοδος</button></div>
+          <div class="hub">
+            <a class="hub-card" href="radio-admin.html">
+              <span class="hub-k">Ραδιόφωνο</span>
+              <span class="hub-t">Πειραϊκή Εκκλησία 91.2</span>
+              <span class="hub-s" id="radio-state">Φόρτωση κατάστασης…</span>
+              <span class="hub-m" id="radio-meta"></span>
+              <span class="hub-go">Πρόγραμμα, ηχογραφήσεις, ρυθμίσεις →</span>
+            </a>
+            <div class="hub-card">
+              <span class="hub-k">Ομιλίες</span>
+              <span class="hub-t" id="sermon-count">…</span>
+              <span class="hub-m" id="sermon-last"></span>
+              <button class="btn btn-accent" type="button" id="new-btn">+ Νέα ομιλία</button>
+            </div>
           </div>
+          <h2 class="section-heading">Ομιλίες</h2>
           <div id="list-msg"></div>
           <ul class="list" id="list"></ul>
         </section>
@@ -128,7 +152,7 @@
           await call({ action: 'check' });
           try { sessionStorage.setItem('adminPw', pw); } catch (e) { /* */ }
           show('login', false); show('list-sec', true);
-          loadList();
+          loadList(); loadRadioState();
         } catch (e) { pw = ''; msg('login-msg', esc(e.message), 'err'); }
       }
       function logout() {
@@ -141,8 +165,27 @@
           sermons = await fetch('/sermons-data.json', { cache: 'no-store' }).then(r => r.json());
         } catch (e) { sermons = []; }
         $('list').innerHTML = sermons.map((s, i) => `<li><div><div class="t">${esc(s.title)}</div><div class="s">${esc([s.speaker, s.date].filter(Boolean).join(' · '))}</div></div>
-          <button class="btn" type="button" data-i="${i}">Επεξεργασία</button></li>`).join('') || '<li class="s">Δεν υπάρχουν ομιλίες.</li>';
+          <button class="btn small" type="button" data-i="${i}">Επεξεργασία</button></li>`).join('') || '<li class="s">Δεν υπάρχουν ομιλίες.</li>';
+        $('sermon-count').textContent = sermons.length === 1 ? '1 ομιλία' : sermons.length + ' ομιλίες';
+        const latest = sermons.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0];
+        $('sermon-last').textContent = latest ? 'Πιο πρόσφατη: ' + latest.title : '';
         $('list').querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => openForm(sermons[+b.dataset.i])));
+      }
+
+      // Σύντομη κατάσταση του ραδιοφώνου για την κάρτα της κεντρικής σελίδας
+      async function loadRadioState() {
+        const fmt = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+        const hm = new Intl.DateTimeFormat('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+        try {
+          const d = await call({ action: 'radio-get' }), now = Date.now();
+          const live = d.nights.find(n => n.growing && n.status && n.status.recording && now - n.status.updated * 1000 < 25 * 60e3);
+          const nx = d.upcoming.find(w => w.start > now), last = (d.log || []).find(e => e.type === 'record');
+          $('radio-state').innerHTML = live ? '<span class="live">● Ηχογραφεί τώρα</span> έως ' + esc(hm.format(live.status.until * 1000))
+            : !d.config.enabled ? 'Οι αυτόματες ηχογραφήσεις είναι ανενεργές.' : nx ? 'Επόμενη ηχογράφηση: ' + esc(fmt.format(nx.start)) + '–' + esc(hm.format(nx.end)) : 'Καμία προγραμματισμένη ηχογράφηση.';
+          const gb = d.storage.bytes / 1e9;
+          $('radio-meta').innerHTML = esc(d.storage.count + (d.storage.count === 1 ? ' ημέρα' : ' ημέρες') + ' · ' + (gb >= 1 ? gb.toLocaleString('el-GR', { maximumFractionDigits: 1 }) + ' GB' : Math.round(d.storage.bytes / 1e6) + ' MB')) +
+            (last && last.state === 'failed' ? '<br><span class="danger">Η τελευταία ηχογράφηση απέτυχε' + (last.error ? ': ' + esc(last.error) : '') + '</span>' : '');
+        } catch (e) { $('radio-state').textContent = 'Η κατάσταση δεν φορτώθηκε.'; }
       }
 
       function transcriptText(segs) { return (segs || []).map(s => s.ts + '\n' + s.text).join('\n\n'); }
