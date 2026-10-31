@@ -208,12 +208,8 @@
         if (i < 0) return N.total;
         return segs[i].off + Math.max(0, (ms - segs[i].start) / 1000);
       }
-      // Εκπομπές από το πρόγραμμα του σταθμού· στη λίστα όχι τα σύντομα (καιρός, ύμνος κ.λπ.)
-      function showsOf(n) {
-        const list = n.shows || [];
-        return list.map((s, i) => Object.assign({}, s, { end: i + 1 < list.length ? list[i + 1].start : Infinity }));
-      }
-      const listed = n => showsOf(n).filter(s => s.end - s.start >= 3 * 60e3);
+      // Όλες οι εκπομπές από το πρόγραμμα του σταθμού, και οι σύντομες (καιρός, ύμνος κ.λπ.)
+      const listed = n => n.shows || [];
       function showAt(ms) {
         if (!N || ms == null) return null;
         let cur = null;
