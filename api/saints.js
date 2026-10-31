@@ -38,22 +38,36 @@ function undouble(name) {
   return name;
 }
 
-// Κάθε άγιος είναι σύνδεσμος της μορφής /{id}/saint.aspx. Κρατάμε μία εγγραφή ανά id.
+// Οι άγιοι της ημέρας είναι κάρτες <div class="w3-quarter …"><a href="/{id}/saint.aspx"> κάτω από το «… εορτάζουν:»·
+// το πλήρες όνομα είναι στο title/alt της εικόνας (το κείμενο κόβεται με «....»). Οι υπόλοιποι σύνδεσμοι της σελίδας
+// (μενού, πλαϊνές στήλες με προβεβλημένους αγίους) δεν ανήκουν στην ημέρα. Αν αλλάξει η μορφή της σελίδας και δεν
+// βρεθούν κάρτες, κρατάμε όλους τους συνδέσμους αγίων.
 function parseSaints(html) {
   const out = [];
   const seen = new Set();
-  const re = /<a\b[^>]*href=["']([^"']*?\/(\d+)\/saint\.aspx)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let m;
-  while ((m = re.exec(html))) {
-    const id = m[2];
-    let name = decodeEntities(m[3].replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  const add = (href, id, inner) => {
+    const title = /\b(?:title|alt)\s*=\s*["']([^"']{3,})["']/i.exec(inner);
+    let name = decodeEntities((title ? title[1] : inner.replace(/<[^>]*>/g, ' '))).replace(/\s+/g, ' ').trim();
     name = undouble(name);
-    if (!name || seen.has(id)) continue;
+    if (!name || seen.has(id)) return;
     seen.add(id);
-    out.push({ name, url: new URL(m[1], 'https://www.saint.gr/').href });
-  }
+    out.push({ name, url: new URL(href, 'https://www.saint.gr/').href });
+  };
+  const card = /<div\b[^>]*class=["'][^"']*\bw3-quarter\b[^"']*["'][^>]*>\s*<a\b[^>]*href=["']([^"']*?\/(\d+)\/saint\.aspx)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = card.exec(html))) add(m[1], m[2], m[3]);
+  if (out.length) return out;
+  const any = /<a\b[^>]*href=["']([^"']*?\/(\d+)\/saint\.aspx)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  while ((m = any.exec(html))) add(m[1], m[2], m[3]);
   return out;
 }
+
+// Κινητές εορτές (εξαρτώνται από το Πάσχα): στη σελίδα του saint.gr μιας ημερομηνίας εμφανίζονται μόνο για το
+// τρέχον έτος, οπότε δεν μπαίνουν στα σταθερά δεδομένα (το ημερολόγιό μας τις υπολογίζει για κάθε έτος).
+const MOVABLE = [/^[Α-Ω]΄\s*Κυριακή/, /Κυριακή\s+(του|των|της|προ|πρό|μετά)\s/, /Σάββατο\s+(του|των|της)\s/, /Ψυχοσάββατο/, /Πάσχα/, /Πεντηκοστ/,
+  /Τριώδ/, /Ανάληψη του Κυρίου/, /Διακαινησίμου/, /Μεγάλ[ηο]\s+(Δευτέρα|Τρίτη|Τετάρτη|Πέμπτη|Παρασκευή|Σάββατο|Εβδομάδα)/, /Καθαρά Δευτέρα/,
+  /Ζωοδόχου Πηγής/, /Αγίου Πνεύματος/, /Ακαθίστου/, /Μεγάλου Κανόνος/, /Χαιρετισμ/, /Βαΐων/, /Τελώνου/, /Ασώτου/, /Απόκρεω/, /Τυρινής/];
+const isMovable = name => MOVABLE.some(re => re.test(name));
 
 async function fetchSaints(month, day) {
   const mm = String(month).padStart(2, '0');
@@ -105,3 +119,4 @@ module.exports.parseSaints = parseSaints;
 module.exports.decodeHtml = decodeHtml;
 module.exports.undouble = undouble;
 module.exports.fetchSaints = fetchSaints;
+module.exports.isMovable = isMovable;

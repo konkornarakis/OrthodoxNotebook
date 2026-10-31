@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { fetchSaints } = require('../api/saints.js');
+const { fetchSaints, isMovable } = require('../api/saints.js');
 
 const OUT = path.join(__dirname, '..', 'data', 'saints.json');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -25,7 +25,8 @@ async function main() {
       for (let attempt = 1; attempt <= 3 && !saints; attempt++) {
         try {
           const r = await fetchSaints(m, d);
-          if (r.saints.length) saints = r.saints;
+          const fixed = r.saints.filter(x => !isMovable(x.name));
+          if (fixed.length) saints = fixed;
         } catch (e) { if (attempt === 3) console.error(key, e.message); }
         if (!saints) await sleep(1500 * attempt);
       }

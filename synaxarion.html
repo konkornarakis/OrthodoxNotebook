@@ -179,10 +179,14 @@
     function parseSaints(html) {
       const doc = new DOMParser().parseFromString(html, 'text/html');
       const out = [], seen = new Set();
-      for (const a of doc.querySelectorAll('a[href*="saint.aspx"]')) {
+      // μόνο οι κάρτες της ημέρας (όχι μενού και πλαϊνές στήλες)· πλήρες όνομα από το title της εικόνας
+      let links = doc.querySelectorAll('.w3-quarter > a[href*="saint.aspx"]');
+      if (!links.length) links = doc.querySelectorAll('a[href*="saint.aspx"]');
+      for (const a of links) {
         const href = a.getAttribute('href') || '';
         const id = (/\/(\d+)\/saint\.aspx/i.exec(href) || [])[1];
-        const name = undouble(a.textContent.replace(/\s+/g, ' ').trim());
+        const img = a.querySelector('img[title], img[alt]');
+        const name = undouble(((img && (img.getAttribute('title') || img.getAttribute('alt'))) || a.textContent).replace(/\s+/g, ' ').trim());
         if (!id || !name || seen.has(id)) continue;
         seen.add(id);
         out.push({ name, url: new URL(href, 'https://www.saint.gr/').href });
