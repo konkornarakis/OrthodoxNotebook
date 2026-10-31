@@ -1,5 +1,27 @@
 {
   "enabled": true,
-  "start": "22:00",
-  "end": "03:00"
+  "quality": {
+    "bitrate": 96,
+    "channels": 2
+  },
+  "retentionDays": 0,
+  "maxGB": 0,
+  "rules": [
+    {
+      "id": "daily",
+      "label": "Καθημερινή",
+      "days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "start": "22:00",
+      "end": "03:00",
+      "enabled": true
+    }
+  ]
 }
