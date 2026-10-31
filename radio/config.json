@@ -10,6 +10,7 @@
     {
       "id": "daily",
       "label": "Καθημερινή",
+      "enabled": true,
       "days": [
         0,
         1,
@@ -19,17 +20,17 @@
         5,
         6
       ],
-      "start": "22:00",
-      "end": "03:00",
-      "enabled": false
+      "start": "22:30",
+      "end": "01:30",
+      "skip": []
     },
     {
       "id": "rmvw7ogxxpdz",
       "label": "Η Ακολουθία του Αποδείπνου",
+      "enabled": true,
       "date": "2026-10-31",
       "start": "22:00",
-      "end": "22:30",
-      "enabled": true
+      "end": "22:30"
     }
   ]
 }
