@@ -19,7 +19,6 @@ const REPO = process.env.RECORDINGS_REPO || process.env.GITHUB_REPO || 'konkorna
 const API = 'https://api.github.com/repos/' + REPO;
 const DEFAULT_KBPS = 96;           // τα πρώτα κομμάτια δεν έχουν kbps στο όνομα
 const MIN_BYTES = 24 * 1024;       // μικρότερα αρχεία είναι υπόλοιπα χωρίς ήχο
-const SHORT_SHOW_MS = 3 * 60e3;    // καιρός, ύμνος κ.λπ.: όχι στους τίτλους της λίστας
 
 function gh(path, opts = {}) {
   const headers = { Accept: opts.accept || 'application/vnd.github+json', 'User-Agent': 'orthodox-notebook' };
@@ -105,7 +104,7 @@ function night(rel) {
   };
 }
 
-const titlesOf = shows => [...new Set(shows.filter((s, i) => (i + 1 < shows.length ? shows[i + 1].start : Infinity) - s.start >= SHORT_SHOW_MS).map(s => s.title))];
+const titlesOf = shows => [...new Set(shows.map(s => s.title))];
 
 async function nights() {
   return (await releases()).map(night).filter(n => n.segments.length).sort((a, b) => b.date.localeCompare(a.date));
