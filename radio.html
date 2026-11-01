@@ -100,6 +100,14 @@
     .l-more select { padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font: inherit; max-width: 100%; }
     .l-more .btn { padding: 5px 12px; font-size: 14px; }
     .l-rec { font-size: 14px; color: var(--ink-soft); }
+    .l-info { text-align: left; max-width: 36em; margin: 8px auto 0; font-size: 14.5px; color: var(--ink-soft); }
+    .l-info p { margin: 6px 0; }
+    .l-info b { color: var(--ink); font-weight: 600; }
+    .l-warn { color: #8a4b00; background: rgba(214, 150, 40, .12); border: 1px solid rgba(214, 150, 40, .45); border-radius: 8px; padding: 6px 10px; }
+    .l-usage { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .l-pause { font-size: 14px; color: var(--ink-soft); margin-top: 6px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; }
+    .l-pause[hidden] { display: none; }
+    .l-pause .btn { padding: 4px 10px; font-size: 13.5px; }
     .l-rec.on { color: #b3261e; }
     .extra form { flex-wrap: wrap; justify-content: center; max-width: 100%; }
     .extra input[type="time"] { min-width: 0; max-width: 9.5em; }
@@ -118,7 +126,11 @@
           <div class="l-now" id="l-now"></div>
           <div id="l-start">
             <button class="btn btn-accent l-go" id="l-go" type="button">● Άκου ζωντανά</button>
-            <p class="l-note">Όσο είναι ανοιχτή η σελίδα, ό,τι ακούγεται φυλάγεται στη συσκευή σου, ώστε να γυρίσεις πίσω δευτερόλεπτα, λεπτά ή ώρες, να σταματήσεις και να συνεχίσεις από εκεί.</p>
+            <div class="l-info" id="l-info">
+              <p><b>Πώς λειτουργεί.</b> Όσο είναι ανοιχτή η σελίδα, ό,τι μεταδίδεται κατεβαίνει και φυλάγεται στη συσκευή σου, ώστε να γυρίσεις πίσω δευτερόλεπτα, λεπτά ή ώρες, να σταματήσεις και να συνεχίσεις από εκεί.</p>
+              <p><b>Τι κοστίζει.</b> <span id="l-cost"></span></p>
+              <p class="l-warn" id="l-warn" hidden></p>
+            </div>
           </div>
           <div id="l-ui" hidden>
             <div class="p-clock" id="l-clock"></div>
@@ -146,18 +158,22 @@
               <form id="l-jump"><label for="l-jc">Ώρα μετάδοσης</label><input type="time" id="l-jc" step="1" required><button class="btn" type="submit">Πήγαινε</button></form>
             </div>
             <p class="p-msg" id="l-msg" role="status"></p>
+            <div class="l-usage" id="l-usage" aria-live="off"></div>
+            <div class="l-pause" id="l-pause" hidden><span id="l-pause-t"></span> <button class="btn" id="l-pause-stop" type="button">Σταμάτα τη λήψη</button></div>
             <ol class="shows" id="l-shows" hidden aria-label="Εκπομπές στα αποθηκευμένα"></ol>
             <details class="l-more" id="l-more">
-              <summary>Αποθήκευση στη συσκευή</summary>
+              <summary>Αποθήκευση και κατανάλωση δεδομένων</summary>
               <p class="l-rec" id="l-rec"></p>
               <p id="l-store"></p>
+              <p id="l-totals"></p>
               <div class="row"><label for="l-keep">Κράτα έως</label><select id="l-keep"></select></div>
               <p id="l-quota"></p>
               <div class="row">
-                <button class="btn" id="l-recbtn" type="button">Σταμάτα την αποθήκευση</button>
+                <button class="btn" id="l-recbtn" type="button">Σταμάτα τη λήψη</button>
                 <button class="btn" id="l-clear" type="button">Σβήσε τα αποθηκευμένα</button>
               </div>
-              <p>Τα αποθηκευμένα μένουν στη συσκευή και όταν κλείσεις τη σελίδα· όσο ήταν κλειστή φαίνεται ως κενό (γκρι σημάδι). Η ροή κατεβαίνει μία φορά (~86 MB την ώρα)· στα δεδομένα κινητού να το έχεις υπόψη. Για ό,τι μεταδόθηκε πριν ανοίξεις τη σελίδα, υπάρχουν οι προγραμματισμένες ηχογραφήσεις παρακάτω.</p>
+              <p id="l-how"></p>
+              <p>Τα αποθηκευμένα μένουν στη συσκευή και όταν κλείσεις τη σελίδα· όσο ήταν κλειστή φαίνεται ως κενό (γκρι σημάδι). Πιάνουν χώρο μέχρι να τα σβήσεις ή να περάσει το όριο «Κράτα έως». Για ό,τι μεταδόθηκε πριν ανοίξεις τη σελίδα, υπάρχουν οι προγραμματισμένες ηχογραφήσεις παρακάτω.</p>
             </details>
           </div>
         </section>

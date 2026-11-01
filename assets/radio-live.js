@@ -16,6 +16,7 @@
   const LIVE_NEAR = 25;         // μέχρι εδώ πίσω θεωρείται ότι ακούς ζωντανά
   const KEEP_OPTS = [1, 3, 6, 12, 24, 48, Infinity];
   const MB_PER_H = 86;          // 192 kbps
+  const BPS = 192000 / 8;       // bytes/δευτ. της ροής (για την εκτίμηση της απευθείας ακρόασης)
 
   const $ = id => document.getElementById(id);
   const TR = window.RADIO_LIVE_TRACE ? [] : null;
@@ -219,6 +220,29 @@
     };
   }
 
+  // ── Κατανάλωση δεδομένων ────────────────────────────────────────
+  // Μετριούνται τα bytes που κατεβαίνουν για αποθήκευση (ακριβώς) και, στην εφεδρεία, όσα κατεβάζει
+  // ο player απευθείας από τον σταθμό (εκτίμηση από τον χρόνο ακρόασης × 192 kbps).
+  const usage = { sess: 0, direct: 0, day: '', dayB: 0, month: '', monthB: 0, dirty: false };
+  try { Object.assign(usage, JSON.parse(store.get('usage') || '{}'), { sess: 0, direct: 0 }); } catch (e) { /* */ }
+  function addUsage(n, direct) {
+    const d = dateFmt.format(Date.now()), m = d.slice(0, 7);
+    if (usage.day !== d) { usage.day = d; usage.dayB = 0; }
+    if (usage.month !== m) { usage.month = m; usage.monthB = 0; }
+    usage.dayB += n; usage.monthB += n;
+    if (direct) usage.direct += n; else usage.sess += n;
+    usage.dirty = true;
+  }
+  function saveUsage() {
+    if (!usage.dirty) return;
+    usage.dirty = false;
+    store.set('usage', JSON.stringify({ day: usage.day, dayB: usage.dayB, month: usage.month, monthB: usage.monthB }));
+  }
+  setInterval(saveUsage, 10000);
+  window.addEventListener('pagehide', saveUsage);
+  const mb = b => (b >= 1e9 ? (b / 1073741824).toFixed(2).replace('.', ',') + ' GB' : b < 10485760 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.round(b / 1048576) + ' MB');
+  const gbh = h => (h * MB_PER_H >= 1000 ? (h * MB_PER_H / 1000).toFixed(1).replace('.', ',') + ' GB' : h * MB_PER_H + ' MB');
+
   // ── Αποθήκευση της ροής ─────────────────────────────────────────
   const Rec = { on: false, state: 'off', ctrl: null, release: null, remoteAt: 0, err: '' };
   const remoteRec = () => Date.now() - Rec.remoteAt < 12000;
@@ -279,6 +303,7 @@
         const { value, done } = await reader.read();
         if (done || !Rec.on) break;
         last = Date.now();
+        addUsage(value.byteLength, false);
         for (const c of sp.push(value)) await addChunk(sess, c);
       }
     } finally { clearInterval(dog); if (Rec.ctrl === ctrl) Rec.ctrl = null; }
@@ -594,7 +619,11 @@
   });
 
   // Κάθε μισό δευτερόλεπτο: κενά, τέλος αποθηκευμένων, εμφάνιση
+  let tickAt = Date.now();
   setInterval(() => {
+    const dt = Math.min(5, (Date.now() - tickAt) / 1000);
+    tickAt = Date.now();
+    if (F && F.mode === 'stream' && !audio.paused) addUsage(Math.round(dt * BPS), true);
     if (E && E.sb && E.started && want && !E.sb.updating) {
       const t = audio.currentTime, b = E.sb.buffered;
       // κενό μέσα στον άξονα (χαμένο κομμάτι): πήδημα στο επόμενο διαθέσιμο
@@ -703,6 +732,7 @@
       $('l-clock').textContent = ''; $('l-from').textContent = ''; $('l-to').textContent = ''; $('l-behind').textContent = '';
       $('l-store').textContent = 'Δεν υπάρχει ακόμα τίποτα αποθηκευμένο.';
     }
+    renderUsage(has);
     const busy = want && (waitingFirst || (E && (E.seekTo != null || audio.readyState < 3)) || (F && !F.ready) || audio.readyState < 3);
     const pb = $('l-play');
     pb.innerHTML = want ? ICON_PAUSE : ICON_PLAY;
@@ -713,15 +743,15 @@
     $('l-rate').textContent = String(rate).replace('.', ',') + '×';
     const st = $('l-rec');
     st.textContent = {
-      on: '● Αποθηκεύεται στη συσκευή όσο είναι ανοιχτή η σελίδα',
+      on: '● Λήψη και αποθήκευση στη συσκευή (~' + MB_PER_H + ' MB την ώρα), όσο είναι ανοιχτή η σελίδα',
       connecting: 'Σύνδεση με τον σταθμό…',
       retry: 'Χάθηκε η σύνδεση με τον σταθμό· νέα προσπάθεια…',
       offline: 'Χωρίς σύνδεση στο διαδίκτυο· θα συνεχίσει μόλις επανέλθει.',
       remote: '● Αποθηκεύεται από άλλη καρτέλα αυτής της σελίδας',
-      off: Rec.err || 'Η αποθήκευση είναι σταματημένη.',
+      off: Rec.err || 'Η λήψη είναι σταματημένη· δεν καταναλώνονται δεδομένα.',
     }[Rec.on ? Rec.state : remoteRec() ? 'remote' : 'off'];
     st.classList.toggle('on', Rec.on && Rec.state === 'on' || remoteRec());
-    $('l-recbtn').textContent = Rec.on ? 'Σταμάτα την αποθήκευση' : 'Ξεκίνα την αποθήκευση';
+    $('l-recbtn').textContent = Rec.on ? 'Σταμάτα τη λήψη' : 'Ξεκίνα τη λήψη';
     $('l-recbtn').disabled = !Rec.on && remoteRec();
     if ('mediaSession' in navigator && window.__radioActive === 'live') {
       navigator.mediaSession.playbackState = want ? 'playing' : 'paused';
@@ -729,6 +759,33 @@
     }
   }
   let listKey = '';
+  // Τι κοστίζει: πριν την έναρξη, κατά την ακρόαση, στην παύση
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  function renderInfo() {
+    const keep = Number.isFinite(keepH) ? 'έως ' + (keepH === 1 ? '1 ώρα' : keepH + ' ώρες') + ' (περίπου ' + gbh(keepH) + ')' : 'όσο χωράει στη συσκευή';
+    $('l-cost').textContent = (useMSE
+      ? 'Η ροή του σταθμού κατεβαίνει μία φορά: περίπου ' + MB_PER_H + ' MB δεδομένων την ώρα, για όσο είναι ανοιχτή η σελίδα, ακόμη και σε παύση. '
+      : 'Σε αυτή τη συσκευή, όσο ακούς ζωντανά, η ροή κατεβαίνει δύο φορές (μία για να την ακούς και μία για να φυλάγεται): περίπου ' + 2 * MB_PER_H + ' MB την ώρα· όταν γυρίσεις πίσω ή σε παύση, περίπου ' + MB_PER_H + ' MB την ώρα. ')
+      + 'Στη συσκευή φυλάγονται ' + keep + '· τα παλαιότερα σβήνονται αυτόματα. Μπορείς να σταματήσεις τη λήψη και να σβήσεις τα αποθηκευμένα όποτε θέλεις.';
+    const cell = conn && (conn.type === 'cellular' || conn.saveData);
+    const w = $('l-warn');
+    w.hidden = !cell;
+    if (cell) w.textContent = conn.saveData ? 'Έχεις ενεργή την εξοικονόμηση δεδομένων. Η ζωντανή ακρόαση με επιστροφή καταναλώνει περίπου ' + MB_PER_H + ' MB την ώρα.' : 'Φαίνεται ότι είσαι σε δεδομένα κινητού. Η ζωντανή ακρόαση με επιστροφή καταναλώνει περίπου ' + MB_PER_H + ' MB την ώρα από το πακέτο σου.';
+    $('l-how').textContent = useMSE
+      ? 'Σε αυτή τη συσκευή ακούς από τα ίδια κομμάτια που φυλάγονται, γι’ αυτό το «ζωντανά» είναι λίγα δευτερόλεπτα πίσω από τον σταθμό και η ροή κατεβαίνει μία φορά.'
+      : 'Αυτή η συσκευή δεν μπορεί να παίζει συνεχόμενα από τα φυλαγμένα κομμάτια· όσο ακούς ζωντανά παίζει απευθείας από τον σταθμό, ενώ η σελίδα κατεβάζει παράλληλα τη ροή για να τη φυλάει (διπλή λήψη). Όταν γυρίσεις πίσω, παίζει από τα φυλαγμένα, με ένα στιγμιαίο κόψιμο κάθε λίγα λεπτά.';
+  }
+  function renderUsage(has) {
+    const direct = usage.direct > 0 ? ' + ' + mb(usage.direct) + ' απευθείας (εκτίμηση)' : '';
+    const u = 'Λήψη σε αυτή την ακρόαση: ' + mb(usage.sess) + direct + (has ? ' · Στη συσκευή: ' + fmtDur(stored()) + ' (' + mb(bytes()) + ')' : '');
+    if ($('l-usage').textContent !== u) $('l-usage').textContent = u;
+    const t = 'Δεδομένα για τη ζωντανή ακρόαση σε αυτή τη συσκευή: σήμερα ' + mb(usage.day === dateFmt.format(Date.now()) ? usage.dayB : 0) + ', αυτόν τον μήνα ' + mb(usage.month === dateFmt.format(Date.now()).slice(0, 7) ? usage.monthB : 0) + '.';
+    if ($('l-totals').textContent !== t) $('l-totals').textContent = t;
+    const paused = !want && Rec.on;
+    $('l-pause').hidden = !paused;
+    if (paused) $('l-pause-t').textContent = 'Σε παύση· η λήψη συνεχίζεται (~' + MB_PER_H + ' MB την ώρα), για να συνεχίσεις από εδώ ή να πας στο ζωντανό χωρίς κενό.';
+  }
+
   function renderTicks() {
     const ticks = $('l-ticks'), box = $('l-shows');
     ticks.innerHTML = '';
@@ -799,17 +856,19 @@
   });
   $('l-recbtn').addEventListener('click', () => (Rec.on ? recStop() : recStart()));
   $('l-clear').addEventListener('click', clearAll);
+  $('l-pause-stop').addEventListener('click', () => recStop());
   const keepSel = $('l-keep');
   for (const h of KEEP_OPTS) {
     const o = document.createElement('option');
     o.value = Number.isFinite(h) ? String(h) : 'inf';
-    o.textContent = Number.isFinite(h) ? (h === 1 ? '1 ώρα' : h + ' ώρες') + ' (~' + (h * MB_PER_H >= 1000 ? (h * MB_PER_H / 1000).toFixed(1).replace('.', ',') + ' GB' : h * MB_PER_H + ' MB') + ')' : 'Όσο χωράει στη συσκευή';
+    o.textContent = Number.isFinite(h) ? (h === 1 ? '1 ώρα' : h + ' ώρες') + ' (~' + gbh(h) + ')' : 'Όσο χωράει στη συσκευή';
     if (h === keepH) o.selected = true;
     keepSel.appendChild(o);
   }
   keepSel.addEventListener('change', () => {
     keepH = keepSel.value === 'inf' ? Infinity : Number(keepSel.value);
     store.set('keep', keepSel.value);
+    renderInfo();
     evictByKeep().then(render);
   });
   document.addEventListener('keydown', e => {
@@ -828,6 +887,8 @@
   $('l-more').addEventListener('toggle', () => { if ($('l-more').open) showQuota(); });
 
   // ── Εκκίνηση ────────────────────────────────────────────────────
+  renderInfo();
+  if (conn && conn.addEventListener) conn.addEventListener('change', renderInfo);
   if (!window.indexedDB || !window.fetch || !window.ReadableStream) { root.hidden = true; return; }
   tx(['idx'], 'readonly', t => { const r = t.objectStore('idx').getAll(); return () => r.result || []; })
     .then(list => {
@@ -839,6 +900,6 @@
     .then(() => { dirty = true; render(); });
   render();
   window.RadioLive = { get chunks() { return C; }, pos, edge, first, goLive, play, pause, seek, recStop, useMSE, get rec() { return Rec; },
-    get trace() { return TR; },
+    get trace() { return TR; }, get usage() { return usage; },
     get debug() { const b = E && E.sb ? E.sb.buffered : null; return { lastErr, want, cur, seekTo: E && E.seekTo, started: E && E.started, busy: E && E.busy, t: audio.currentTime, paused: audio.paused, rs: audio.readyState, buf: b ? Array.from({ length: b.length }, (_, i) => [b.start(i), b.end(i)]) : null, F: F && { mode: F.mode, ready: F.ready, base: F.base, end: F.end } }; } };
 })();
