@@ -8,13 +8,13 @@
 // Αν ποτέ χρειαστεί να απενεργοποιηθεί: αρκεί ένα sw.js που κάνει
 // self.registration.unregister() και καθαρίζει τα caches.
 
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = 'on-pages-' + VERSION;
 const FONTS = 'on-fonts-v1';
 const PRECACHE = [
   '/main.html', '/synaxarion.html', '/fasting.html', '/sermons.html', '/radio.html', '/efarmogi.html',
   '/anagnosmata.html', '/proseuxitario.html', '/assets/greek.js', '/assets/prayers.js',
-  '/assets/site.css', '/assets/site.js', '/assets/calendar.js', '/assets/ics.js',
+  '/assets/site.css', '/assets/site.js', '/assets/radio-live.js', '/assets/calendar.js', '/assets/ics.js',
   '/assets/icons/icon.svg', '/assets/icons/icon-192.png', '/assets/icons/favicon-32.png', '/assets/icons/apple-touch-icon.png',
   '/manifest.webmanifest', '/sermons-data.json',
 ];

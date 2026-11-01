@@ -76,15 +76,92 @@
     .n-meta { grid-column: 1 / -1; color: var(--ink-faint); font-size: 14px; }
     .n-shows { grid-column: 1 / -1; color: var(--ink-soft); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .msg { text-align: center; color: var(--ink-soft); }
+
+    /* ── Ζωντανά ────────────────────────────────────────────────────── */
+    .live { margin-bottom: 1.4rem; text-align: center; }
+    .l-badge { display: inline-block; font-size: 13px; letter-spacing: .06em; color: var(--ink-soft); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 10px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .l-badge.on { color: #fff8ef; background: #b3261e; border-color: #b3261e; }
+    .l-now { color: var(--ink-soft); font-size: 14.5px; margin-top: 4px; min-height: 1.4em; overflow-wrap: anywhere; }
+    .l-go { margin: 14px auto 6px; font-size: 17px; padding: 10px 22px; }
+    .l-note { color: var(--ink-faint); font-size: 14px; margin: 6px auto 0; max-width: 34em; }
+    .ticks i.gap { background: var(--ink-faint); width: 3px; opacity: .6; }
+    .l-jumps { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
+    .l-jumps .btn { padding: 5px 12px; font-size: 14px; min-width: 4.2em; }
+    .l-jumps .l-live { font-weight: 600; }
+    .l-jumps .l-live.on { color: #b3261e; border-color: #b3261e; }
+    .l-jumps .l-live:disabled { cursor: default; opacity: 1; }
+    .live .times { display: grid; grid-template-columns: 1fr auto 1fr; }
+    .live .times span:last-child { text-align: right; }
+    .live .times #l-behind { color: var(--cinnabar); }
+    .l-more { margin-top: 10px; text-align: left; font-size: 14.5px; color: var(--ink-soft); border-top: 1px solid var(--rule-soft); padding-top: 8px; }
+    .l-more summary { cursor: pointer; color: var(--ink); }
+    .l-more p { margin: 6px 0; }
+    .l-more .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+    .l-more select { padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--vellum); color: var(--ink); font: inherit; max-width: 100%; }
+    .l-more .btn { padding: 5px 12px; font-size: 14px; }
+    .l-rec { font-size: 14px; color: var(--ink-soft); }
+    .l-rec.on { color: #b3261e; }
+    .extra form { flex-wrap: wrap; justify-content: center; max-width: 100%; }
+    .extra input[type="time"] { min-width: 0; max-width: 9.5em; }
   </style>
 </head>
 
 <body>
   <div class="ort-root">
     <div class="ort-shell">
-      <header data-page="radio" data-title="Ραδιόφωνο" data-subtitle="Ηχογραφήσεις της Πειραϊκής Εκκλησίας 91.2"></header>
+      <header data-page="radio" data-title="Ραδιόφωνο" data-subtitle="Ζωντανά και ηχογραφήσεις της Πειραϊκής Εκκλησίας 91.2"></header>
 
       <main class="radio-page">
+        <section class="panel live" id="live" aria-label="Ζωντανή ακρόαση">
+          <span class="l-badge" id="l-badge">● Ζωντανά</span>
+          <div class="p-title">Πειραϊκή Εκκλησία 91.2</div>
+          <div class="l-now" id="l-now"></div>
+          <div id="l-start">
+            <button class="btn btn-accent l-go" id="l-go" type="button">● Άκου ζωντανά</button>
+            <p class="l-note">Όσο είναι ανοιχτή η σελίδα, ό,τι ακούγεται φυλάγεται στη συσκευή σου, ώστε να γυρίσεις πίσω δευτερόλεπτα, λεπτά ή ώρες, να σταματήσεις και να συνεχίσεις από εκεί.</p>
+          </div>
+          <div id="l-ui" hidden>
+            <div class="p-clock" id="l-clock"></div>
+            <div class="p-show" id="l-show"></div>
+            <div class="seek">
+              <div class="ticks" id="l-ticks" aria-hidden="true"></div>
+              <input type="range" id="l-seek" min="0" max="1" step="1" value="0" aria-label="Θέση στα αποθηκευμένα">
+              <div class="times"><span id="l-from"></span><span id="l-behind"></span><span id="l-to"></span></div>
+            </div>
+            <div class="controls">
+              <button class="cbtn" id="l-b30" type="button" aria-label="Πίσω 30 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>30</button>
+              <button class="cbtn" id="l-b10" type="button" aria-label="Πίσω 10 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>10</button>
+              <button class="cbtn play" id="l-play" type="button" aria-label="Αναπαραγωγή"></button>
+              <button class="cbtn" id="l-f10" type="button" aria-label="Μπροστά 10 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>10</button>
+              <button class="cbtn" id="l-f30" type="button" aria-label="Μπροστά 30 δευτερόλεπτα"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>30</button>
+            </div>
+            <div class="l-jumps">
+              <button class="btn" id="l-b1h" type="button" aria-label="Πίσω μία ώρα">−1 ώρα</button>
+              <button class="btn" id="l-b15m" type="button" aria-label="Πίσω 15 λεπτά">−15′</button>
+              <button class="btn" id="l-b5m" type="button" aria-label="Πίσω 5 λεπτά">−5′</button>
+              <button class="btn l-live" id="l-live" type="button">Ζωντανά ⏭</button>
+            </div>
+            <div class="extra">
+              <button class="btn rate" id="l-rate" type="button" aria-label="Ταχύτητα αναπαραγωγής">1×</button>
+              <form id="l-jump"><label for="l-jc">Ώρα μετάδοσης</label><input type="time" id="l-jc" step="1" required><button class="btn" type="submit">Πήγαινε</button></form>
+            </div>
+            <p class="p-msg" id="l-msg" role="status"></p>
+            <ol class="shows" id="l-shows" hidden aria-label="Εκπομπές στα αποθηκευμένα"></ol>
+            <details class="l-more" id="l-more">
+              <summary>Αποθήκευση στη συσκευή</summary>
+              <p class="l-rec" id="l-rec"></p>
+              <p id="l-store"></p>
+              <div class="row"><label for="l-keep">Κράτα έως</label><select id="l-keep"></select></div>
+              <p id="l-quota"></p>
+              <div class="row">
+                <button class="btn" id="l-recbtn" type="button">Σταμάτα την αποθήκευση</button>
+                <button class="btn" id="l-clear" type="button">Σβήσε τα αποθηκευμένα</button>
+              </div>
+              <p>Τα αποθηκευμένα μένουν στη συσκευή και όταν κλείσεις τη σελίδα· όσο ήταν κλειστή φαίνεται ως κενό (γκρι σημάδι). Η ροή κατεβαίνει μία φορά (~86 MB την ώρα)· στα δεδομένα κινητού να το έχεις υπόψη. Για ό,τι μεταδόθηκε πριν ανοίξεις τη σελίδα, υπάρχουν οι προγραμματισμένες ηχογραφήσεις παρακάτω.</p>
+            </details>
+          </div>
+        </section>
+
         <section class="panel player" id="player" hidden aria-label="Αναπαραγωγή">
           <div class="p-title" id="p-title"></div>
           <div class="p-clock" id="p-clock"></div>
@@ -233,6 +310,7 @@
       }
       function play() {
         if (!N) return;
+        claim();
         wantPlay = true; waitingLive = false; msg('');
         if (srcId !== seg().id) loadSeg(idx, pendingSeek);
         else audio.play().catch(playFailed);
@@ -356,10 +434,6 @@
         $('p-title').textContent = nightTitle(N);
         msg('');
         renderShows();
-        if ('mediaSession' in navigator && window.MediaMetadata) {
-          navigator.mediaSession.metadata = new MediaMetadata({ title: 'Πειραϊκή Εκκλησία 91.2', artist: nightTitle(N), album: 'Ορθόδοξο Σημειωματάριο',
-            artwork: [{ src: '/assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' }] });
-        }
         if (autoplay) play(); else render();
         renderNights();
       }
@@ -384,7 +458,7 @@
           $('p-show').innerHTML = show ? '<b></b><small></small>' : '';
           if (show) { $('p-show').firstChild.textContent = show.title; $('p-show').lastChild.textContent = show.desc; }
           $('shows').querySelectorAll('li').forEach(li => li.classList.toggle('on', show != null && Number(li.dataset.start) === show.start));
-          if ('mediaSession' in navigator && navigator.mediaSession.metadata) navigator.mediaSession.metadata.title = show ? show.title : 'Πειραϊκή Εκκλησία 91.2';
+          if ('mediaSession' in navigator && navigator.mediaSession.metadata && window.__radioActive !== 'live') navigator.mediaSession.metadata.title = show ? show.title : 'Πειραϊκή Εκκλησία 91.2';
         }
         const busy = wantPlay && (switching || audio.readyState < 3 || waitingLive);
         const p = $('play');
@@ -392,7 +466,7 @@
         p.setAttribute('aria-label', wantPlay ? 'Παύση' : 'Αναπαραγωγή');
         p.classList.toggle('busy', busy);
         $('rate').textContent = String(rate).replace('.', ',') + '×';
-        if ('mediaSession' in navigator) {
+        if ('mediaSession' in navigator && window.__radioActive !== 'live') {
           navigator.mediaSession.playbackState = wantPlay ? 'playing' : 'paused';
           try { navigator.mediaSession.setPositionState({ duration: N.total, position: Math.min(t, N.total), playbackRate: rate }); } catch (e) { /* */ }
         }
@@ -529,13 +603,18 @@
       });
 
       document.addEventListener('keydown', e => {
-        if (!N || e.target.closest('input, textarea, select, button') || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (!N || window.__radioActive === 'live' || e.target.closest('input, textarea, select, button') || e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.key === ' ' || e.key === 'k') { e.preventDefault(); wantPlay ? pause() : play(); }
         else if (e.key === 'ArrowLeft') { e.preventDefault(); skip(e.shiftKey ? -30 : -10); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); skip(e.shiftKey ? 30 : 10); }
       });
 
-      if ('mediaSession' in navigator) {
+      // Ένας player τη φορά: η ζωντανή ακρόαση και οι ηχογραφήσεις σταματούν η μία την άλλη
+      // και όποια παίζει τελευταία κρατά τα πλήκτρα και τα χειριστήρια του συστήματος.
+      function claim() {
+        window.__radioActive = 'rec';
+        window.dispatchEvent(new CustomEvent('radio-exclusive', { detail: 'rec' }));
+        if (!('mediaSession' in navigator)) return;
         const ms = navigator.mediaSession;
         const set = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) { /* μη υποστηριζόμενο */ } };
         set('play', play);
@@ -543,7 +622,14 @@
         set('seekbackward', d => skip(-(d && d.seekOffset || 10)));
         set('seekforward', d => skip(d && d.seekOffset || 10));
         set('seekto', d => { if (d && Number.isFinite(d.seekTime)) seek(d.seekTime); });
+        set('nexttrack', null); set('previoustrack', null);
+        if (N && window.MediaMetadata) {
+          const sh = showAt(clockAt(now()));
+          ms.metadata = new MediaMetadata({ title: sh ? sh.title : 'Πειραϊκή Εκκλησία 91.2', artist: nightTitle(N), album: 'Ορθόδοξο Σημειωματάριο',
+            artwork: [{ src: '/assets/icons/icon-192.png', sizes: '192x192', type: 'image/png' }] });
+        }
       }
+      window.addEventListener('radio-exclusive', e => { if (e.detail !== 'rec' && wantPlay) pause(); });
       window.addEventListener('pagehide', () => save(true));
 
       refresh().then(async () => {
@@ -556,6 +642,7 @@
       setInterval(refresh, 60000);
     })();
   </script>
+  <script src="assets/radio-live.js"></script>
 </body>
 
 </html>
