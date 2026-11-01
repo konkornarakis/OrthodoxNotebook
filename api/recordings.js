@@ -3,6 +3,7 @@
 // GET /api/recordings                 →  { ok, nights: [{ tag, date, dur, size, growing, titles, from, to }] }   (όλες οι ημέρες, ελαφριά λίστα)
 // GET /api/recordings?night=<tag>     →  { ok, night: { tag, date, growing, segments: [{ id, start, dur, size }], shows: [{ start, title, desc }] } }
 // GET /api/recordings?asset=<id>      →  302 προς προσωρινό σύνδεσμο του mp3
+// GET /api/recordings?program=week    →  { ok, week, days }  το εβδομαδιαίο πρόγραμμα του σταθμού (για τη ζωντανή ακρόαση)
 //
 // Τα mp3 ανεβαίνουν από το workflow record-peiraiki.yml ως assets σε GitHub Releases (tag rec-ΕΕΕΕ-ΜΜ-ΗΗ),
 // σε κομμάτια των 10 λεπτών με όνομα peiraiki_ΕΕΕΕ-ΜΜ-ΗΗ_ΩΩ-ΛΛ-ΔΔ[_ΝΝk].mp3 (ώρα έναρξης σε ώρα Ελλάδας, kbps).
@@ -14,6 +15,7 @@
 'use strict';
 
 const { athensToEpoch } = require('../radio/schedule.js');
+const program = require('../radio/program.js');
 
 const REPO = process.env.RECORDINGS_REPO || process.env.GITHUB_REPO || 'konkornarakis/OrthodoxNotebook';
 const API = 'https://api.github.com/repos/' + REPO;
@@ -127,6 +129,25 @@ async function assetUrl(id) {
   return r.status >= 300 && r.status < 400 ? r.headers.get('location') : null;
 }
 
+// Το πρόγραμμα του σταθμού· αν δεν απαντά το peradio.com, το τελευταίο αντίγραφο που κράτησε το workflow (radio-log)
+let weekCache = null;
+async function stationWeek() {
+  if (weekCache && Date.now() - weekCache.at < 30 * 60e3) return weekCache.week;
+  let week = null;
+  try {
+    week = await Promise.race([program.fetchWeek(), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 8000))]);
+  } catch {
+    try {
+      const r = await gh('/releases/tags/radio-log');
+      const a = r.ok && (await r.json()).assets.find(x => x.name === 'program-week.json');
+      const loc = a && (await gh('/releases/assets/' + a.id, { accept: 'application/octet-stream' })).headers.get('location');
+      if (loc) week = await (await fetch(loc, { signal: AbortSignal.timeout(10000) })).json();
+    } catch { /* καμία πηγή */ }
+  }
+  if (week && Object.keys(week).length) weekCache = { at: Date.now(), week };
+  return weekCache ? weekCache.week : null;
+}
+
 function json(res, status, obj, cache) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', cache || 'no-store');
@@ -146,6 +167,11 @@ async function handler(req, res) {
       res.setHeader('Location', url);
       res.end();
       return;
+    }
+    if (q.get('program') === 'week') {
+      const week = await stationWeek();
+      if (!week) return json(res, 502, { ok: false, error: 'Το πρόγραμμα του σταθμού δεν είναι διαθέσιμο' });
+      return json(res, 200, { ok: true, week, days: program.DAYS }, 'public, s-maxage=1800, stale-while-revalidate=86400');
     }
     if (q.has('night')) {
       const tag = q.get('night');
