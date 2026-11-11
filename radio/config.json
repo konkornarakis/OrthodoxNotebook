@@ -10,7 +10,7 @@
     {
       "id": "daily",
       "label": "Καθημερινή",
-      "enabled": true,
+      "enabled": false,
       "days": [
         0,
         1,
