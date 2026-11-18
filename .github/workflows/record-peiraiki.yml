@@ -48,8 +48,10 @@ jobs:
         run: |
           go=1
           if [ "${{ github.event_name }}" = schedule ]; then
-            n=$(gh run list -R "$GH_REPO" --workflow record-peiraiki.yml --limit 30 --json databaseId,status \
-                  --jq '[.[] | select(.databaseId != ${{ github.run_id }} and .status != "completed")] | length' 2>/dev/null || echo 0)
+            if ! n=$(gh run list -R "$GH_REPO" --workflow record-peiraiki.yml --limit 30 --json databaseId,status \
+                  --jq '[.[] | select(.databaseId != ${{ github.run_id }} and .status != "completed")] | length'); then
+              echo "::warning::Δεν διαβάστηκαν τα άλλα τρεξίματα· συνεχίζει κανονικά (μπαίνει στη σειρά)."; n=0
+            fi
             echo "Άλλα τρεξίματα σε εξέλιξη ή αναμονή: $n"
             [ "$n" -ge 2 ] && go=0
           fi
