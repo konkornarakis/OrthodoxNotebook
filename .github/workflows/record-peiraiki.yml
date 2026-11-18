@@ -26,8 +26,35 @@ on:
 
 permissions:
   contents: write
+  actions: read     # για να δει το «gate» αν γράφει ήδη άλλο τρέξιμο
 
 jobs:
+  # Τα προγραμματισμένα τρεξίματα (κάθε 30′) περιμένουν στη σειρά όσο γράφει κάποιο άλλο. Το GitHub κρατά
+  # μόνο ΕΝΑ σε αναμονή και ακυρώνει («cancelled») το προηγούμενο κάθε φορά που έρχεται νέο, γι' αυτό
+  # εμφανίζονταν ~5 ακυρωμένα κάθε βράδυ. Εδώ, αν υπάρχει ήδη ένα που γράφει και ένα που περιμένει, το νέο
+  # τελειώνει αμέσως (επιτυχία, χωρίς να μπει στη σειρά)· ένα σε αναμονή αρκεί για να συνεχιστεί η
+  # ηχογράφηση αμέσως μόλις τελειώσει η τρέχουσα (όριο 6 ωρών ανά εργασία).
+  gate:
+    if: github.event.inputs.program_tag == '' || github.event.inputs.program_tag == null
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      go: ${{ steps.g.outputs.go }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - id: g
+        run: |
+          go=1
+          if [ "${{ github.event_name }}" = schedule ]; then
+            n=$(gh run list -R "$GH_REPO" --workflow record-peiraiki.yml --limit 30 --json databaseId,status \
+                  --jq '[.[] | select(.databaseId != ${{ github.run_id }} and .status != "completed")] | length' 2>/dev/null || echo 0)
+            echo "Άλλα τρεξίματα σε εξέλιξη ή αναμονή: $n"
+            [ "$n" -ge 2 ] && go=0
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+
   # Ενημέρωση του προγράμματος μιας ημέρας που υπάρχει ήδη (χειροκίνητα).
   program:
     if: github.event.inputs.program_tag != ''
@@ -37,12 +64,13 @@ jobs:
       GH_REPO: ${{ github.repository }}
       TAG: ${{ github.event.inputs.program_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { sparse-checkout: radio }
       - run: radio/update-program.sh "$TAG" "${TAG#rec-}"
 
   record:
-    if: github.event.inputs.program_tag == '' || github.event.inputs.program_tag == null
+    needs: gate
+    if: needs.gate.outputs.go == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 355
     concurrency:
@@ -58,7 +86,7 @@ jobs:
       RUN_ID: ${{ github.run_id }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { sparse-checkout: radio }
 
       - name: Απόφαση
