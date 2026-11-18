@@ -142,8 +142,16 @@ async function main() {
     ok++;
     await sleep(300);
   }
-  const need = windowDays ? Math.min(10, list.length - 5) : 250;
-  if (ok < need) { console.error('Μόνο ' + ok + ' ημέρες με αναγνώσματα· δεν γράφεται τίποτα. Αποτυχίες: ' + failed.join(', ')); process.exit(1); }
+  // Έλεγχος ότι η πηγή λειτουργεί, πριν γραφτεί οτιδήποτε. Στο καθημερινό παράθυρο, οι κοντινές ημέρες
+  // (3 πριν έως 3 μετά) πρέπει να έχουν αναγνώσματα· οι μακρινές μπορεί να μην έχουν δημοσιευτεί ακόμη
+  // (το saint.gr τις ανεβάζει από ~5 έως ~15 ημέρες μπροστά), και αυτό δεν είναι σφάλμα.
+  if (windowDays) {
+    const near = list.slice(0, 7).filter(([m, d]) => Object.values(years).some(y => y[String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0')])).length;
+    if (near < 5 || failed.length > list.length / 2) {
+      console.error('Η πηγή δεν απαντά σωστά (κοντινές ημέρες με αναγνώσματα: ' + near + '/7)· δεν γράφεται τίποτα. Αποτυχίες: ' + failed.join(', '));
+      process.exit(1);
+    }
+  } else if (ok < 250) { console.error('Μόνο ' + ok + ' ημέρες με αναγνώσματα· δεν γράφεται τίποτα. Αποτυχίες: ' + failed.join(', ')); process.exit(1); }
   fs.mkdirSync(OUT, { recursive: true });
   for (const [y, days] of Object.entries(years)) {
     const file = path.join(OUT, y + '.json');
