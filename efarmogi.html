@@ -304,9 +304,10 @@
       function loadReadings() {
         if (readingsOf || readingsLoading) return readingsLoading;
         const y = new Date().getFullYear();
-        readingsLoading = Promise.all([y, y + 1].map(yy => fetch(`readings/${yy}.json`).then(r => r.ok ? r.json() : null).catch(() => null))
-          .concat(fetch('readings/refs.json').then(r => r.json())))
-          .then(([a, b, refs]) => { readingsOf = I.readingsLookup({ [y]: a, [y + 1]: b }, refs); render(); })
+        const get = u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null);
+        readingsLoading = Promise.all([get(`readings/${y}.json`), get(`readings/${y + 1}.json`), fetch('readings/refs.json').then(r => r.json()),
+          get(`readings-gr/${y}.json`), get(`readings-gr/${y + 1}.json`)])
+          .then(([a, b, refs, ga, gb]) => { readingsOf = I.readingsLookup({ [y]: a, [y + 1]: b }, refs, { [y]: ga, [y + 1]: gb }); render(); })
           .catch(() => { readingsLoading = null; });
         return readingsLoading;
       }

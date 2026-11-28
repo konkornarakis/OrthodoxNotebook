@@ -12,8 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const OrthoIcs = require('../assets/ics.js');
 
-function readJson(file) {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'readings', file), 'utf8')); } catch (e) { return null; }
+function readJson(file, dir) {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', dir || 'readings', file), 'utf8')); } catch (e) { return null; }
 }
 
 function handler(req, res) {
@@ -33,9 +33,9 @@ function handler(req, res) {
 
   let readingsOf = null;
   if (on('readings')) {
-    const years = {};
-    for (let y = from.getFullYear(); y <= to.getFullYear(); y++) years[y] = readJson(y + '.json');
-    readingsOf = OrthoIcs.readingsLookup(years, readJson('refs.json') || {});
+    const years = {}, grYears = {};
+    for (let y = from.getFullYear(); y <= to.getFullYear(); y++) { years[y] = readJson(y + '.json'); grYears[y] = readJson(y + '.json', 'readings-gr'); }
+    readingsOf = OrthoIcs.readingsLookup(years, readJson('refs.json') || {}, grYears);
   }
 
   const body = OrthoIcs.build({

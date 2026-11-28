@@ -204,11 +204,18 @@
     return { ics: lines.map(fold).join('\r\n') + '\r\n', at };
   }
 
-  // Συνάρτηση αναγνωσμάτων από τα αρχεία readings/ (έτη → { 'MM-DD': [[περικοπή, 'A'|'E']] }, refs → { περικοπή: παραπομπή })
-  function readingsLookup(years, refs) {
+  // Συνάρτηση αναγνωσμάτων. Προτιμά την τάξη της Εκκλησίας της Ελλάδος (readings-gr/, από το saint.gr:
+  // έτη → { 'MM-DD': { r: [{ k: 'A'|'E'|…, ref }] } }) και μόνο για τις ημέρες που δεν έχουν ακόμη
+  // κατέβει από εκεί χρησιμοποιεί τον υπολογισμό των αρχείων readings/ (έτη → { 'MM-DD': [[περικοπή, 'A'|'E']] },
+  // refs → { περικοπή: παραπομπή }).
+  function readingsLookup(years, refs, grYears) {
     return d => {
+      const key = pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const gy = grYears && grYears[d.getFullYear()];
+      const gr = gy && gy[key] && (gy[key].r || []).filter(x => (x.k === 'A' || x.k === 'E') && x.ref);
+      if (gr && gr.length) return gr.map(x => (x.k === 'A' ? 'Απ. ' : 'Ευ. ') + x.ref).join(' · ');
       const y = years[d.getFullYear()];
-      const list = y && y[pad(d.getMonth() + 1) + '-' + pad(d.getDate())];
+      const list = y && y[key];
       if (!list || !list.length) return null;
       return list.map(([pid, k]) => (k === 'A' ? 'Απ. ' : 'Ευ. ') + (refs[pid] || '')).join(' · ');
     };

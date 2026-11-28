@@ -41,7 +41,7 @@
   ],
   "functions": {
     "api/calendar.js": {
-      "includeFiles": "readings/**"
+      "includeFiles": "{readings,readings-gr}/**"
     }
   }
 }
