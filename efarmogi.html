@@ -306,8 +306,8 @@
         const y = new Date().getFullYear();
         const get = u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null);
         readingsLoading = Promise.all([get(`readings/${y}.json`), get(`readings/${y + 1}.json`), fetch('readings/refs.json').then(r => r.json()),
-          get(`readings-gr/${y}.json`), get(`readings-gr/${y + 1}.json`)])
-          .then(([a, b, refs, ga, gb]) => { readingsOf = I.readingsLookup({ [y]: a, [y + 1]: b }, refs, { [y]: ga, [y + 1]: gb }); render(); })
+          get(`readings-gr/${y}.json`), get(`readings-gr/${y + 1}.json`), get(`readings-gr-pred/${y}.json`), get(`readings-gr-pred/${y + 1}.json`)])
+          .then(([a, b, refs, ga, gb, pa, pb]) => { readingsOf = I.readingsLookup({ [y]: a, [y + 1]: b }, refs, { [y]: ga, [y + 1]: gb }, { [y]: pa, [y + 1]: pb }); render(); })
           .catch(() => { readingsLoading = null; });
         return readingsLoading;
       }

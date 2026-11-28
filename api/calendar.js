@@ -33,9 +33,11 @@ function handler(req, res) {
 
   let readingsOf = null;
   if (on('readings')) {
-    const years = {}, grYears = {};
-    for (let y = from.getFullYear(); y <= to.getFullYear(); y++) { years[y] = readJson(y + '.json'); grYears[y] = readJson(y + '.json', 'readings-gr'); }
-    readingsOf = OrthoIcs.readingsLookup(years, readJson('refs.json') || {}, grYears);
+    const years = {}, grYears = {}, predYears = {};
+    for (let y = from.getFullYear(); y <= to.getFullYear(); y++) {
+      years[y] = readJson(y + '.json'); grYears[y] = readJson(y + '.json', 'readings-gr'); predYears[y] = readJson(y + '.json', 'readings-gr-pred');
+    }
+    readingsOf = OrthoIcs.readingsLookup(years, readJson('refs.json') || {}, grYears, predYears);
   }
 
   const body = OrthoIcs.build({

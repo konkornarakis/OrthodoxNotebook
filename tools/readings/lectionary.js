@@ -219,7 +219,7 @@ function preferTradition(rows) {
 }
 
 // ── Μία ημέρα ───────────────────────────────────────────────────────────────
-function dayInfo(y, m, d) {
+function dayInfo(y, m, d, opts) {
   const jdn = dayNum(y, m, d);
   let py = y, pdist = jdn - pascha(y);
   if (pdist < -77) { py = y - 1; pdist = jdn - pascha(py); }
@@ -251,6 +251,7 @@ function dayInfo(y, m, d) {
     else if (pdist > Y.lukanJumpThreshold) gospel = pdist + Y.lukanJump;
     else gospel = pdist;
   }
+  if (opts && opts.cycleOnly) return { pdist, weekday: wd, epistle, gospel, py };
   const noMemorial = [-36, -29, -22].includes(pdist) && m === 3 && [9, 24, 25, 26].includes(d);
 
   let rows = READINGS.filter(r => {

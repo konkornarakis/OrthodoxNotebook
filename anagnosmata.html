@@ -155,21 +155,38 @@
         const key = pad(d.getMonth() + 1) + '-' + pad(d.getDate());
         const gr = await json(`readings-gr/${d.getFullYear()}.json`).catch(() => null);
         if (my !== req) return;
-        const gday = gr && gr[key];
+        let gday = gr && gr[key], predicted = false;
+        // 1β) Αλλιώς το αρχείο του saint.gr (ημέρες προηγούμενων ετών) ή η πρόβλεψη κατά την ίδια τάξη (readings-gr-pred)
+        if (!gday) {
+          const pr = await json(`readings-gr-pred/${d.getFullYear()}.json`).catch(() => null);
+          const pday = pr && pr[key];
+          if (pday) {
+            const blocks = await Promise.all(pday.r.map(([, id]) => json(`readings-gr-pred/b/${id % 16}.json`).then(c => c[id]))).catch(() => null);
+            if (blocks && blocks.every(Boolean)) {
+              gday = { h: pday.h || '', r: pday.r.map(([k], i) => Object.assign({ k }, blocks[i])) };
+              predicted = !pday.s;
+            }
+          }
+        }
+        if (my !== req) return;
         if (gday) {
           if (gday.h) $('day-head').insertAdjacentHTML('beforeend', `<p class="day-cal">${esc(gday.h)}</p>`);
           const thisYear = d.getFullYear() === now.getFullYear();
           const saintUrl = `https://www.saint.gr/${key.replace('-', '/')}/index.aspx`;
           const title = r => r.k === 'A' ? 'Ὁ Ἀπόστολος' : r.k === 'E' ? 'Τὸ Εὐαγγέλιον' : r.k === 'H' ? 'Τὸ Ἑωθινὸν Εὐαγγέλιον' : r.t;
-          box.innerHTML = (gday.r.length ? gday.r.map(r => `<section class="reading panel">
+          box.innerHTML = (predicted ? `<div class="note-box" style="margin-top:1.4rem">Το saint.gr δημοσιεύει τα αναγνώσματα της Εκκλησίας της Ελλάδος έως 15 ημέρες νωρίτερα.
+              Για αυτή την ημέρα δεν έχουν δημοσιευτεί ακόμη· παρακάτω είναι η <b>πρόβλεψη</b> κατά την ίδια τάξη, από τα αναγνώσματα που δημοσίευσε τα έτη 2011–2026
+              (σε έλεγχο με αυτά τα έτη η πρόβλεψη συμφωνεί περίπου 9 φορές στις 10). Όταν δημοσιευτούν, εμφανίζονται εδώ τα επίσημα.</div>` : '') +
+            (gday.r.length ? gday.r.map(r => `<section class="reading panel">
               <h2>${esc(title(r))}</h2>
               <p class="ref">${esc(r.b)} · ${esc(r.ref)}</p>
               ${r.n ? `<p class="note">${esc(r.n)}</p>` : ''}
               <p class="text" lang="grc">${textOf(r)}</p>
-              ${thisYear ? `<p class="more"><a href="${saintUrl}" target="_blank" rel="noopener">Νεοελληνική ερμηνευτική απόδοση (Π. Τρεμπέλα · Ι. Κολιτσάρα) στο saint.gr ↗</a></p>` : ''}
+              ${thisYear && !predicted ? `<p class="more"><a href="${saintUrl}" target="_blank" rel="noopener">Νεοελληνική ερμηνευτική απόδοση (Π. Τρεμπέλα · Ι. Κολιτσάρα) στο saint.gr ↗</a></p>` : ''}
             </section>`).join('')
             : `<div class="note-box" style="margin-top:1.4rem">Σήμερα δεν ορίζεται Απόστολος και Ευαγγέλιο Θείας Λειτουργίας.</div>`) +
-            `<p class="order">Κατά το <b>Ημερολόγιο της Εκκλησίας της Ελλάδος</b> (από το <a href="${saintUrl}" target="_blank" rel="noopener">saint.gr</a>).</p>`;
+            (predicted ? `<p class="order">Πρόβλεψη κατά το <b>Ημερολόγιο της Εκκλησίας της Ελλάδος</b>· κείμενο από το saint.gr.</p>`
+              : `<p class="order">Κατά το <b>Ημερολόγιο της Εκκλησίας της Ελλάδος</b> (από το <a href="${saintUrl}" target="_blank" rel="noopener">saint.gr</a>).</p>`);
           return;
         }
         // 2) Αλλιώς υπολογισμός κατά την τάξη του Οικουμενικού Πατριαρχείου (για ημέρες που δεν έχουν δημοσιευτεί ακόμη)

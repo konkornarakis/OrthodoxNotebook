@@ -204,16 +204,23 @@
     return { ics: lines.map(fold).join('\r\n') + '\r\n', at };
   }
 
-  // Συνάρτηση αναγνωσμάτων. Προτιμά την τάξη της Εκκλησίας της Ελλάδος (readings-gr/, από το saint.gr:
-  // έτη → { 'MM-DD': { r: [{ k: 'A'|'E'|…, ref }] } }) και μόνο για τις ημέρες που δεν έχουν ακόμη
-  // κατέβει από εκεί χρησιμοποιεί τον υπολογισμό των αρχείων readings/ (έτη → { 'MM-DD': [[περικοπή, 'A'|'E']] },
-  // refs → { περικοπή: παραπομπή }).
-  function readingsLookup(years, refs, grYears) {
+  // Συνάρτηση αναγνωσμάτων κατά την τάξη της Εκκλησίας της Ελλάδος:
+  //  1. readings-gr/ (από το saint.gr, έως ~15 ημέρες μπροστά): έτη → { 'MM-DD': { r: [{ k: 'A'|'E'|…, ref }] } }
+  //  2. readings-gr-pred/ (το αρχείο του saint.gr και η πρόβλεψη για τις υπόλοιπες ημέρες): έτη → { 'MM-DD': { r: [[k, id, ref]] } }
+  //  3. μόνο αν λείπουν και αυτά, ο υπολογισμός των αρχείων readings/ (έτη → { 'MM-DD': [[περικοπή, 'A'|'E']] },
+  //     refs → { περικοπή: παραπομπή }).
+  function readingsLookup(years, refs, grYears, predYears) {
+    const label = list => list.map(([k, ref]) => (k === 'A' ? 'Απ. ' : 'Ευ. ') + ref).join(' · ');
     return d => {
       const key = pad(d.getMonth() + 1) + '-' + pad(d.getDate());
       const gy = grYears && grYears[d.getFullYear()];
       const gr = gy && gy[key] && (gy[key].r || []).filter(x => (x.k === 'A' || x.k === 'E') && x.ref);
-      if (gr && gr.length) return gr.map(x => (x.k === 'A' ? 'Απ. ' : 'Ευ. ') + x.ref).join(' · ');
+      if (gr && gr.length) return label(gr.map(x => [x.k, x.ref]));
+      const py = predYears && predYears[d.getFullYear()];
+      if (py && py[key]) {
+        const list = py[key].r.filter(([k]) => k === 'A' || k === 'E').map(([k, , ref]) => [k, ref]);
+        return list.length ? label(list) : null;
+      }
       const y = years[d.getFullYear()];
       const list = y && y[key];
       if (!list || !list.length) return null;

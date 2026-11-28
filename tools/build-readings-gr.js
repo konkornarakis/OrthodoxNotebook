@@ -164,5 +164,5 @@ async function main() {
   console.log('Χωρίς αναγνώσματα ακόμη: ' + empty + (failed.length ? ' · Αποτυχίες: ' + failed.join(', ') : ''));
 }
 
-module.exports = { parsePage };
+module.exports = { parsePage, parseBlock, text };
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });

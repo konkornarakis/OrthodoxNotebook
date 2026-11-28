@@ -3,6 +3,8 @@ name: Αναγνώσματα — τάξη της Εκκλησίας της Ελ�
 # Κατεβάζει από το saint.gr τα αναγνώσματα (Απόστολος, Ευαγγέλιο, Εωθινό) κατά το Ημερολόγιο της Εκκλησίας της
 # Ελλάδος στο readings-gr/<έτος>.json (tools/build-readings-gr.js). Το saint.gr τα δείχνει έως ~15 ημέρες μπροστά,
 # γι' αυτό τρέχει κάθε μέρα για τις επόμενες ημέρες· χειροκίνητα μπορεί να κατεβάσει όλο το έτος.
+# Μία φορά τον μήνα ξαναφτιάχνει και την πρόβλεψη readings-gr-pred/ (tools/build-readings-gr-predict.js),
+# που μαθαίνει την τάξη από το αρχείο του saint.gr και από ό,τι έχει κατέβει εδώ.
 on:
   schedule:
     - cron: "23 1 * * *"
@@ -29,11 +31,14 @@ jobs:
       - name: Λήψη αναγνωσμάτων
         run: |
           if [ "${{ github.event.inputs.full }}" = "true" ]; then node tools/build-readings-gr.js; else node tools/build-readings-gr.js --window 16; fi
+      - name: Πρόβλεψη για τις ημέρες που δεν έχουν δημοσιευτεί (την 1η κάθε μήνα ή με την πλήρη λήψη)
+        run: |
+          if [ "$(date -u +%d)" = "01" ] || [ "${{ github.event.inputs.full }}" = "true" ]; then node tools/build-readings-gr-predict.js; fi
       - name: Αποθήκευση
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add readings-gr
+          git add readings-gr readings-gr-pred
           if git diff --cached --quiet; then echo "Καμία αλλαγή."; exit 0; fi
           git commit -m "Αναγνώσματα: τάξη της Εκκλησίας της Ελλάδος (saint.gr)"
           git pull --rebase -q && git push
